@@ -31,5 +31,6 @@ Everything below is new.
 - Ships with drop rates, trainer and vendor recipes and reagent prices shared by players.
 - Sharing is manual and anonymous: `/haul export`, then paste it on the upload page.
 
-### Feedback
+### Sharing and feedback
+- Sharing is manual (addons can't reach the internet). The Share kills button, a footer count of kills you haven't shared and a chat reminder every 100 make it easy. The reminder can be turned off.
 - `/haul feedback` (or Settings → Feedback) shows where to report bugs and suggest ideas.

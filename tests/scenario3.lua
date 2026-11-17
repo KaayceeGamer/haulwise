@@ -224,3 +224,30 @@ GP:ShowGuide(true)
 ok(HaulwiseGuide.shown, "guide opens with What's new")
 SlashCmdList.HAULWISE("guide")
 print("GUIDE PASSED")
+
+-- Sharing reminders and the unshared-kill counter
+local printed = {}
+local oldPrint = GP.Print
+GP.Print = function(m) printed[#printed + 1] = m end
+GP.db.mobs = {}
+GP:Mob(1).kills = 150
+GP.db.mobs[1].name = "Test Mob"
+GP.db.sharedKills, GP.db.shareNudgedAt = 0, 0
+ok(GP:UnsharedKills() == 150, "150 kills not shared yet")
+GP:MaybeNudgeShare()
+ok(#printed == 1 and printed[1]:find("150 kills"), "reminder printed after 100+ unshared kills")
+GP:MaybeNudgeShare()
+ok(#printed == 1, "reminder not repeated before 100 more kills")
+GP:ShowExport()
+ok(GP:UnsharedKills() == 0, "opening Share kills marks them as shared")
+GP.db.mobs[1].kills = 400
+GP.db.settings.shareReminder = false
+GP:MaybeNudgeShare()
+ok(#printed == 1, "reminder off in settings")
+GP.db.settings.shareReminder = true
+GP:MaybeNudgeShare()
+ok(#printed == 2, "reminder again after 100 more")
+SlashCmdList.HAULWISE("feedback")
+ok(HaulwiseShareFrame and HaulwiseShareFrame.shown ~= false, "feedback window opens")
+GP.Print = oldPrint
+print("SHARING PASSED")

@@ -214,20 +214,38 @@ local function getBox()
     return box
 end
 
+function GP:OwnKills()
+    local n = 0
+    for _, m in pairs(self.db.mobs) do n = n + (m.kills or 0) end
+    return n
+end
+
+function GP:UnsharedKills()
+    return math.max(0, self:OwnKills() - (self.db.sharedKills or 0))
+end
+
+-- Sharing is manual: addons can't reach the internet. Every 100 unshared kills, say so once in chat.
+function GP:MaybeNudgeShare()
+    if not self.db.settings.shareReminder then return end
+    local own, new = self:OwnKills(), self:UnsharedKills()
+    if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
+        self.db.shareNudgedAt = own
+        self.Print(string.format("You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share kills|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings.", new, GP.SITE_URL))
+    end
+end
+
 function GP:ShowExport()
     local b = getBox()
-    b.title:SetText("Export: Ctrl+C, then paste it on the Haulwise site or send it to a friend")
+    b.title:SetText("Share your kills: press Ctrl+C, then paste it on the Haulwise website")
+    self.db.sharedKills = self:OwnKills()
     b.edit:SetText(self:ExportString())
     b.edit:HighlightText()
     b.edit:SetFocus()
-    b.status:SetText("Upload page: |cffffffff" .. GP.SITE_URL .. "|r")
+    b.status:SetText("Website: |cffffffff" .. GP.SITE_URL .. "|r   " .. "|cff8f8b80Nothing is sent automatically; only what you paste is shared.|r")
     b.action:SetText("Close")
     b.action:SetScript("OnClick", function() b:Hide() end)
     b:Show()
 end
-
-GP.SITE_URL = "kaayceegamer.github.io/haulwise"
-GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
 function GP:ShowFeedback()
     local b = getBox()

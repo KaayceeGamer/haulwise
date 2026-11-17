@@ -67,6 +67,7 @@ local function addKill(guid, npc, when)
     end
     m.lastKill = t
     GP.session.kills = GP.session.kills + 1
+    if GP.MaybeNudgeShare then GP:MaybeNudgeShare() end
     return m
 end
 

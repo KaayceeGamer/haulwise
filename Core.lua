@@ -3,6 +3,8 @@ local ADDON, GP = ...
 Haulwise = GP
 
 GP.VERSION = "0.5.0"
+GP.SITE_URL = "kaayceegamer.github.io/haulwise"
+GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
 local DEFAULTS = {
     version = 1,
@@ -19,6 +21,8 @@ local DEFAULTS = {
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
     shared = {},        -- [sourceId] = { label, time, mobs }
+    sharedKills = 0,    -- your kill total the last time you opened Share
+    shareNudgedAt = 0,  -- kill total at the last share reminder
     settings = {
         defaultKph = 40,        -- kills/hour when we have not timed a mob yet
         trackInGroup = false,   -- group loot skews drop rates, so solo only by default
@@ -39,6 +43,7 @@ local DEFAULTS = {
         usePawn = true,         -- use Pawn's stat weights when Pawn is installed
         upgradePopups = true,
         sendToAltsAtMailbox = true,
+        shareReminder = true,   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
         hudLocked = false,
         winShown = false,

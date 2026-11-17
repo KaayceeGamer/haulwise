@@ -53,7 +53,8 @@ local GUIDE = {
         "Everything all your characters own and where: bags, bank, equipped, mail, auctions. Worn gear isn't counted as worth anything; it isn't for sale.",
     } },
     { "Community data: everyone's kills in your Haulwise", {
-        "Haulwise ships with drop rates, trainer and vendor recipes and reagent prices pooled from every player who shares. To share yours: type /haul export, copy it, and paste it on the Haulwise website.",
+        "Haulwise ships with drop rates, trainer and vendor recipes and reagent prices pooled from every player who shares.",
+        G .. "Sharing is manual." .. E .. " Addons can't reach the internet, so nothing leaves your PC by itself. Press " .. G .. "Share kills" .. E .. " (or /haul export), press Ctrl+C, and paste it on " .. W .. GP.SITE_URL .. E .. ". The footer shows how many kills you haven't shared yet.",
         "It's anonymous (no names, no IPs). Your newest upload replaces your old one. Each player's weight is capped and data that doesn't match everyone else's is left out.",
     } },
     { "Commands and tips", {
@@ -64,6 +65,8 @@ local GUIDE = {
 }
 
 local NEWS = {
+    "Share kills: the Export button is now Share kills, the footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings).",
+    "/haul feedback shows where to report bugs and suggest ideas.",
     "Recipe sources: trainers and vendors you visit are remembered and shared with everyone.",
     "Click column titles to sort. Craft no longer shows a profit when a reagent has no price.",
     "Gear upgrades use your Pawn scales when Pawn is installed.",

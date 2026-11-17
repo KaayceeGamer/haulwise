@@ -981,9 +981,15 @@ local function build()
     f.import = flatButton(f, "Import", 84)
     f.import:SetPoint("RIGHT", f.scan, "LEFT", -6, 0)
     f.import:SetScript("OnClick", function() GP:ShowImport() end)
-    f.export = flatButton(f, "Export", 84)
+    f.export = flatButton(f, "Share kills", 100)
     f.export:SetPoint("RIGHT", f.import, "LEFT", -6, 0)
     f.export:SetScript("OnClick", function() GP:ShowExport() end)
+    tip(f.export, function(t)
+        t:AddLine("Share your kills", 1, 0.82, 0.25)
+        t:AddLine("Haulwise can't reach the internet, so sharing is manual: copy the text and paste it on " .. GP.SITE_URL .. ". Your kills join everyone's drop rates in the next release.", 1, 1, 1, true)
+        local new = GP:UnsharedKills()
+        if new > 0 then t:AddLine(new .. " kills not shared yet.", 0.37, 0.83, 0.37) end
+    end)
 
     GP.MakeScalable(f, "winScale")
     local gear = GP.IconButton(f, "Interface\\Buttons\\UI-OptionsButton", "Settings", 18)
@@ -1151,6 +1157,8 @@ function GP:RefreshUI()
     local extra = ""
     if com and S().useShared then extra = string.format(" + community (%d players)", com.contributors or 0) end
     if nFriends > 0 and S().useShared then extra = extra .. string.format(" + %d friends", nFriends) end
+    local unshared = self:UnsharedKills()
+    if unshared > 0 then extra = extra .. string.format("  ·  |cffffd040%d not shared yet|r", unshared) end
     f.footer:SetText(string.format("%s  ·  %d days of history  ·  %d of your kills%s", priceText, days, ownKills, extra))
 
     local canScan = self:CanScan()

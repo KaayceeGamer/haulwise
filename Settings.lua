@@ -81,7 +81,7 @@ local function setScale(name, key, v)
 end
 
 local function build()
-    panel = GP.Panel("HaulwiseSettings", 400, 560, "Haulwise settings")
+    panel = GP.Panel("HaulwiseSettings", 400, 584, "Haulwise settings")
     panel:SetFrameStrata("DIALOG")
     local s = GP.db.settings
     local draws = {}
@@ -153,6 +153,8 @@ local function build()
     y = y - 26
     add(check(panel, "Community data", 18, y, "useShared", "Add everyone's pooled kills (shipped with Haulwise) and friends' imports to your own."))
     add(check(panel, "Record in groups", 200, y, "trackInGroup", "Group loot makes drop rates less accurate, so Haulwise records solo kills only unless this is on."))
+    y = y - 22
+    add(check(panel, "Remind me to share", 18, y, "shareReminder", "A chat line every 100 kills you haven't shared yet. Sharing is always manual."))
 
     local reset = GP.FlatButton(panel, "Reset positions and sizes", 180, 22)
     reset:SetPoint("BOTTOMLEFT", 14, 12)

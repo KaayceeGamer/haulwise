@@ -64,7 +64,9 @@ Every release includes data pooled from everyone who shares:
 - trainer and vendor recipes
 - vendor reagent prices
 
-Share yours with `/haul export`, then paste it on the upload page (link at the bottom). It's anonymous, each player's weight is capped, and outliers are filtered out.
+**Sharing is manual, and that's on purpose.** WoW addons can't reach the internet, so nothing ever leaves your PC by itself. To share, press **Share kills** in the Haulwise window, press Ctrl+C, and paste it on the Haulwise website (link at the bottom). It takes about 10 seconds. The window shows how many kills you haven't shared yet, and a chat reminder comes every 100 (you can turn it off).
+
+Shared data is anonymous, each player's weight is capped, and outliers are filtered out.
 
 ### 🎨 Your way
 - Drag-to-resize windows
@@ -91,7 +93,7 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 | `/haul room` | make room in your bags |
 | `/haul settings` | settings |
 | `/haul guide` | the guide |
-| `/haul export` / `import` | share data |
+| `/haul export` / `import` | share your kills / load data |
 | `/haul reset` | reset window positions and sizes |
 | `/haul feedback` | report a bug or suggest an idea |
 
