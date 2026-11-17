@@ -30,11 +30,12 @@ end)
 -- Gear: sell, auction or disenchant? One line with the best move, then what disenchanting gives
 -- and who can do it (or which skill it needs).
 local function moveText(src, d, who)
+    -- Bright colours only: tooltips sit on all sorts of backgrounds, and grey text drowns.
     if src == "DE" then
-        for _, n in ipairs(who or {}) do if n == UnitName("player") then return "|cffc48cffdisenchant|r" end end
-        return "|cffc48cffsend to " .. ((who and who[1]) or "an enchanter") .. " to disenchant|r"
+        for _, n in ipairs(who or {}) do if n == UnitName("player") then return "|cffe0c0ffdisenchant|r" end end
+        return "|cffe0c0ffsend to " .. ((who and who[1]) or "an enchanter") .. " to disenchant|r"
     elseif src == "AH" then return "|cffffd040sell on the AH|r" end
-    return "|cffaaaaaasell to a vendor|r"
+    return "|cffffffffsell to a vendor|r"
 end
 
 local function whoText(who)
@@ -66,20 +67,23 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     local _, outcomes, who, _, estimate = GP:DisenchantValue(link, bound, info)
     tooltip:AddDoubleLine("|cffffd040Haulwise|r best: " .. moveText(src, d, d.deWho), GP.Coins(best, true), 1, 1, 1, 1, 1, 1)
     if not outcomes or not GP.db.settings.tooltipDisenchant then return end
-    local right = estimate and ("~" .. GP.Coins(estimate, true)) or "|cff999999no price: scan the AH|r"
-    local left = (who and #who > 0) and ("  Disenchant |cff8a8880(" .. whoText(who) .. ")|r") or "  Disenchant |cffff9944(learn Enchanting)|r"
-    tooltip:AddDoubleLine(left, right, 0.77, 0.55, 1, 0.77, 0.55, 1)
-    for _, o in ipairs(outcomes) do
+    local right = estimate and ("~" .. GP.Coins(estimate, true)) or "|cffffb060no price yet: scan the AH|r"
+    local left = (who and #who > 0) and ("  Disenchant |cffffffff(" .. whoText(who) .. ")|r") or "  Disenchant |cffffb060(learn Enchanting)|r"
+    tooltip:AddDoubleLine(left, right, 0.88, 0.75, 1, 1, 1, 1)
+    local sorted = {}
+    for i, o in ipairs(outcomes) do sorted[i] = o end
+    table.sort(sorted, function(a, b) return a[2] > b[2] end)
+    for _, o in ipairs(sorted) do
         local name = GP.ItemInfo(o[1]) or ("#" .. o[1])
         local qty = o[3] == o[4] and tostring(o[3]) or (o[3] .. "-" .. o[4])
-        tooltip:AddDoubleLine(string.format("    %s %s  |cff8a8880%.0f%%|r", qty, name, o[2] * 100),
-            o.unit and (GP.Coins(o.unit, true) .. " each") or "", 0.75, 0.75, 0.75, 0.6, 0.6, 0.6)
+        tooltip:AddDoubleLine(string.format("    %3.0f%%   %s x %s", o[2] * 100, name, qty),
+            o.unit and (GP.Coins(o.unit, true) .. " each") or "", 0.95, 0.95, 0.95, 1, 1, 1)
     end
     local mine, similar = GP:DisenchantHistory(id, info)
     if mine then
-        tooltip:AddLine(string.format("    You got from %d: %s", mine.n, matList(mine.list, 3)), 0.37, 0.83, 0.37, true)
+        tooltip:AddLine(string.format("    You got from %d: %s", mine.n, matList(mine.list, 3)), 0.45, 1, 0.45, true)
     elseif similar then
-        tooltip:AddLine(string.format("    Items like this (%d done): %s", similar.n, matList(similar.list, 3)), 0.37, 0.83, 0.37, true)
+        tooltip:AddLine(string.format("    Items like this (%d done): %s", similar.n, matList(similar.list, 3)), 0.45, 1, 0.45, true)
     end
 end)
 
