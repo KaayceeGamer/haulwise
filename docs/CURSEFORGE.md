@@ -1,5 +1,3 @@
-# Haulwise
-
 **Haulwise shows what everything you own is worth, what you can safely throw away, which gear is an upgrade, and where to make gold. It works it out from your own play and from what every Haulwise player shares.**
 
 Free and open source. No ads, no accounts, no donations.
@@ -8,7 +6,7 @@ Free and open source. No ads, no accounts, no donations.
 
 ## What you get
 
-### 🪙 The HUD — always on screen until you close it
+### 💰 The HUD — always on screen until you close it
 - Gold per hour this session
 - Gold, bag value and your **total worth**. Hover for the full breakdown: vendor value (guaranteed), best value (auction house and disenchanting), bank, gold in the mail, all your characters, and your 10 most valuable items.
 - **Cheapest to throw away**: drag the HUD taller to see more, and Make room deletes with one click.
@@ -86,7 +84,7 @@ Shared data is anonymous, each player's weight is capped, and outliers are filte
 Then just play. The in-game guide (`/haul guide`) explains everything.
 
 ## Commands
-| | |
+| Command | What it does |
 |---|---|
 | `/haul` | open the window |
 | `/haul hud` | show or hide the HUD |
