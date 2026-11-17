@@ -191,4 +191,16 @@ ok(best and de, "tooltip shows the best move and what disenchanting gives")
 local gotLine
 for _, l in ipairs(lines) do if l:find("You got from 1") then gotLine = l end end
 ok(gotLine, "tooltip shows what your own disenchant gave")
+-- Pawn 2.14: PawnIsInitialized is local, PawnIsReady() says whether it's ready.
+local oldInit, oldItem, oldSingle, oldAll = PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx
+PawnIsInitialized = nil
+PawnGetItemData = PawnGetItemData or function() return {} end
+PawnGetSingleValueFromItem = PawnGetSingleValueFromItem or function() return 1 end
+PawnGetAllScalesEx = PawnGetAllScalesEx or function() return {} end
+PawnIsReady = function() return true end
+ok(GP.PawnLoaded(), "Pawn 2.14 is detected through PawnIsReady()")
+PawnIsReady = function() return false end
+ok(not GP.PawnLoaded(), "not used while Pawn is still loading")
+PawnIsReady = nil
+PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx = oldInit, oldItem, oldSingle, oldAll
 print("NEW FEATURES PASSED")

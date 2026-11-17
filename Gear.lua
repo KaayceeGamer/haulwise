@@ -76,8 +76,15 @@ end
 -- If Pawn is installed, Haulwise uses Pawn's own stat weights (the scales Pawn shows for each
 -- character), through Pawn's public functions. Haulwise's built-in weights are the fallback.
 
+-- Pawn 2.14 keeps PawnIsInitialized local and exposes PawnIsReady() instead; older versions
+-- only have the global.
 local function pawnReady()
-    return PawnGetItemData and PawnGetSingleValueFromItem and PawnGetAllScalesEx and PawnIsInitialized
+    if not (PawnGetItemData and PawnGetSingleValueFromItem and PawnGetAllScalesEx) then return false end
+    if PawnIsReady then
+        local ok, ready = pcall(PawnIsReady)
+        return ok and ready and true or false
+    end
+    return PawnIsInitialized and true or false
 end
 
 function GP.PawnLoaded() return pawnReady() and true or false end
@@ -367,6 +374,7 @@ function GP:FindAHUpgrades(gear, done)
                     replaces = r.replaces, atLevel = r.atLevel, forMe = who.me and true or false,
                     alt = not who.me and who.name or nil, label = who.label,
                     perGold = r.gain / math.max(l.price / 10000, 0.01),
+                    name = (get(l.link)), replacesName = r.replaces and (get(r.replaces)) or nil,
                 }
             end
         end
@@ -435,6 +443,8 @@ function GP:RecheckAHUpgrades(force)
             local c = self:CompareGear(r.link, who)
             if c and c.gain >= MIN_GAIN then
                 r.gain, r.slot, r.slotName, r.replaces, r.atLevel = c.gain, c.slot, c.slotName, c.replaces, c.atLevel
+                local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+                r.replacesName = c.replaces and (get(c.replaces)) or r.replacesName
                 r.perGold = c.gain / math.max(r.price / 10000, 0.01)
                 keep[#keep + 1] = r
             end

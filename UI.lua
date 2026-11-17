@@ -550,7 +550,8 @@ TAB.gear = {
     cells = function(r)
         local rep = r.replaces and itemName(tonumber(r.replaces:match("item:(%d+)"))) or grey("empty slot")
         return {
-            name = itemName(r.id), icon = GP.ItemIcon(r.id),
+            name = (GP.ItemInfo(r.id) and itemName(r.id)) or (r.name and ("|cff1eff00" .. r.name .. "|r")) or itemName(r.id),
+            icon = GP.ItemIcon(r.id),
             who = r.forMe and "|cff5fd35fYou|r" or ("|cffff9944" .. (r.alt or "?") .. "|r"),
             slot = grey(r.slotName or ""),
             gain = r.replaces and string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100) or "|cff5fd35fnew|r",
@@ -679,7 +680,7 @@ TAB.gear_ah = {
             slot = grey(r.slotName or ""), gain = string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100),
             price = Coins(r.price, true),
             value = (r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r  ") or "")
-                .. (r.replaces and grey(GP.ItemInfo(tonumber(r.replaces:match("item:(%d+)")) or 0) or "?") or "|cff88ccffempty slot|r"),
+                .. (r.replaces and grey(GP.ItemInfo(tonumber(r.replaces:match("item:(%d+)")) or 0) or r.replacesName or "?") or "|cff88ccffempty slot|r"),
         }
     end,
     hero = function(rows)
