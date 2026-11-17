@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.1
+
+### Fixes from the first days of play
+- **AH scan** can no longer get stuck on "scanning...": it shows progress on the button, stops with a reason if the auction house doesn't answer within a minute, and resets if you close the auction house.
+- **Pawn 2.14** is detected again, and there's a **Use Pawn** checkbox in the Gear tab.
+- **Gear upgrades** no longer show a fake +100% when the game hasn't sent the stats of what you wear yet. Gear → On the AH shows what each item **replaces** and is checked again when you change gear.
+- **Deals**: rare items and gear need 3 days of scans before they count as "below market", so one odd listing no longer looks like a deal. Item names show even before the game has loaded them.
+- **Popups**: only one at a time. The swap card sits next to the loot window, and says "Leave it" when even your cheapest item is worth more.
+- **Class reagents** (Light Feather, candles, runes, seeds...) are never offered for deletion.
+- **Disenchanting**: WoW Forever has no skill limit, so Haulwise no longer says you need a higher skill.
+- Tooltips use brighter colours; Settings buttons no longer overlap; "1 craft", not "1 crafts".
+
 ## 0.6.0
 
 ### Gold
