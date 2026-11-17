@@ -48,7 +48,9 @@ function GP:Deals()
             -- market so you don't buy more than you can resell.
             -- One scan of a thin market (a few recipes, one rare pattern) says nothing about the
             -- usual price: then it takes 3 days of scans, or 20+ units listed, to trust it.
-            local trusted = (days or 0) >= 3 or (p.q or 0) >= 20
+            -- Gear is never trusted on one scan: the same item comes with different "of the ..."
+            -- stats at very different prices.
+            local trusted = (days or 0) >= 3 or ((p.q or 0) >= 20 and not GEAR[p.k or 0])
             local uUnits, uCost, uProfit = 0, 0, 0
             if market and market > 0 and trusted then
                 for _, l in ipairs(cheap) do

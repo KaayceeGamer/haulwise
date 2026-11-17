@@ -163,7 +163,9 @@ local function build()
     add(check(panel, "Disenchant in tooltips", 18, y, "tooltipDisenchant", "Item tooltips show what gear disenchants into, at your AH prices, and what your own disenchants gave."))
     add(check(panel, "Mats to crafters", 200, y + 22, "matsToCrafters", "At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."))
 
-    local reset = GP.FlatButton(panel, "Reset positions and sizes", 180, 22)
+    -- Four buttons of the same width across the bottom, so nothing overlaps.
+    local BW, GAP = 86, 6
+    local reset = GP.FlatButton(panel, "Reset windows", BW, 22)
     reset:SetPoint("BOTTOMLEFT", 14, 12)
     reset:SetScript("OnClick", function()
         GP.db.positions, GP.db.sizes = {}, {}
@@ -171,14 +173,20 @@ local function build()
         GP.Print("Positions and sizes reset. Type /reload to apply.")
         for _, d in ipairs(draws) do d() end
     end)
-    local guideBtn = GP.FlatButton(panel, "Guide", 70, 22)
-    guideBtn:SetPoint("LEFT", reset, "RIGHT", 6, 0)
+    reset:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Put every Haulwise window back in its place, at its normal size.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    reset:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    local guideBtn = GP.FlatButton(panel, "Guide", BW, 22)
+    guideBtn:SetPoint("LEFT", reset, "RIGHT", GAP, 0)
     guideBtn:SetScript("OnClick", function() GP:ShowGuide(false) end)
-    local fbBtn = GP.FlatButton(panel, "Feedback", 80, 22)
-    fbBtn:SetPoint("LEFT", guideBtn, "RIGHT", 6, 0)
+    local fbBtn = GP.FlatButton(panel, "Feedback", BW, 22)
+    fbBtn:SetPoint("LEFT", guideBtn, "RIGHT", GAP, 0)
     fbBtn:SetScript("OnClick", function() GP:ShowFeedback() end)
-    local done = GP.FlatButton(panel, "Close", 90, 22)
-    done:SetPoint("BOTTOMRIGHT", -14, 12)
+    local done = GP.FlatButton(panel, "Close", BW, 22)
+    done:SetPoint("LEFT", fbBtn, "RIGHT", GAP, 0)
     done:SetScript("OnClick", function() panel:Hide() end)
 
     panel.draws = draws
