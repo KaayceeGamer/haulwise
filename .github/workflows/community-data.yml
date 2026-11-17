@@ -1,0 +1,44 @@
+# Every Wednesday: pull the pooled community data into Data.lua and, if it changed,
+# release a new version to CurseForge so everyone gets the bigger data pool.
+name: Community data
+on:
+  schedule:
+    - cron: "37 4 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: data
+        run: node tools/build-data.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      - if: steps.data.outputs.changed == 'true'
+        id: tag
+        run: |
+          git config user.name "haulwise-bot"
+          git config user.email "haulwise-bot@users.noreply.github.com"
+          git add Data.lua
+          git commit -m "Community data $(date -u +%Y-%m-%d)"
+          base=$(git describe --tags --abbrev=0 --match 'v*' | sed 's/-data.*//')
+          tag="${base}-data$(date -u +%Y%m%d)"
+          git tag "$tag"
+          git push origin HEAD --tags
+      - if: steps.data.outputs.changed == 'true'
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -p ${{ vars.CURSEFORGE_PROJECT_ID }}
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,5 @@
+node_modules/
+tests/addon_export.txt
+tests/community_export.txt
+.env
+.release/

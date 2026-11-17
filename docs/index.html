@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haulwise: community drop rates for WoW Forever</title>
+<meta name="description" content="Free, open-source gold, bag and gear addon for WoW Forever. Share your kills anonymously and get everyone's drop rates back.">
+<style>
+  :root { --bg:#0e0f12; --panel:#16171b; --line:#2a2a2e; --gold:#ffd040; --gold-d:#806629; --text:#e6e3da; --muted:#8f8b80; --ok:#5fd35f; --bad:#ff6b5b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom: 8px; }
+  .logo { width:44px; height:44px; border-radius:50%; background:#e8b923; border:3px solid #8a6a14; color:#5a4208; display:grid; place-items:center; font-weight:700; font-size:20px; flex:none; }
+  h1 { margin:0; color:var(--gold); font-size:28px; font-weight:600; }
+  h2 { color:var(--gold); font-size:18px; font-weight:600; margin: 0 0 10px; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--muted); }
+  section { background:var(--panel); border:1px solid var(--gold-d); border-radius:8px; padding:20px; margin-top:20px; }
+  .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top: 20px; }
+  .stat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--gold); padding:12px 14px; border-radius:4px; }
+  .stat b { display:block; font-size:24px; color:var(--text); font-weight:600; }
+  .stat span { color:var(--muted); font-size:13px; }
+  textarea { width:100%; min-height:130px; background:#0b0b0d; color:var(--text); border:1px solid var(--line); border-radius:4px; padding:10px; font:12px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--gold-d); }
+  label.consent { display:flex; gap:10px; align-items:flex-start; margin:12px 0; font-size:14px; color:#cfccc2; cursor:pointer; }
+  label.consent input { margin-top:4px; accent-color: var(--gold); }
+  button { background:#221c10; color:var(--gold); border:1px solid var(--gold-d); border-radius:4px; padding:9px 18px; font-size:14px; cursor:pointer; }
+  button:hover { background:#2e2614; }
+  button:disabled { opacity:.5; cursor:default; }
+  .msg { margin-top:12px; font-size:14px; min-height: 1.4em; }
+  .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+  code { background:#0b0b0d; border:1px solid var(--line); padding:1px 6px; border-radius:3px; font-size: 13px; }
+  ol { padding-left: 20px; margin: 0 0 12px; } li { margin-bottom: 4px; }
+  footer { color:var(--muted); font-size:13px; margin-top:28px; text-align:center; }
+  a { color: var(--gold); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo" aria-hidden="true">G</div>
+    <div>
+      <h1>Haulwise</h1>
+      <div class="sub">Gold, bags and gear for WoW Forever, with drop rates from everyone's kills</div>
+    </div>
+  </header>
+
+  <div class="stats" aria-live="polite">
+    <div class="stat"><b id="s-players">–</b><span>players sharing</span></div>
+    <div class="stat"><b id="s-kills">–</b><span>kills pooled</span></div>
+    <div class="stat"><b id="s-mobs">–</b><span>mobs covered</span></div>
+    <div class="stat"><b id="s-recipes">–</b><span>recipe sources</span></div>
+    <div class="stat"><b id="s-updated">–</b><span>last updated</span></div>
+  </div>
+
+  <section>
+    <h2>Share your kills</h2>
+    <ol>
+      <li>In game, type <code>/haul export</code> (or press Export in the Haulwise window).</li>
+      <li>Press <code>Ctrl+C</code> to copy, then paste it here.</li>
+    </ol>
+    <textarea id="data" placeholder="CF1,..." spellcheck="false" aria-label="Your Haulwise export string"></textarea>
+    <label class="consent"><input type="checkbox" id="consent">
+      <span>Share my kills and loot anonymously with every Haulwise user. I understand they're pooled and published as community drop rates.</span></label>
+    <button id="send">Share my data</button>
+    <div class="msg" id="msg" role="status"></div>
+    <p class="sub" style="margin-top:10px">You can upload again any time. Your new upload replaces your old one, so nothing is counted twice.</p>
+  </section>
+
+  <section>
+    <h2>Get the latest community data</h2>
+    <p>Every Haulwise release on CurseForge already includes the community data, rebuilt each week. Want it sooner? Copy it here and paste it in game with <code>/haul import</code>.</p>
+    <button id="copy">Copy community data</button>
+    <div class="msg" id="copymsg" role="status"></div>
+  </section>
+
+  <section>
+    <h2>Privacy</h2>
+    <p>Your export contains kills, loot, coins, levels and zones per mob, the recipes you've seen at trainers and vendors (with their prices), what vendors charge for reagents, and a random id the addon made up. That id is how a new upload replaces your old one.</p>
+    <p><b>What's stored:</b> those numbers, under a one-way hash of the random id. Your character name in the export is thrown away. No account names, no email, no cookies, no tracking.</p>
+    <p><b>Your IP address</b> is never stored. A hash of it, which changes every day, is used for one day to limit spam uploads, then deleted.</p>
+    <p><b>Nothing is sent automatically.</b> The addon can't reach the internet; data only leaves your PC if you paste it here yourself. Uploads can't be linked to you, your character or your account. Haulwise is a free hobby project with no ads and no money involved.</p>
+  </section>
+
+  <footer>
+    Haulwise is free and open source. It's a fan project, not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.<br>
+    Questions or bugs: use the comments on the Haulwise CurseForge page.
+  </footer>
+</main>
+
+<script>
+  // Fill these in after creating your Supabase project (see SETUP.md). The publishable key is
+  // meant to be public: it can only call the two read-only functions.
+  const SUPABASE_URL = "https://njpkpiufvdrwuhlhwvof.supabase.co";
+  const PUBLISHABLE_KEY = "sb_publishable_kmTESVC8h-492aAnqZK0NA_s1DUZ605";
+  const SUBMIT_FUNCTION = "bright-handler";
+
+  const $ = (id) => document.getElementById(id);
+
+  async function rpc(name) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST", headers: { apikey: PUBLISHABLE_KEY, "Content-Type": "application/json" }, body: "{}",
+    });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  async function loadStats() {
+    try {
+      const s = await rpc("community_stats");
+      if (!s) return;
+      const n = (x) => Number(x || 0).toLocaleString("en-US");
+      $("s-players").textContent = n(s.contributors);
+      $("s-kills").textContent = n(s.kills);
+      $("s-mobs").textContent = n(s.mobs);
+      $("s-recipes").textContent = n((s.trainers || 0) + (s.vendors || 0));
+      $("s-updated").textContent = s.refreshed_at ? new Date(s.refreshed_at).toLocaleDateString() : "–";
+    } catch { /* stats are optional */ }
+  }
+
+  function say(el, text, ok) { el.textContent = text; el.className = "msg " + (ok ? "ok" : "bad"); }
+
+  $("send").addEventListener("click", async () => {
+    const data = $("data").value.trim();
+    if (!data.startsWith("CF1,")) return say($("msg"), "Paste the text from /haul export first. It starts with CF1.", false);
+    if (!$("consent").checked) return say($("msg"), "Tick the box to agree to sharing first.", false);
+    $("send").disabled = true;
+    say($("msg"), "Sending…", true);
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/${SUBMIT_FUNCTION}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: data });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) say($("msg"), `Thanks! ${j.kills.toLocaleString("en-US")} kills on ${j.mobs} mobs, ${j.trainers} trainer recipes and ${j.vendors} vendor recipes added. They'll be in the community data after tonight's update.`, true);
+      else say($("msg"), j.error || "Something went wrong. Try again later.", false);
+    } catch {
+      say($("msg"), "Couldn't reach the server. Try again later.", false);
+    }
+    $("send").disabled = false;
+  });
+
+  $("copy").addEventListener("click", async () => {
+    try {
+      const s = await rpc("community_export");
+      await navigator.clipboard.writeText(s);
+      say($("copymsg"), "Copied. In game, type /haul import and paste it.", true);
+    } catch {
+      say($("copymsg"), "Couldn't load the data right now. Try again later.", false);
+    }
+  });
+
+  ["data", "consent"].forEach((id) => $(id).addEventListener("input", () => $("msg").textContent = ""));
+  loadStats();
+</script>
+</body>
+</html>

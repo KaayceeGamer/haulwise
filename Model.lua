@@ -1,0 +1,193 @@
+-- Haulwise: turns kills, drops and prices into gold per hour.
+--
+-- The unit of ranking is the MOB, not the item: one Coyote kill is worth its meat AND its claw
+-- AND its coins, so every row is a farm you can actually go and do.
+--
+--   per kill  = sum over drops of (units per kill x what a unit is worth to you)
+--             + coins per kill + skinning/mining/herbing (if you have it) + pickpocket (rogues)
+--   gold/hr   = per kill x kills per hour (timed from YOUR kills of that mob, not a guess)
+--   "safe"    = the same with every drop chance at the low end of its 95% interval,
+--               so a 1-in-50 lucky streak can't put a mob at the top.
+--   Thin markets: when you'd farm more per hour than a quarter of what is listed on the AH,
+--   the extra units are valued at the vendor price, since nobody will buy them at AH price.
+local _, GP = ...
+
+local MIN_TIMED = 5          -- kill intervals needed before we trust a measured kills/hour
+local GATHER_LINES = { [393] = true, [186] = true, [182] = true } -- skinning, mining, herbalism
+
+local function addCount(dst, src)
+    for id, e in pairs(src or {}) do
+        local d = dst[id]
+        if not d then d = { k = 0, q = 0 }; dst[id] = d end
+        d.k = d.k + (e.k or 0)
+        d.q = d.q + (e.q or 0)
+    end
+end
+
+local function merge(into, m)
+    into.name = into.name or m.name
+    into.kills = into.kills + (m.kills or 0)
+    into.money = into.money + (m.money or 0)
+    into.gathered = into.gathered + (m.gathered or 0)
+    into.pp = into.pp + (m.pp or 0)
+    into.ppMoney = into.ppMoney + (m.ppMoney or 0)
+    into.tIntervals = into.tIntervals + (m.tIntervals or 0)
+    into.tSeconds = into.tSeconds + (m.tSeconds or 0)
+    if m.minL then into.minL = math.min(into.minL or m.minL, m.minL) end
+    if m.maxL then into.maxL = math.max(into.maxL or m.maxL, m.maxL) end
+    for z, n in pairs(m.zones or {}) do into.zones[z] = (into.zones[z] or 0) + n end
+    addCount(into.items, m.items)
+    addCount(into.gather, m.gather)
+    addCount(into.ppItems, m.ppItems)
+end
+
+-- Own data plus anything imported from friends.
+function GP:MergedMobs()
+    local out = {}
+    local function add(npc, m)
+        local o = out[npc]
+        if not o then
+            o = { kills = 0, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+                  zones = {}, items = {}, gather = {}, ppItems = {} }
+            out[npc] = o
+        end
+        merge(o, m)
+    end
+    for npc, m in pairs(self.db.mobs) do add(npc, m) end
+    if self.db.settings.useShared then
+        for _, src in pairs(self.db.shared) do
+            for npc, m in pairs(src.mobs or {}) do add(npc, m) end
+        end
+        if self.community then
+            for npc, m in pairs(self.community.mobs or {}) do add(npc, m) end
+        end
+    end
+    return out
+end
+
+function GP:PlayerHasGathering()
+    if not GetProfessions then return true end
+    local ok, a, b = pcall(GetProfessions)
+    if not ok then return true end
+    for _, idx in ipairs({ a, b }) do
+        if idx then
+            local line = select(7, GetProfessionInfo(idx))
+            if line and GATHER_LINES[line] then return true end
+        end
+    end
+    return false
+end
+
+function GP:PlayerIsRogue()
+    local _, class = UnitClass("player")
+    return class == "ROGUE"
+end
+
+local function topZone(zones)
+    local best, n = nil, 0
+    for z, c in pairs(zones) do if c > n then best, n = z, c end end
+    return best or "?"
+end
+
+-- Value one bucket of drops (corpse loot, gather or pickpocket) over `n` tries.
+local function valueBucket(self, bucket, n, kph, lines, kind)
+    local est, safe = 0, 0
+    for id, e in pairs(bucket) do
+        local _, ah, vendor, listed = self:ItemValue(id)
+        local chance = e.k / n
+        local lo, hi = GP.Wilson(e.k, n)
+        local perDrop = e.q / math.max(1, e.k)
+        local units = chance * perDrop           -- expected units per kill
+        local unitsSafe = lo * perDrop
+
+        local function perHour(u)
+            local y = u * kph
+            if not ah then return y * vendor, false end
+            local cap = listed and math.max(5, listed / 4) or math.huge
+            local atAH = math.min(y, cap)
+            return atAH * ah + (y - atAH) * vendor, y > cap
+        end
+        local vh, thin = perHour(units)
+        local vs = perHour(unitsSafe)
+        -- Worth more crafted? (e.g. cook the meat instead of selling it raw)
+        local craft, craftName = self:CraftValue(id)
+        local rawUnit = math.max(ah or 0, vendor)
+        local crafted = false
+        if craft and craft > rawUnit and self.db.settings.valueAsCrafted then
+            vh, vs, thin, crafted = units * kph * craft, unitsSafe * kph * craft, false, true
+        end
+        est, safe = est + vh, safe + vs
+        lines[#lines + 1] = {
+            id = id, kind = kind, chance = chance, lo = lo, hi = hi, perDrop = perDrop,
+            perHour = vh, thin = thin, priced = ah ~= nil or crafted, vendor = vendor, unit = rawUnit,
+            craft = (craft and craft > rawUnit) and craft or nil, craftName = craftName, crafted = crafted,
+        }
+    end
+    return est, safe
+end
+
+function GP:Evaluate(npc, m)
+    local s = self.db.settings
+    local K = math.max(1, m.kills)
+    local measured = m.tIntervals >= MIN_TIMED and m.tSeconds > 0
+    local kph = measured and (3600 * m.tIntervals / m.tSeconds) or s.defaultKph
+
+    local lines = {}
+    local est, safe = valueBucket(self, m.items, K, kph, lines, "drop")
+    local coins = (m.money / K) * kph
+    est, safe = est + coins, safe + coins
+
+    if s.includeGather and m.gathered > 0 and self:PlayerHasGathering() then
+        local e2, s2 = valueBucket(self, m.gather, m.gathered, kph, lines, "gather")
+        est, safe = est + e2, safe + s2
+    end
+    if s.includePickpocket and m.pp > 0 and self:PlayerIsRogue() then
+        local e3, s3 = valueBucket(self, m.ppItems, m.pp, kph, lines, "pickpocket")
+        local ppCoins = (m.ppMoney / m.pp) * kph
+        est, safe = est + e3 + ppCoins, safe + s3 + ppCoins
+    end
+    table.sort(lines, function(a, b) return a.perHour > b.perHour end)
+
+    local unpriced = 0
+    for _, l in ipairs(lines) do if not l.priced and l.vendor == 0 then unpriced = unpriced + 1 end end
+
+    return {
+        npc = npc, name = m.name or ("NPC #" .. npc), zone = topZone(m.zones),
+        minL = m.minL, maxL = m.maxL, kills = m.kills, kph = kph, measured = measured,
+        perKill = est / kph, est = est, safe = safe, coinsPerKill = m.money / K,
+        lines = lines, unpriced = unpriced,
+    }
+end
+
+function GP:Rank()
+    local s = self.db.settings
+    local level = UnitLevel("player") or 60
+    local rows = {}
+    for npc, m in pairs(self:MergedMobs()) do
+        if m.kills > 0 then
+            local tooHigh = s.levelWindow and m.minL and m.minL > level + 2
+            if not tooHigh then rows[#rows + 1] = self:Evaluate(npc, m) end
+        end
+    end
+    local key = s.sortBy == "est" and "est" or "safe"
+    table.sort(rows, function(a, b)
+        if a[key] ~= b[key] then return a[key] > b[key] end
+        return a.npc < b.npc
+    end)
+    return rows
+end
+
+-- Best sources for one item, for the item tooltip.
+function GP:SourcesFor(itemID, max)
+    local out = {}
+    for npc, m in pairs(self:MergedMobs()) do
+        local e = m.items[itemID]
+        if e and m.kills > 0 then
+            out[#out + 1] = { name = m.name or ("NPC #" .. npc), chance = e.k / m.kills, kills = m.kills,
+                              lo = (GP.Wilson(e.k, m.kills)) }
+        end
+    end
+    table.sort(out, function(a, b) return a.lo > b.lo end)
+    for i = #out, (max or 3) + 1, -1 do out[i] = nil end
+    return out
+end

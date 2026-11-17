@@ -1,0 +1,12 @@
+package-as: Haulwise
+
+ignore:
+  - supabase
+  - docs
+  - tools
+  - tests
+  - SETUP.md
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown

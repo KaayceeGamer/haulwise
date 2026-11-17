@@ -1,0 +1,33 @@
+## Interface: 16001
+## Title: Haulwise
+## Notes: Your gold, bags and gear in one place: best farms, bag values with smart swaps, upgrade advisor, alts' holdings, crafting, AH deals and trends.
+## Version: @project-version@
+## Author: Haulwise Team
+## X-License: MIT
+## SavedVariables: HaulwiseDB
+## OptionalDeps: Pawn, Auctionator
+## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## AddonCompartmentFunc: Haulwise_OnCompartmentClick
+
+Data.lua
+Core.lua
+Widgets.lua
+DataDisenchant.lua
+DataWeights.lua
+Tracker.lua
+Prices.lua
+Values.lua
+Model.lua
+Crafting.lua
+Market.lua
+Sources.lua
+Holdings.lua
+Gear.lua
+Bags.lua
+Share.lua
+UI.lua
+Popups.lua
+HUD.lua
+Settings.lua
+Guide.lua
+Tooltip.lua
