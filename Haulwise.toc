@@ -2,8 +2,10 @@
 ## Title: Haulwise
 ## Notes: Your gold, bags and gear in one place: best farms, bag values with smart swaps, upgrade advisor, alts' holdings, crafting, AH deals and trends.
 ## Version: @project-version@
-## Author: Haulwise Team
+## Author: KaayceeGamer
 ## X-License: MIT
+## X-Curse-Project-ID: 1812709
+## X-Website: https://kaayceegamer.github.io/haulwise/
 ## SavedVariables: HaulwiseDB
 ## OptionalDeps: Pawn, Auctionator
 ## IconTexture: Interface\Icons\INV_Misc_Coin_01

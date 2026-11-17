@@ -62,13 +62,13 @@ Dele:
    ```
 3. **Settings → Pages**: Source = *Deploy from a branch*, Branch = `main`, mappe = `/docs`.
 4. **Settings → Secrets and variables → Actions**:
-   - under *Variables*: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` og `CURSEFORGE_PROJECT_ID` (det sidste får du i trin 4)
+   - under *Variables*: `SUPABASE_URL` og `SUPABASE_PUBLISHABLE_KEY` (CurseForge Project ID 1812709 står allerede i TOC'en og workflows)
    - under *Secrets*: `CF_API_KEY` (fra trin 4)
 
 ## 4. CurseForge
 
 1. Lav en konto på curseforge.com og gå til **authors.curseforge.com → Create Project**. Vælg World of Warcraft og Addons, navngiv det Haulwise og skriv beskrivelsen (du kan bruge README.md). Godkendelse tager normalt et døgn.
-2. Når projektet er godkendt: kopiér **Project ID** (tallet i sidebaren, ikke navnet i URL'en) til variablen `CURSEFORGE_PROJECT_ID`.
+2. Project ID er **1812709** og står allerede i `Haulwise.toc` og workflows.
 3. **authors.curseforge.com → API tokens**: lav en token og læg den i secret'en `CF_API_KEY`.
 
 ## 5. Udgiv

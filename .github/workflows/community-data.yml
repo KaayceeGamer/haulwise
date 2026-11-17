@@ -38,7 +38,7 @@ jobs:
       - if: steps.data.outputs.changed == 'true'
         uses: BigWigsMods/packager@v2
         with:
-          args: -p ${{ vars.CURSEFORGE_PROJECT_ID }}
+          args: -p 1812709
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
