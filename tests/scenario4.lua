@@ -38,6 +38,15 @@ for _, r in ipairs(cheap) do if r.price > 10000 then onlyBoots = false end end
 ok(onlyBoots, "max price hides the 2g robe")
 GP.db.settings.ahUpgradeMax = 0
 
+-- Worn item whose stats the game hasn't sent yet: no fake +100%.
+W.items[7020] = { name = "Worn Silk Robe", sell = 300, quality = 2, k = 4, sk = 1, ilvl = 30, minLevel = 25, equipLoc = "INVTYPE_CHEST" }
+W.equipped = { [5] = 7020 }
+ok(GP:CompareGear(LINK(7010), GP.MeForGear()) == nil, "worn item not loaded yet: no comparison instead of a fake +100%")
+W.stats[7020] = { ITEM_MOD_INTELLECT_SHORT = 4, RESISTANCE0_NAME = 30 }
+local back = GP:CompareGear(LINK(7010), GP.MeForGear())
+ok(back and back.gain < 1, "once it's loaded the real gain shows (not +100%)")
+W.equipped = { [5] = 7003 }
+
 -- A full scan with gear listings runs the finder too.
 GP.db.ahUpgrades = nil
 GP._test.finishPrices({ [2589] = { { 40, 200 } } }, { [LINK(7010)] = { id = 7010, price = 15000 } })

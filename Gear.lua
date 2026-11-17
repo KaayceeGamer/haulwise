@@ -134,7 +134,13 @@ function GP.ItemStats(link)
     if statCache[link] then return statCache[link] end
     local get = (C_Item and C_Item.GetItemStats) or GetItemStats
     local raw = get and get(link) or nil
-    if not raw then return nil end
+    -- Right after login the game can answer with nothing for items it hasn't loaded yet.
+    -- Don't remember that: ask again next time, or every item compared with it looks +100%.
+    if not raw or next(raw) == nil then
+        local id = tonumber(link:match("item:(%d+)"))
+        if id and C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id) end
+        return nil
+    end
     local out = {}
     for k, v in pairs(raw) do
         local s = GP.STAT_KEYS[k]
@@ -223,6 +229,8 @@ function GP:CompareGear(link, who)
                 old = nil -- wearing a two-hander: an off-hand isn't a straight swap
             else
                 old, replaces = sc(links[slot]), links[slot]
+                -- Something is worn there but its stats aren't loaded yet: we can't compare.
+                if links[slot] and not GP.ItemStats(links[slot]) and not who.scorer then old = nil end
             end
         end
         if old then
@@ -408,9 +416,36 @@ function GP:FindAHUpgrades(gear, done)
     step()
 end
 
+-- Gear changes after the scan (you equip something, an alt levels): check the saved rows again
+-- against what everyone wears now. At most once every 30 seconds.
+local lastRecheck = 0
+function GP:RecheckAHUpgrades(force)
+    local d = self.db.ahUpgrades
+    if not d or not d.rows then return end
+    if not force and GetTime() - lastRecheck < 30 then return end
+    lastRecheck = GetTime()
+    local whoBy = {}
+    for _, w in ipairs(ahWhoList()) do whoBy[w.me and "me" or w.name] = w end
+    local keep = {}
+    for _, r in ipairs(d.rows) do
+        local who = whoBy[r.forMe and "me" or r.alt]
+        if who then
+            local c = self:CompareGear(r.link, who)
+            if c and c.gain >= MIN_GAIN then
+                r.gain, r.slot, r.slotName, r.replaces, r.atLevel = c.gain, c.slot, c.slotName, c.replaces, c.atLevel
+                r.perGold = c.gain / math.max(r.price / 10000, 0.01)
+                keep[#keep + 1] = r
+            end
+        end
+    end
+    table.sort(keep, function(a, b) return a.perGold > b.perGold end)
+    d.rows = keep
+end
+
 function GP:AHUpgradeRows()
     local d = self.db.ahUpgrades
     if not d then return {} end
+    self:RecheckAHUpgrades()
     local max = self.db.settings.ahUpgradeMax or 0
     local rows = {}
     for _, r in ipairs(d.rows or {}) do
@@ -493,6 +528,6 @@ function GP.StatDiff(newLink, oldLink)
 end
 
 GP:On("BAG_UPDATE_DELAYED", function() C_Timer.After(0.6, function() GP:CheckNewGear() end) end)
-GP:On("PLAYER_EQUIPMENT_CHANGED", function() C_Timer.After(0.3, function() GP:ScanUpgrades() end) end)
+GP:On("PLAYER_EQUIPMENT_CHANGED", function() C_Timer.After(0.3, function() GP:ScanUpgrades(); GP:RecheckAHUpgrades(true) end) end)
 GP:On("PLAYER_REGEN_ENABLED", function() GP:ShowNextUpgrade() end)
 GP:On("PLAYER_LEVEL_UP", function() C_Timer.After(1, function() GP:ScanUpgrades() end) end)

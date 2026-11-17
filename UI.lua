@@ -666,7 +666,7 @@ TAB.gear_ah = {
             slot = grey(r.slotName or ""), gain = string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100),
             price = Coins(r.price, true),
             value = (r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r  ") or "")
-                .. (r.replaces and grey(r.replaces:match("%[(.-)%]") or "?") or "|cff88ccffempty slot|r"),
+                .. (r.replaces and grey(GP.ItemInfo(tonumber(r.replaces:match("item:(%d+)")) or 0) or "?") or "|cff88ccffempty slot|r"),
         }
     end,
     hero = function(rows)
@@ -848,7 +848,7 @@ TAB.gear.sort = {
 TAB.gear_ah.sort = {
     name = function(r) return nm(r.id) end, who = function(r) return r.forMe and "" or (r.alt or ""):lower() end,
     slot = function(r) return r.slotName end, gain = function(r) return r.gain end, price = function(r) return r.price end,
-    value = function(r) return r.replaces and (r.replaces:match("%[(.-)%]") or ""):lower() or "" end,
+    value = function(r) return r.replaces and (GP.ItemInfo(tonumber(r.replaces:match("item:(%d+)")) or 0) or ""):lower() or "" end,
 }
 TAB.craft_skill.sort = {
     name = function(r) return nm(r.out) end, prof = function(r) return r.prof end, color = function(r) return r.d end,
