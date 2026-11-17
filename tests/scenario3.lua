@@ -240,7 +240,7 @@ ok(#printed == 1 and printed[1]:find("150 kills"), "reminder printed after 100+ 
 GP:MaybeNudgeShare()
 ok(#printed == 1, "reminder not repeated before 100 more kills")
 GP:ShowExport()
-ok(GP:UnsharedKills() == 0, "opening Share kills marks them as shared")
+ok(GP:UnsharedKills() == 0, "opening Share data marks them as shared")
 GP.db.mobs[1].kills = 400
 GP.db.settings.shareReminder = false
 GP:MaybeNudgeShare()

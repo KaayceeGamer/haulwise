@@ -191,6 +191,13 @@ ok(best and de, "tooltip shows the best move and what disenchanting gives")
 local gotLine
 for _, l in ipairs(lines) do if l:find("You got from 1") then gotLine = l end end
 ok(gotLine, "tooltip shows what your own disenchant gave")
+-- An empty recipe name (seen in a real export) must not reach the server.
+GP.db.recipeItems[""] = 13939
+GP.db.recipeItems["stormrider's leather pants"] = 252796
+local exp = GP:ExportString()
+ok(not exp:find(";R,,") and exp:find("R,stormrider's leather pants,252796", 1, true), "export skips empty recipe names, keeps the rest")
+GP.db.recipeItems[""] = nil
+
 -- Pawn 2.14: PawnIsInitialized is local, PawnIsReady() says whether it's ready.
 local oldInit, oldItem, oldSingle, oldAll = PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx
 PawnIsInitialized = nil

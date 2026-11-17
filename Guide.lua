@@ -59,7 +59,7 @@ local GUIDE = {
     } },
     { "Community data: everyone's kills in your Haulwise", {
         "Haulwise ships with drop rates, trainer and vendor recipes and reagent prices pooled from every player who shares.",
-        G .. "Sharing is manual." .. E .. " Addons can't reach the internet, so nothing leaves your PC by itself. Press " .. G .. "Share kills" .. E .. " (or /haul export), press Ctrl+C, and paste it on " .. W .. GP.SITE_URL .. E .. ". The footer shows how many kills you haven't shared yet.",
+        G .. "Sharing is manual." .. E .. " Addons can't reach the internet, so nothing leaves your PC by itself. Press " .. G .. "Share data" .. E .. " (or /haul export), press Ctrl+C, and paste it on " .. W .. GP.SITE_URL .. E .. ". The footer shows how many kills you haven't shared yet.",
         "It's anonymous (no names, no IPs). Your newest upload replaces your old one. Each player's weight is capped and data that doesn't match everyone else's is left out.",
     } },
     { "Commands and tips", {
@@ -77,7 +77,7 @@ local NEWS = {
     "At the mailbox: send crafting mats to the alt whose recipes use them, in one click.",
     "Bags: Best move for every item, and a Disenchant button when disenchanting pays most.",
     "Farm: By zone, and This zone only.",
-    "Share kills: the Export button is now Share kills, the footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings).",
+    "Share data: the Export button is now Share data (your kills, plus the recipes and vendor prices you've seen). The footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings).",
     "/haul feedback shows where to report bugs and suggest ideas.",
 }
 

@@ -43,7 +43,7 @@ Free and open source. No ads, no donations, no accounts.
 ## Community data
 
 Every release includes **community drop rates**, pooled from everyone who chooses to share. To add yours:
-1. Press **Share kills** in the Haulwise window, or type `/haul export`.
+1. Press **Share data** in the Haulwise window, or type `/haul export`.
 2. Paste it on the Haulwise site.
 
 Sharing is anonymous: no character names, no IPs. Your newest upload replaces your old one, so nothing is counted twice. Each player's weight per mob is capped, and uploads that don't match everyone else's drop rates are left out, so one player can't skew the numbers.

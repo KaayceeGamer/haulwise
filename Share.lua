@@ -7,6 +7,16 @@ local function clean(s)
     return (tostring(s or ""):gsub("[,;:/~|\n\r]", " "))
 end
 
+-- A text field the server will accept: 1-80 characters, no < >. Records with a field that
+-- isn't are left out of the export, so one odd name can't make the whole upload fail.
+local function okText(...)
+    for i = 1, select("#", ...) do
+        local t = clean(select(i, ...)):match("^%s*(.-)%s*$")
+        if t == "" or #t > 80 or t:find("[<>]") then return false end
+    end
+    return true
+end
+
 local function packCounts(t)
     local parts = {}
     for id, e in pairs(t or {}) do parts[#parts + 1] = string.format("%d:%d:%d", id, e.k, e.q) end
@@ -25,7 +35,7 @@ function GP:ExportString()
     for npc, m in pairs(self.db.mobs) do
         if (m.kills or 0) > 0 then
             out[#out + 1] = table.concat({
-                npc, clean(m.name), m.minL or 0, m.maxL or 0, m.kills, m.money, m.gathered, m.pp, m.ppMoney,
+                npc, okText(m.name) and clean(m.name) or "?", m.minL or 0, m.maxL or 0, m.kills, m.money, m.gathered, m.pp, m.ppMoney,
                 m.tIntervals, m.tSeconds, packZones(m.zones), packCounts(m.items), packCounts(m.gather),
                 packCounts(m.ppItems),
             }, ",")
@@ -35,17 +45,17 @@ function GP:ExportString()
     -- and which item teaches which recipe (R). Only things you saw yourself.
     for key, e in pairs(self.db.sources or {}) do
         for npc, t in pairs(e.trainer or {}) do
-            out[#out + 1] = table.concat({ "T", clean(key), clean(npc), clean(t.zone), math.floor(t.cost or 0), t.skill or 0, clean(t.prof) }, ",")
+            if okText(key, npc, t.zone, t.prof) then out[#out + 1] = table.concat({ "T", clean(key), clean(npc), clean(t.zone), math.floor(t.cost or 0), t.skill or 0, clean(t.prof) }, ",") end
         end
         for npc, v in pairs(e.vendor or {}) do
-            out[#out + 1] = table.concat({ "V", clean(key), clean(npc), clean(v.zone), math.floor(v.price or 0), v.limited and 1 or 0, v.item or 0 }, ",")
+            if okText(key, npc, v.zone) then out[#out + 1] = table.concat({ "V", clean(key), clean(npc), clean(v.zone), math.floor(v.price or 0), v.limited and 1 or 0, v.item or 0 }, ",") end
         end
     end
     for id, price in pairs(self.db.vendorBuy or {}) do
         out[#out + 1] = string.format("B,%d,%d", id, math.floor(price + 0.5))
     end
     for key, id in pairs(self.db.recipeItems or {}) do
-        out[#out + 1] = table.concat({ "R", clean(key), id }, ",")
+        if okText(key) then out[#out + 1] = table.concat({ "R", clean(key), id }, ",") end
     end
     return table.concat(out, ";")
 end
@@ -230,13 +240,13 @@ function GP:MaybeNudgeShare()
     local own, new = self:OwnKills(), self:UnsharedKills()
     if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
         self.db.shareNudgedAt = own
-        self.Print(string.format("You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share kills|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings.", new, GP.SITE_URL))
+        self.Print(string.format("You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings.", new, GP.SITE_URL))
     end
 end
 
 function GP:ShowExport()
     local b = getBox()
-    b.title:SetText("Share your kills: press Ctrl+C, then paste it on the Haulwise website")
+    b.title:SetText("Share your data: press Ctrl+C, then paste it on the Haulwise website")
     self.db.sharedKills = self:OwnKills()
     b.edit:SetText(self:ExportString())
     b.edit:HighlightText()
@@ -251,7 +261,7 @@ function GP:ShowFeedback()
     local b = getBox()
     b.title:SetText("Feedback, bugs and ideas: copy a link with Ctrl+C")
     b.edit:SetText("Report a bug or suggest an idea (GitHub issues):\n" .. GP.ISSUES_URL ..
-        "\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your kills and get the newest community data:\n" .. GP.SITE_URL ..
+        "\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your data and get the newest community data:\n" .. GP.SITE_URL ..
         "\n\nWhen reporting a bug, tell us what you did, what you expected, and paste any error message. Haulwise version: " ..
         (GP.VERSION or "?") .. ".")
     b.edit:SetCursorPosition(0)

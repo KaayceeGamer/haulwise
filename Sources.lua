@@ -10,7 +10,8 @@ local RECIPE_CLASS = 9
 
 function GP.RecipeKey(name)
     if not name then return nil end
-    return (name:gsub("^[^:]+:%s*", "")):lower()
+    local key = (name:gsub("^[^:]+:%s*", "")):lower():match("^%s*(.-)%s*$")
+    return key ~= "" and key or nil
 end
 
 local function where()

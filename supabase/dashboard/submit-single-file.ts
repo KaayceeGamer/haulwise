@@ -74,6 +74,22 @@ function zones(s: string): Record<string, number> {
   return out;
 }
 
+function extraRecord(kind: string, f: string[], extra: Parsed["extra"]): void {
+  if (kind === "T") {
+    extra.trainers.push({ recipe: text(f[1], "trainer recipe").toLowerCase(), npc: text(f[2], "trainer name"),
+      zone: text(f[3], "trainer zone"), cost: int(f[4], 100_000_000, "trainer cost"), skill: int(f[5], 1000, "trainer skill"),
+      prof: (f[6] ?? "").trim().slice(0, 40) });
+  } else if (kind === "V") {
+    extra.vendors.push({ recipe: text(f[1], "vendor recipe").toLowerCase(), npc: text(f[2], "vendor name"),
+      zone: text(f[3], "vendor zone"), price: int(f[4], 100_000_000, "vendor price"), limited: f[5] === "1",
+      item: int(f[6], 9_999_999, "vendor item") });
+  } else if (kind === "B") {
+    extra.buys.push([int(f[1], 9_999_999, "vendor item"), int(f[2], 100_000_000, "vendor price")]);
+  } else {
+    extra.recipeItems.push([text(f[1], "recipe").toLowerCase(), int(f[2], 9_999_999, "recipe item")]);
+  }
+}
+
 function parseExport(raw: string): Parsed {
   const str = raw.trim();
   if (str.length > MAX_LEN) throw new Error("upload too large");
@@ -93,20 +109,12 @@ function parseExport(raw: string): Parsed {
   for (let i = 1; i < records.length; i++) {
     const f = records[i].split(",");
     const kind = f[0];
-    if (kind === "T") {
-      extra.trainers.push({ recipe: text(f[1], "trainer recipe").toLowerCase(), npc: text(f[2], "trainer name"),
-        zone: text(f[3], "trainer zone"), cost: int(f[4], 100_000_000, "trainer cost"), skill: int(f[5], 1000, "trainer skill"),
-        prof: (f[6] ?? "").trim().slice(0, 40) });
+    // Trainer, vendor, price and recipe records are extras: one bad one (an empty name from an
+    // older addon version) is skipped instead of throwing the whole upload away.
+    if (kind === "T" || kind === "V" || kind === "B" || kind === "R") {
+      try { extraRecord(kind, f, extra); } catch { /* skip this record */ }
       continue;
     }
-    if (kind === "V") {
-      extra.vendors.push({ recipe: text(f[1], "vendor recipe").toLowerCase(), npc: text(f[2], "vendor name"),
-        zone: text(f[3], "vendor zone"), price: int(f[4], 100_000_000, "vendor price"), limited: f[5] === "1",
-        item: int(f[6], 9_999_999, "vendor item") });
-      continue;
-    }
-    if (kind === "B") { extra.buys.push([int(f[1], 9_999_999, "vendor item"), int(f[2], 100_000_000, "vendor price")]); continue; }
-    if (kind === "R") { extra.recipeItems.push([text(f[1], "recipe").toLowerCase(), int(f[2], 9_999_999, "recipe item")]); continue; }
     if (f.length < 15) throw new Error(`record ${i} is cut short`);
     const what = `mob ${f[0]}`;
     const npc = int(f[0], 9_999_999, what);
