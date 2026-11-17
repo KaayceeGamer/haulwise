@@ -137,6 +137,8 @@ local S = function() return GP.db.settings end
 local TAB = {}
 
 -- A tab can have more than one view (Gear: your bags / the AH). The view is TAB["gear_ah"] etc.
+local function plural(n, one, many) return n .. " " .. (n == 1 and one or (many or one .. "s")) end
+
 local function current()
     local tab = TAB[S().tab] and S().tab or "farm"
     local v = S().views and S().views[tab]
@@ -254,7 +256,7 @@ TAB.craft = {
             elseif not b or r.profit > b.profit then b = r end
         end
         local tail = unpriced > 0 and grey(string.format("   ·   %d need a reagent price: visit a trade goods vendor or scan the AH", unpriced)) or ""
-        if not b or b.profit <= 0 then return unpriced > 0 and grey(string.format("%d recipes need a reagent price: visit a trade goods vendor (thread, dyes...) or scan the AH.", unpriced)) or nil end
+        if not b or b.profit <= 0 then return unpriced > 0 and grey(string.format("%s a reagent price: visit a trade goods vendor (thread, dyes...) or scan the AH.", plural(unpriced, "recipe needs", "recipes need"))) or nil end
         return string.format("Best craft:  %s   |cff5fd35f+%s|r each%s", itemName(b.out), Coins(b.profit, true), tail)
     end,
     empty = "No recipes yet.\n\nOpen each of your profession windows once. Haulwise reads your recipes and works out what every craft costs and earns at your auction house.",
@@ -364,7 +366,7 @@ TAB.recipes = {
         if #parts == 0 and r.buyPrice then parts[1] = "|cff88ccffAH|r " .. Coins(r.buyPrice, true) end
         local get = #parts > 0 and table.concat(parts, grey("  ·  ")) or grey("not seen yet: visit trainers and vendors")
         local pay
-        if r.payback then pay = (r.payback <= 5 and "|cff5fd35f" or "") .. r.payback .. " crafts|r"
+        if r.payback then pay = (r.payback <= 5 and "|cff5fd35f" or "") .. plural(r.payback, "craft") .. "|r"
         elseif r.kind == "ahonly" then pay = grey("open profession") end
         return {
             name = r.name or "?", icon = r.out and GP.ItemIcon(r.out) or (r.itemID and GP.ItemIcon(r.itemID)) or 134939,
@@ -376,11 +378,11 @@ TAB.recipes = {
     hero = function(rows)
         for _, r in ipairs(rows) do
             if r.payback then
-                return string.format("Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%d crafts|r", r.name, r.payback)
+                return string.format("Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%s|r", r.name, plural(r.payback, "craft"))
             end
         end
         if #rows == 0 then return nil end
-        return string.format("%d recipes you don't know yet.  %s", #rows,
+        return string.format("%s you don't know yet.  %s", plural(#rows, "recipe"),
             grey("Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."))
     end,
     empty = "No recipes to suggest yet.\n\nOpen your profession windows once and scan the AH. Recipes you don't know yet are ranked by profit per craft and how fast they pay for themselves.",
