@@ -27,6 +27,43 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     end
 end)
 
+-- Gear: sell, auction or disenchant? One line with the best move, then what disenchanting gives
+-- and who can do it (or which skill it needs).
+local function moveText(src, d, who)
+    if src == "DE" then
+        for _, n in ipairs(who or {}) do if n == UnitName("player") then return "|cffc48cffdisenchant|r" end end
+        return "|cffc48cffsend to " .. ((who and who[1]) or "an enchanter") .. " to disenchant|r"
+    elseif src == "AH" then return "|cffffd040sell on the AH|r" end
+    return "|cffaaaaaasell to a vendor|r"
+end
+
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
+    if not GP.db or tooltip ~= GameTooltip or not tooltip.GetItem then return end
+    local _, link = tooltip:GetItem()
+    link = GP.Safe(link)
+    if not link then return end
+    local info = GP.LinkInfo(link)
+    if info.classID ~= 2 and info.classID ~= 4 then return end
+    if (info.quality or 0) < 2 or (info.quality or 0) > 4 then return end
+    local bound = info.bindType == 1
+    local id = tonumber(link:match("item:(%d+)"))
+    local best, src, d = GP:BagValue(id, link, bound)
+    local _, outcomes, who, need, estimate = GP:DisenchantValue(link, bound, info)
+    tooltip:AddDoubleLine("|cffffd040Haulwise|r best: " .. moveText(src, d, d.deWho), GP.Coins(best, true), 1, 1, 1, 1, 1, 1)
+    if outcomes then
+        local right = estimate and ("~" .. GP.Coins(estimate, true)) or "|cff999999no price: scan the AH|r"
+        local whoText
+        if who and #who > 0 then
+            whoText = "|cff8a8880" .. table.concat(who, ", ") .. "|r"
+        else
+            local mine = GP:MyProfessions()["Enchanting"]
+            whoText = string.format("|cffff9944needs Enchanting %d%s|r", need or 0,
+                mine and mine.rank and string.format(" (you: %d)", mine.rank) or "")
+        end
+        tooltip:AddDoubleLine("  Disenchant  " .. whoText, right, 0.77, 0.55, 1, 0.77, 0.55, 1)
+    end
+end)
+
 -- Gear: is this an upgrade for you?
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
     if not GP.db or tooltip ~= GameTooltip or not GP.db.settings.upgradeAdvisor or not tooltip.GetItem then return end

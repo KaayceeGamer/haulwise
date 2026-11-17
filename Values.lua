@@ -65,8 +65,13 @@ function GP:DisenchantValue(link, bound, info)
     for _, e in ipairs(self:Enchanters()) do
         if e.skill >= need and (e.me or not bound) then who[#who + 1] = e.name end
     end
-    if #who == 0 then return nil, outcomes, who, need end
+    local value = self:DisenchantEstimate(outcomes)
+    if #who == 0 then return nil, outcomes, who, need, value end
+    return value, outcomes, who, need, value
+end
 
+-- Expected value of a list of disenchant outcomes at your AH prices, or nil if none is priced.
+function GP:DisenchantEstimate(outcomes)
     local value, priced = 0, false
     for _, o in ipairs(outcomes) do
         local unit = freshAH(o[1])
@@ -76,8 +81,8 @@ function GP:DisenchantValue(link, bound, info)
             value = value + o[2] * (o[3] + o[4]) / 2 * unit
         end
     end
-    if not priced then return nil, outcomes, who, need end
-    return value, outcomes, who, need
+    if not priced then return nil end
+    return value
 end
 
 -- Value of ONE unit in your bags. Returns value, source ("V"|"AH"|"DE"), details table.

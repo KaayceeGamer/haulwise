@@ -147,4 +147,24 @@ GP:ShowMakeRoom()
 ok(not HaulwiseMakeRoom.shown, "Make room stays away while the swap card is up")
 fire("LOOT_CLOSED")
 ok(not HaulwiseSwap.shown, "swap card closes with the loot window")
+-- Item tooltip: best move and disenchant line ----------------------------------------------------
+local calls = {}
+TooltipDataProcessor = { AddTooltipPostCall = function(_, fn) calls[#calls + 1] = fn end }
+Enum.TooltipDataType = { Item = 0, Unit = 1 }
+assert(loadfile(DIR .. "/Tooltip.lua"))("Haulwise", GP)
+local lines = {}
+local tip = { AddLine = function(_, t) lines[#lines + 1] = t end,
+              AddDoubleLine = function(_, l, r) lines[#lines + 1] = l .. " | " .. tostring(r) end,
+              GetItem = function() return "Fine Silk Robe", LINK(7010) end }
+GameTooltip = tip
+GP.db.settings.useDisenchant = true
+GP:Char().profs = { Enchanting = { rank = 159 } }
+for _, fn in ipairs(calls) do pcall(fn, tip, { id = 7010 }) end
+local best, de
+for _, l in ipairs(lines) do
+  if l:find("best:") then best = l end
+  if l:find("Disenchant") then de = l end
+end
+print("     " .. tostring(best)); print("     " .. tostring(de))
+ok(best and de, "tooltip shows the best move and what disenchanting gives")
 print("NEW FEATURES PASSED")
