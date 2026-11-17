@@ -57,7 +57,7 @@ local GUIDE = {
         "It's anonymous (no names, no IPs). Your newest upload replaces your old one. Each player's weight is capped and data that doesn't match everyone else's is left out.",
     } },
     { "Commands and tips", {
-        W .. "/haul" .. E .. " window   " .. W .. "/haul hud" .. E .. " HUD   " .. W .. "/haul room" .. E .. " make room   " .. W .. "/haul settings" .. E .. "   " .. W .. "/haul guide" .. E,
+        W .. "/haul" .. E .. " window   " .. W .. "/haul hud" .. E .. " HUD   " .. W .. "/haul room" .. E .. " make room   " .. W .. "/haul settings" .. E .. "   " .. W .. "/haul guide" .. E .. "   " .. W .. "/haul feedback" .. E .. " bugs and ideas",
         W .. "/haul export" .. E .. " / " .. W .. "import" .. E .. " share data   " .. W .. "/haul reset" .. E .. " window positions and sizes",
         "Click any column title to sort. Drag a window's corner to resize it. Ctrl + mouse wheel scales it.",
     } },

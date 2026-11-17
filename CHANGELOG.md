@@ -30,3 +30,6 @@ Everything below is new.
 ### Community data
 - Ships with drop rates, trainer and vendor recipes and reagent prices shared by players.
 - Sharing is manual and anonymous: `/haul export`, then paste it on the upload page.
+
+### Feedback
+- `/haul feedback` (or Settings → Feedback) shows where to report bugs and suggest ideas.

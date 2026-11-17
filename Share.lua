@@ -220,6 +220,24 @@ function GP:ShowExport()
     b.edit:SetText(self:ExportString())
     b.edit:HighlightText()
     b.edit:SetFocus()
+    b.status:SetText("Upload page: |cffffffff" .. GP.SITE_URL .. "|r")
+    b.action:SetText("Close")
+    b.action:SetScript("OnClick", function() b:Hide() end)
+    b:Show()
+end
+
+GP.SITE_URL = "kaayceegamer.github.io/haulwise"
+GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
+
+function GP:ShowFeedback()
+    local b = getBox()
+    b.title:SetText("Feedback, bugs and ideas: copy a link with Ctrl+C")
+    b.edit:SetText("Report a bug or suggest an idea (GitHub issues):\n" .. GP.ISSUES_URL ..
+        "\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your kills and get the newest community data:\n" .. GP.SITE_URL ..
+        "\n\nWhen reporting a bug, tell us what you did, what you expected, and paste any error message. Haulwise version: " ..
+        (GP.VERSION or "?") .. ".")
+    b.edit:SetCursorPosition(0)
+    b.edit:SetFocus()
     b.status:SetText("")
     b.action:SetText("Close")
     b.action:SetScript("OnClick", function() b:Hide() end)

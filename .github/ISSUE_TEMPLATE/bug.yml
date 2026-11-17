@@ -1,0 +1,27 @@
+name: Bug report
+description: Something in Haulwise doesn't work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message
+      description: If the game showed a Lua error, paste it here. Turn on errors with /console scriptErrors 1.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Haulwise version
+      description: Shown in /haul feedback, or in the AddOns list.
+  - type: input
+    id: others
+    attributes:
+      label: Other addons that might matter
+      description: For example bag, auction or tooltip addons.

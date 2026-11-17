@@ -1,0 +1,11 @@
+name: Idea
+description: Suggest a feature or a change.
+labels: [idea]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like Haulwise to do, and how would it help you make gold or manage your bags and gear?
+    validations:
+      required: true

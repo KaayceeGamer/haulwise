@@ -165,6 +165,8 @@ SlashCmdList.HAULWISE = function(msg)
     elseif cmd == "session" then
         GP.session = { start = time(), value = 0, money = 0, kills = 0 }
         GP.Print("Session reset.")
+    elseif cmd == "feedback" or cmd == "bug" then
+        GP:ShowFeedback()
     elseif cmd == "guide" or cmd == "help" then
         GP:ToggleGuide()
     elseif cmd == "settings" or cmd == "options" or cmd == "config" then
@@ -208,6 +210,7 @@ SlashCmdList.HAULWISE = function(msg)
         GP.Print("/haul group on|off  also record while grouped")
         GP.Print("/haul session  reset the session counter")
         GP.Print("/haul export | import  share data with friends")
+        GP.Print("/haul feedback  report a bug or suggest an idea")
         GP.Print("/haul wipe yes  delete all drop data")
     end
     if GP.RefreshUI then GP:RefreshUI() end

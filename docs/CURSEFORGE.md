@@ -93,6 +93,7 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 | `/haul guide` | the guide |
 | `/haul export` / `import` | share data |
 | `/haul reset` | reset window positions and sizes |
+| `/haul feedback` | report a bug or suggest an idea |
 
 ## Works with
 - **Pawn**: Haulwise uses your Pawn scales.
@@ -106,6 +107,9 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 - Auction house scans use the game's own full scan, which the game allows once every 15 minutes.
 
 ---
+
+### Feedback
+Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (link below). `/haul feedback` in game shows the links.
 
 ### Links
 - Upload page and community data: https://kaayceegamer.github.io/haulwise/
