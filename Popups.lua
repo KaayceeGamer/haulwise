@@ -6,30 +6,53 @@ local KIND_TITLE = {
     plain = "BAGS FULL: swap?", bad = "NOT WORTH A SWAP",
 }
 
--- Swap ------------------------------------------------------------------------------------------
+-- Swap and Make room ---------------------------------------------------------------------------
+-- Only one of these is ever on screen. The swap card sits right next to the loot window, so your
+-- eyes don't have to leave it; Make room is for "Inventory is full" outside a loot window.
 
-local swap
+local swap, room
+
+-- Next to the loot window if it's open, otherwise where you last dragged it.
+local function placeNearLoot(p, default)
+    local lf = LootFrame
+    if lf and lf.IsShown and lf:IsShown() then
+        p:ClearAllPoints()
+        p:SetPoint("TOPLEFT", lf, "TOPRIGHT", 8, 0)
+    else
+        p:RestorePosition(default)
+    end
+end
+
+local function itemLine(parent, sign, color)
+    local row = GP.ItemRow(parent, 300)
+    row.sign = parent:CreateFontString(nil, "OVERLAY", "HaulwiseFontLarge")
+    row.sign:SetPoint("RIGHT", row, "LEFT", -6, 0)
+    row.sign:SetText(color .. sign .. "|r")
+    return row
+end
+
 local function buildSwap()
-    swap = GP.Panel("HaulwiseSwap", 360, 168, "")
-    swap.lootLabel = swap:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
-    swap.lootLabel:SetPoint("TOPLEFT", 12, -36)
-    swap.lootLabel:SetText("LOOT")
-    swap.loot = GP.ItemRow(swap, 336)
-    swap.loot:SetPoint("TOPLEFT", 12, -48)
-    swap.bagLabel = swap:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
-    swap.bagLabel:SetPoint("TOPLEFT", 12, -76)
-    swap.bagLabel:SetText("DELETE FROM BAGS")
-    swap.bag = GP.ItemRow(swap, 336)
-    swap.bag:SetPoint("TOPLEFT", 12, -88)
-    swap.verdict = swap:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
-    swap.verdict:SetPoint("TOPLEFT", 12, -116)
-    swap.verdict:SetPoint("RIGHT", -12, 0)
-    swap.verdict:SetJustifyH("LEFT")
-    swap.go = GP.FlatButton(swap, "Swap", 110, 24)
+    swap = GP.Panel("HaulwiseSwap", 350, 150, "")
+    swap.take = itemLine(swap, "+", "|cff5fd35f")
+    swap.take:SetPoint("TOPLEFT", 30, -36)
+    swap.drop = itemLine(swap, "-", "|cffff6b5b")
+    swap.drop:SetPoint("TOPLEFT", 30, -62)
+    swap.rule = GP.Tex(swap, "ARTWORK", 1, 1, 1, 0.08)
+    swap.rule:SetPoint("TOPLEFT", 12, -88)
+    swap.rule:SetPoint("TOPRIGHT", -12, -88)
+    swap.rule:SetHeight(1)
+    swap.verdict = swap:CreateFontString(nil, "OVERLAY", "HaulwiseFont")
+    swap.verdict:SetPoint("TOPRIGHT", -14, -94)
+    swap.verdict:SetJustifyH("RIGHT")
+    swap.note = swap:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
+    swap.note:SetPoint("TOPLEFT", 14, -96)
+    swap.note:SetPoint("RIGHT", swap.verdict, "LEFT", -8, 0)
+    swap.note:SetJustifyH("LEFT")
+    swap.go = GP.FlatButton(swap, "Swap", 120, 24)
     swap.go:SetPoint("BOTTOMLEFT", 12, 10)
-    swap.next = GP.FlatButton(swap, "Next", 80, 24)
+    swap.next = GP.FlatButton(swap, "Other item", 100, 24)
     swap.next:SetPoint("LEFT", swap.go, "RIGHT", 6, 0)
-    swap.cancel = GP.FlatButton(swap, "Cancel", 80, 24)
+    swap.cancel = GP.FlatButton(swap, "Not now", 90, 24)
     swap.cancel:SetPoint("LEFT", swap.next, "RIGHT", 6, 0)
     swap.cancel:SetScript("OnClick", function() swap:Hide() end)
 end
@@ -38,41 +61,46 @@ local function drawSwap()
     local s = swap.state
     local loot, cands = s.loot, s.cands
     local bagItem = cands[s.i]
-    swap.loot:SetItem(loot.id, loot.link, GP.ValueText(loot.total, loot.src, loot.d), loot.count)
-    swap.loot.tip = function(t) t:SetHyperlink(loot.link); GP.AddValueLines(t, loot.unit, loot.src, loot.d, loot.count) end
+    swap.take:SetItem(loot.id, loot.link, GP.ValueText(loot.total, loot.src, loot.d), loot.count)
+    swap.take.tip = function(t) t:SetHyperlink(loot.link); GP.AddValueLines(t, loot.unit, loot.src, loot.d, loot.count) end
     local important = loot.prio and loot.prio > 0
     if not bagItem then
         swap:SetKind("bad")
-        swap.title:SetText("NOTHING TO SWAP")
-        swap.bag:Hide()
-        swap.verdict:SetText("Everything in your bags is protected (quest items, tools, reagents, upgrades or kept items).")
+        swap.title:SetText("Bags full, nothing safe to drop")
+        swap.drop:Hide(); swap.drop.sign:Hide()
+        swap.verdict:SetText("")
+        swap.note:SetText("Everything left is protected: quest items, tools, reagents, upgrades or kept items.")
         swap.go:Hide(); swap.next:Hide()
         return
     end
-    swap.bag:Show(); swap.go:Show(); swap.next:Show()
-    swap.bag:SetItem(bagItem.id, bagItem.link, GP.ValueText(bagItem.total, bagItem.src, bagItem.d), bagItem.count)
-    swap.bag.tip = function(t) t:SetHyperlink(bagItem.link); GP.AddValueLines(t, bagItem.unit, bagItem.src, bagItem.d, bagItem.count) end
+    swap.drop:Show(); swap.drop.sign:Show(); swap.go:Show()
+    swap.next:SetShown(#cands > 1)
+    swap.drop:SetItem(bagItem.id, bagItem.link, GP.ValueText(bagItem.total, bagItem.src, bagItem.d), bagItem.count)
+    swap.drop.tip = function(t) t:SetHyperlink(bagItem.link); GP.AddValueLines(t, bagItem.unit, bagItem.src, bagItem.d, bagItem.count) end
     local diff = loot.total - bagItem.total
     local worth = important or diff > 0
     local kind = worth and (loot.kind or "plain") or "bad"
     swap:SetKind(kind)
-    local title = KIND_TITLE[kind]
-    if kind == "upgrade" and loot.gain then title = string.format("GEAR UPGRADE +%.0f%%: make room", loot.gain * 100) end
-    swap.title:SetText(title)
+    local titles = {
+        plain = "Bags full: swap?", bad = "Bags full: not worth it", quest = "Quest item: make room",
+        reagent = "Reagent you use: make room",
+        upgrade = loot.gain and string.format("Upgrade +%.0f%%: make room", loot.gain * 100) or "Upgrade: make room",
+    }
+    swap.title:SetText(titles[kind] or titles.plain)
     if diff >= 0 then
-        swap.verdict:SetText(string.format("You gain |cff5fd35f%s|r.  %s", GP.Coins(diff),
-            "|cff8a8880" .. s.i .. " of " .. #cands .. " items you could delete|r"))
+        swap.verdict:SetText("|cff5fd35f+" .. GP.Coins(diff, true) .. "|r")
     else
-        swap.verdict:SetText(string.format("You'd lose |cffff6b5b%s|r%s.  |cff8a8880%d of %d|r", GP.Coins(-diff),
-            important and " (but you need this)" or "", s.i, #cands))
+        swap.verdict:SetText("|cffff6b5b-" .. GP.Coins(-diff, true) .. "|r")
     end
+    local why = (not worth) and "You'd lose money." or (important and diff < 0 and "Worth it: you need this." or "Cheapest item in your bags.")
+    swap.note:SetText(why .. (#cands > 1 and string.format("  %d/%d", s.i, #cands) or ""))
     swap.go:SetLabel(worth and "Swap" or "Swap anyway")
     swap.go:SetPrimary(worth)
 end
 
 function GP:ShowSwapPopup(loot)
     if not swap then buildSwap() end
-    swap:RestorePosition({ "TOP", UIParent, "TOP", 0, -140 })
+    if room then room:Hide() end
     swap.state = { loot = loot, cands = self:DeleteCandidates(), i = 1 }
     swap.next:SetScript("OnClick", function()
         local s = swap.state
@@ -90,69 +118,64 @@ function GP:ShowSwapPopup(loot)
         end
     end)
     drawSwap()
+    placeNearLoot(swap, { "TOP", UIParent, "TOP", 0, -140 })
     swap:Show()
 end
 
 function GP:HideSwapPopup() if swap then swap:Hide() end end
+function GP:SwapPopupShown() return swap and swap:IsShown() end
 
--- Make room ---------------------------------------------------------------------------------------
+-- Make room: the three cheapest items at once, each with its own Delete.
+local ROOM_ROWS = 3
 
-local room
 local function buildRoom()
-    room = GP.Panel("HaulwiseMakeRoom", 340, 132, "MAKE ROOM")
+    room = GP.Panel("HaulwiseMakeRoom", 350, 64 + ROOM_ROWS * 26 + 40, "Make room")
     room:SetKind("room")
     room.free = room:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     room.free:SetPoint("TOPRIGHT", -30, -9)
-    room.item = GP.ItemRow(room, 316)
-    room.item:SetPoint("TOPLEFT", 12, -40)
+    room.rows = {}
+    for i = 1, ROOM_ROWS do
+        local r = GP.ItemRow(room, 250)
+        r:SetPoint("TOPLEFT", 12, -36 - (i - 1) * 26)
+        r.del = GP.FlatButton(room, "Delete", 70, 22)
+        r.del:SetPoint("LEFT", r, "RIGHT", 6, 0)
+        room.rows[i] = r
+    end
     room.note = room:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
-    room.note:SetPoint("TOPLEFT", 12, -68)
+    room.note:SetPoint("TOPLEFT", 12, -42 - ROOM_ROWS * 26)
     room.note:SetPoint("RIGHT", -12, 0)
     room.note:SetJustifyH("LEFT")
-    room.del = GP.FlatButton(room, "Delete", 100, 24)
-    room.del:SetPoint("BOTTOMLEFT", 12, 10)
-    room.next = GP.FlatButton(room, "Next", 80, 24)
-    room.next:SetPoint("LEFT", room.del, "RIGHT", 6, 0)
-    room.done = GP.FlatButton(room, "Close", 80, 24)
-    room.done:SetPoint("LEFT", room.next, "RIGHT", 6, 0)
+    room.note:SetText("Cheapest first. Quest items, tools, reagents, upgrades and kept items are never offered.")
+    room.done = GP.FlatButton(room, "Done", 80, 22)
+    room.done:SetPoint("BOTTOMRIGHT", -12, 10)
     room.done:SetScript("OnClick", function() room:Hide() end)
 end
 
 local function drawRoom()
-    local s = room.state
+    local cands = GP:DeleteCandidates()
     local free = GP:FreeSlots()
     room.free:SetText(string.format("%s%d free|r", free == 0 and "|cffff6b5b" or "|cff5fd35f", free))
-    local it = s.cands[s.i]
-    if not it then
-        room.item:Hide(); room.del:Hide(); room.next:Hide()
-        room.note:SetText("Nothing left that's safe to delete.")
-        return
+    for i, r in ipairs(room.rows) do
+        local it = cands[i]
+        if it then
+            r:SetItem(it.id, it.link, GP.ValueText(it.total, it.src, it.d), it.count)
+            r.tip = function(t) t:SetHyperlink(it.link); GP.AddValueLines(t, it.unit, it.src, it.d, it.count) end
+            r.del:SetPrimary(i == 1)
+            r.del:SetScript("OnClick", function()
+                if GP:DeleteBagItem(it) then C_Timer.After(0.4, function() if room:IsShown() then drawRoom() end end) end
+            end)
+            r:Show(); r.del:Show()
+        else
+            r:Hide(); r.del:Hide()
+        end
     end
-    room.item:Show(); room.del:Show(); room.next:Show()
-    room.item:SetItem(it.id, it.link, GP.ValueText(it.total, it.src, it.d), it.count)
-    room.item.tip = function(t) t:SetHyperlink(it.link); GP.AddValueLines(t, it.unit, it.src, it.d, it.count) end
-    room.note:SetText(string.format("Cheapest first: %d of %d. Quest items, tools, reagents, upgrades and kept items are never offered.", s.i, #s.cands))
-    room.del:SetPrimary(true)
+    if #cands == 0 then room.note:SetText("Nothing left that's safe to delete.") end
 end
 
 function GP:ShowMakeRoom()
+    if self:SwapPopupShown() then return end
     if not room then buildRoom() end
     room:RestorePosition({ "TOP", UIParent, "TOP", 0, -140 })
-    room.state = { cands = self:DeleteCandidates(), i = 1 }
-    room.next:SetScript("OnClick", function()
-        local s = room.state
-        if #s.cands > 0 then s.i = s.i % #s.cands + 1 end
-        drawRoom()
-    end)
-    room.del:SetScript("OnClick", function()
-        local it = room.state.cands[room.state.i]
-        if it and GP:DeleteBagItem(it) then
-            C_Timer.After(0.4, function()
-                room.state = { cands = GP:DeleteCandidates(), i = 1 }
-                drawRoom()
-            end)
-        end
-    end)
     drawRoom()
     room:Show()
 end

@@ -95,7 +95,8 @@ ok(#W.deleted == 1 and W.deleted[1][2] == 2 and W.looted[1] == 1, "swap deleted 
 -- Make room
 GP:ShowMakeRoom()
 ok(HaulwiseMakeRoom.shown, "make room popup shown")
-print("     make room: " .. tostring(HaulwiseMakeRoom.item.name.text) .. " " .. tostring(HaulwiseMakeRoom.item.right.text))
+print("     make room: " .. tostring(HaulwiseMakeRoom.rows[1].name.text) .. " " .. tostring(HaulwiseMakeRoom.rows[1].right.text))
+HaulwiseMakeRoom:Hide()
 
 -- Keep list via shift-click in Bags tab
 GP.db.keep[2673] = true

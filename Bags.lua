@@ -11,6 +11,17 @@ for _, id in ipairs({
     6256, 6365, 6366, 6367, 12225, 19022, 19970,  -- Fishing poles
 }) do TOOLS[id] = true end
 
+-- Class spell reagents: Light Feather (Slow Fall), runes, powders, candles, seeds, shards...
+local CLASS_REAGENTS = {}
+for _, id in ipairs({
+    17056, 17020, 17031, 17032,                   -- Light Feather, Arcane Powder, Runes of Teleportation and Portals
+    17028, 17029, 17033, 17030,                   -- Holy Candle, Sacred Candle, Symbol of Divinity, Ankh
+    17034, 17035, 17036, 17037, 17038, 17021, 17026, -- druid seeds, Wild Berries, Wild Thornroot
+    6265, 5565, 16583,                            -- Soul Shard, Infernal Stone, Demonic Figurine
+    5140, 5530, 2928, 8923, 8924, 8925,           -- Flash and Blinding Powder, poison reagents
+    17057, 17058, 21177,                          -- Shiny Fish Scales, Fish Oil, Symbol of Kings
+}) do CLASS_REAGENTS[id] = true end
+
 local CLASS_QUEST, CLASS_PROJECTILE, CLASS_QUIVER, CLASS_CONTAINER = 12, 6, 11, 1
 -- Crafting materials are never offered, whatever they're worth: gems (3), reagents (5),
 -- trade goods (7: dust, essences, shards, cloth, leather, ore, herbs...) and recipes (9).
@@ -77,6 +88,7 @@ function GP:ProtectReason(bag, slot, it, info)
     if info.classID == CLASS_CONTAINER then return "bag" end
     if isQuest(bag, slot, info) then return "quest" end
     if CRAFTING[info.classID or -1] then return CRAFTING[info.classID] end
+    if CLASS_REAGENTS[it.itemID] or (info.classID == 15 and info.subclassID == 1) then return "class reagent" end
     if GP.DE_MATS and GP.DE_MATS[it.itemID] then return "crafting material" end
     if not isGeneral(bag) then return "special bag" end
     if (it.quality or info.quality or 0) >= 4 then return "epic" end
@@ -215,7 +227,10 @@ function GP:LootNeedingRoom()
 end
 
 local lastAuto = 0
+local lootOpen = false
+GP:On("LOOT_READY", function() lootOpen = true end)
 GP:On("LOOT_OPENED", function()
+    lootOpen = true
     if not GP.db.settings.swapPopups then return end
     C_Timer.After(0.05, function()
         if GP:FreeSlots() > 0 then return end
@@ -223,17 +238,25 @@ GP:On("LOOT_OPENED", function()
         if loot and GP.ShowSwapPopup then GP:ShowSwapPopup(loot) end
     end)
 end)
-GP:On("LOOT_CLOSED", function() if GP.HideSwapPopup then GP:HideSwapPopup() end end)
+GP:On("LOOT_CLOSED", function()
+    lootOpen = false
+    if GP.HideSwapPopup then GP:HideSwapPopup() end
+end)
 
 -- "Inventory is full" outside a loot window (crafting, quest rewards, buying, mail...)
 GP:On("UI_ERROR_MESSAGE", function(_, msg)
     msg = GP.Safe(msg)
     if not msg or not GP.db.settings.makeRoomPopup then return end
     if msg ~= ERR_INV_FULL and msg ~= ERR_BAG_FULL then return end
-    if LootFrame and LootFrame:IsShown() then return end
+    -- With auto loot the error comes before the loot window opens, so wait a moment: if it's a
+    -- loot window after all, the swap card handles it and Make room stays away.
+    if lootOpen or (LootFrame and LootFrame:IsShown()) then return end
     if GetTime() - lastAuto < 10 then return end
     lastAuto = GetTime()
-    if GP.ShowMakeRoom then GP:ShowMakeRoom(true) end
+    C_Timer.After(0.4, function()
+        if lootOpen or (LootFrame and LootFrame:IsShown()) or (GP.SwapPopupShown and GP:SwapPopupShown()) then return end
+        if GP.ShowMakeRoom then GP:ShowMakeRoom(true) end
+    end)
 end)
 
 -- Totals for the HUD and Bags tab: what you'd have if you sold everything.

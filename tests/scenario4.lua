@@ -131,4 +131,20 @@ for _, v in ipairs({ { "gear", "ah" }, { "craft", "skill" }, { "farm", "zones" }
   GP.db.settings.views[v[1]] = nil
 end
 ok(true, "AH, skill-up, zone and bag views draw and sort")
+-- Only one popup at a time ---------------------------------------------------------------------
+W.items[17056] = { name = "Light Feather", sell = 7, k = 15, sk = 1 }
+W.bags = { [0] = { size = 3, slots = { { id = 17056, count = 2 }, { id = 4865 }, { id = 2589, count = 20 } } } }
+local feather
+for _, r in ipairs(GP:BagItems()) do if r.id == 17056 then feather = r.protect end end
+ok(feather == "class reagent", "Light Feather (Slow Fall) is protected")
+if HaulwiseMakeRoom then HaulwiseMakeRoom:Hide() end
+W.loot = { { id = 9999, src = { "Creature-0-1-1-1-113-ABC", 1 } } }
+fire("LOOT_READY")
+fire("UI_ERROR_MESSAGE", 3, ERR_INV_FULL)
+fire("LOOT_OPENED")
+ok(HaulwiseSwap.shown and not (HaulwiseMakeRoom and HaulwiseMakeRoom.shown), "auto loot into full bags: only the swap card, no Make room")
+GP:ShowMakeRoom()
+ok(not HaulwiseMakeRoom.shown, "Make room stays away while the swap card is up")
+fire("LOOT_CLOSED")
+ok(not HaulwiseSwap.shown, "swap card closes with the loot window")
 print("NEW FEATURES PASSED")
