@@ -74,7 +74,6 @@ local function drawSwap()
         return
     end
     swap.drop:Show(); swap.drop.sign:Show(); swap.go:Show()
-    swap.next:SetShown(#cands > 1)
     swap.drop:SetItem(bagItem.id, bagItem.link, GP.ValueText(bagItem.total, bagItem.src, bagItem.d), bagItem.count)
     swap.drop.tip = function(t) t:SetHyperlink(bagItem.link); GP.AddValueLines(t, bagItem.unit, bagItem.src, bagItem.d, bagItem.count) end
     local diff = loot.total - bagItem.total
@@ -82,7 +81,7 @@ local function drawSwap()
     local kind = worth and (loot.kind or "plain") or "bad"
     swap:SetKind(kind)
     local titles = {
-        plain = "Bags full: swap?", bad = "Bags full: not worth it", quest = "Quest item: make room",
+        plain = "Bags full: swap?", bad = "Leave it: not worth a bag slot", quest = "Quest item: make room",
         reagent = "Reagent you use: make room",
         upgrade = loot.gain and string.format("Upgrade +%.0f%%: make room", loot.gain * 100) or "Upgrade: make room",
     }
@@ -92,10 +91,23 @@ local function drawSwap()
     else
         swap.verdict:SetText("|cffff6b5b-" .. GP.Coins(-diff, true) .. "|r")
     end
-    local why = (not worth) and "You'd lose money." or (important and diff < 0 and "Worth it: you need this." or "Cheapest item in your bags.")
-    swap.note:SetText(why .. (#cands > 1 and string.format("  %d/%d", s.i, #cands) or ""))
+    -- Candidates are cheapest first, so when the first one already loses money every other one
+    -- loses more: then leaving the loot is the main button and "Other item" goes away.
+    local why = (not worth) and "Even your cheapest item is worth more." or (important and diff < 0 and "Worth it: you need this." or "Cheapest item in your bags.")
+    swap.note:SetText(why .. ((worth and #cands > 1) and string.format("  %d/%d", s.i, #cands) or ""))
+    swap.next:SetShown(worth and #cands > 1)
     swap.go:SetLabel(worth and "Swap" or "Swap anyway")
     swap.go:SetPrimary(worth)
+    swap.cancel:SetLabel(worth and "Not now" or "Leave it")
+    swap.cancel:SetPrimary(not worth)
+    swap.cancel:ClearAllPoints()
+    if worth then
+        swap.cancel:SetPoint("LEFT", swap.next, "RIGHT", 6, 0)
+        swap.go:ClearAllPoints(); swap.go:SetPoint("BOTTOMLEFT", 12, 10)
+    else
+        swap.cancel:SetPoint("BOTTOMLEFT", 12, 10)
+        swap.go:ClearAllPoints(); swap.go:SetPoint("LEFT", swap.cancel, "RIGHT", 6, 0)
+    end
 end
 
 function GP:ShowSwapPopup(loot)
