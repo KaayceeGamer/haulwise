@@ -200,7 +200,7 @@ function GP:CompareGear(link, who)
     if not slots then return nil end
     local usable, armorLevel = canUse(info, who.classFile, who.level)
     if not usable then return nil end
-    if who.me and tooltipBlocked(link) then return nil end
+    if who.me and not who.skipTooltip and tooltipBlocked(link) then return nil end
     local w = weightsFor(who.classFile, who.spec)
     local sc = who.scorer or function(l) return score(l, w) end
     local new = sc(link)
@@ -315,6 +315,109 @@ function GP:ScanUpgrades()
 end
 
 function GP:AltUpgradesInBags() return self.upgrades.alts end
+
+-- Upgrades on the auction house ------------------------------------------------------------------
+-- After a full AH scan, every gear listing is checked against what you and your alts wear. The
+-- result is ranked by how much upgrade each gold buys, so a cheap +15% beats a pricey +20%.
+
+local CHUNK_LINKS = 150
+local MIN_GAIN = 0.03
+local LEVEL_AHEAD = 3   -- also show gear you can wear within 3 levels
+local PER_SLOT = 3      -- best few listings per character and slot
+
+local function ahWhoList()
+    local list = {}
+    local mine = me()
+    mine.skipTooltip, mine.key = true, "me"
+    list[1] = mine
+    for _, c in ipairs(GP:Alts()) do
+        if c.classFile and c.level then
+            local w = altWho(c)
+            w.key = c.key
+            list[#list + 1] = w
+        end
+    end
+    return list
+end
+
+function GP:FindAHUpgrades(gear, done)
+    local links = {}
+    for link, g in pairs(gear) do links[#links + 1] = { link = link, id = g.id, price = g.price } end
+    local whoList = ahWhoList()
+    local found, retry, i = {}, {}, 0
+    pawnItems = {}
+    local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+
+    local function check(l)
+        for _, who in ipairs(whoList) do
+            local r = self:CompareGear(l.link, who)
+            if r and r.gain >= MIN_GAIN and not (r.atLevel and r.atLevel > (who.level or 1) + LEVEL_AHEAD) then
+                found[#found + 1] = {
+                    link = l.link, id = l.id, price = l.price, gain = r.gain, slot = r.slot, slotName = r.slotName,
+                    replaces = r.replaces, atLevel = r.atLevel, forMe = who.me and true or false,
+                    alt = not who.me and who.name or nil, label = who.label,
+                    perGold = r.gain / math.max(l.price / 10000, 0.01),
+                }
+            end
+        end
+    end
+
+    local function finishUp()
+        -- Gear you can't use (red tooltip lines) only shows up in the tooltip, so check the few
+        -- that made it for you here rather than for every listing.
+        local keep = {}
+        for _, r in ipairs(found) do
+            if not (r.forMe and tooltipBlocked(r.link)) then keep[#keep + 1] = r end
+        end
+        table.sort(keep, function(a, b) return a.perGold > b.perGold end)
+        local perKey, rows = {}, {}
+        for _, r in ipairs(keep) do
+            local k = (r.alt or "me") .. ":" .. (r.slotName or "?")
+            perKey[k] = (perKey[k] or 0) + 1
+            if perKey[k] <= PER_SLOT and #rows < 200 then rows[#rows + 1] = r end
+        end
+        self.db.ahUpgrades = { t = time(), rows = rows }
+        if #rows > 0 then
+            self.Print(string.format("Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear → On the AH.", #rows))
+        end
+        if done then done(rows) end
+        if self.RefreshUI then self:RefreshUI() end
+    end
+
+    local function retryPass()
+        for _, l in ipairs(retry) do check(l) end
+        finishUp()
+    end
+
+    local function step()
+        local stop = math.min(#links, i + CHUNK_LINKS)
+        for k = i + 1, stop do
+            local l = links[k]
+            if get(l.link) then
+                check(l)
+            else
+                if C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(l.id) end
+                retry[#retry + 1] = l
+            end
+        end
+        i = stop
+        if i < #links then C_Timer.After(0, step)
+        elseif #retry > 0 then C_Timer.After(3, retryPass)
+        else finishUp() end
+    end
+    step()
+end
+
+function GP:AHUpgradeRows()
+    local d = self.db.ahUpgrades
+    if not d then return {} end
+    local max = self.db.settings.ahUpgradeMax or 0
+    local rows = {}
+    for _, r in ipairs(d.rows or {}) do
+        if max == 0 or r.price <= max then rows[#rows + 1] = r end
+    end
+    return rows
+end
 
 -- Is this bag item gear someone should keep? (protects it from Make room / swaps)
 function GP:IsUpgradeItem(itemID)

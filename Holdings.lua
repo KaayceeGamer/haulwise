@@ -262,8 +262,88 @@ end
 
 GP.AttachToMail = attachToMail
 
+-- Crafting mats for your crafters: reagents in your bags that one of your alts' recipes use and
+-- yours don't. Each goes to the alt with the highest skill in the profession that uses it.
+function GP:MatsForCrafters()
+    local mine = {}
+    for _, rec in pairs(self:Char().recipes or {}) do
+        if rec.learned then for _, r in ipairs(GP.UnpackReagents(rec.r)) do mine[r[1]] = true end end
+    end
+    local altFor = {}
+    for _, c in ipairs(self:Alts()) do
+        for _, rec in pairs(c.recipes or {}) do
+            if rec.learned then
+                local rank = (c.profs and c.profs[rec.prof] and c.profs[rec.prof].rank) or 0
+                for _, r in ipairs(GP.UnpackReagents(rec.r)) do
+                    local cur = altFor[r[1]]
+                    if not mine[r[1]] and (not cur or rank > cur.rank) then
+                        altFor[r[1]] = { alt = c.short, prof = rec.prof, rank = rank }
+                    end
+                end
+            end
+        end
+    end
+    local groups, byAlt = {}, {}
+    for _, bag in ipairs(GP.BagIDs()) do
+        for slot = 1, numSlots(bag) do
+            local it = slotInfo(bag, slot)
+            local who = it and it.itemID and altFor[it.itemID]
+            if who and not it.isBound and not self.db.keep[it.itemID] then
+                local g = byAlt[who.alt]
+                if not g then
+                    g = { alt = who.alt, profs = {}, items = {}, stacks = 0 }
+                    byAlt[who.alt] = g
+                    groups[#groups + 1] = g
+                end
+                g.profs[who.prof] = true
+                g.items[#g.items + 1] = { bag = bag, slot = slot, id = it.itemID, count = it.stackCount or 1 }
+                g.stacks = g.stacks + 1
+            end
+        end
+    end
+    table.sort(groups, function(a, b) return a.stacks > b.stacks end)
+    return groups
+end
+
+-- One click: address the mail to the alt and attach as many of their mats as fit.
+function GP:AttachMats(g)
+    if not (SendMailNameEditBox and ClickSendMailItemButton) then return end
+    if MailFrameTab_OnClick and not (SendMailFrame and SendMailFrame:IsShown()) then pcall(MailFrameTab_OnClick, nil, 2) end
+    local current = SendMailNameEditBox:GetText() or ""
+    local used = 0
+    for i = 1, (ATTACHMENTS_MAX_SEND or 12) do if HasSendMailItem and HasSendMailItem(i) then used = used + 1 end end
+    if used > 0 and current ~= "" and current ~= g.alt then
+        GP.Print("This mail already has items for " .. current .. ". Send or clear it first.")
+        return
+    end
+    SendMailNameEditBox:SetText(g.alt)
+    local attached = 0
+    for _, it in ipairs(g.items) do
+        local free
+        for i = 1, (ATTACHMENTS_MAX_SEND or 12) do
+            if not (HasSendMailItem and HasSendMailItem(i)) then free = i; break end
+        end
+        if not free then break end
+        local info = slotInfo(it.bag, it.slot)
+        if info and info.itemID == it.id then
+            C_Container.PickupContainerItem(it.bag, it.slot)
+            ClickSendMailItemButton(free)
+            attached = attached + 1
+        end
+    end
+    local left = #g.items - attached
+    GP.Print(string.format("Attached %d stack%s for %s.%s Press Send.", attached, attached == 1 and "" or "s", g.alt,
+        left > 0 and string.format(" %d more after this mail.", left) or ""))
+end
+
 function GP:ShowSendToAlts()
-    local list = self.AltUpgradesInBags and self:AltUpgradesInBags() or {}
+    local list = {}
+    if self.db.settings.sendToAltsAtMailbox and self.AltUpgradesInBags then
+        for _, r in ipairs(self:AltUpgradesInBags()) do list[#list + 1] = r end
+    end
+    if self.db.settings.matsToCrafters then
+        for _, g in ipairs(self:MatsForCrafters()) do list[#list + 1] = { mats = g, id = g.items[1].id } end
+    end
     if #list == 0 then if sendFrame then sendFrame:Hide() end return end
     if not sendFrame then
         sendFrame = GP.Panel("HaulwiseSendToAlts", 300, 60, "Send to alts")
@@ -280,14 +360,33 @@ function GP:ShowSendToAlts()
             r:SetPoint("TOPLEFT", 12, -34 - (i - 1) * 24)
             f.rows[i] = r
         end
-        r:SetItem(item.id, item.link,
-            string.format("|cffff9944%s|r  %s", item.alt, item.gain and string.format("+%.0f%%", item.gain * 100) or ""))
-        r:SetScript("OnClick", function() attachToMail(item) end)
-        r.tip = function(t)
-            t:SetHyperlink(item.link)
-            t:AddLine(" ")
-            t:AddLine(string.format("|cffffd040Haulwise|r: upgrade for %s%s. Click to attach.", item.alt,
-                item.atLevel and (" at level " .. item.atLevel) or ""), 1, 1, 1, true)
+        if item.mats then
+            local g = item.mats
+            local profs = {}
+            for p in pairs(g.profs) do profs[#profs + 1] = p end
+            r:SetItem(item.id, nil, string.format("|cffff9944%s|r  %d stack%s", g.alt, g.stacks, g.stacks == 1 and "" or "s"))
+            r.name:SetText("Mats for " .. table.concat(profs, ", "))
+            r.link = nil
+            r:SetScript("OnClick", function() GP:AttachMats(g) end)
+            r.tip = function(t)
+                t:AddLine(string.format("Crafting mats for %s", g.alt), 1, 0.82, 0.25)
+                t:AddLine("Reagents your alt's recipes use and yours don't.", 0.8, 0.8, 0.8, true)
+                for i, it in ipairs(g.items) do
+                    if i > 12 then t:AddLine(string.format("...and %d more", #g.items - 12), 0.6, 0.6, 0.6); break end
+                    t:AddLine(string.format("|T%s:14|t %s x%d", GP.ItemIcon(it.id), GP.ItemInfo(it.id) or "?", it.count), 1, 1, 1)
+                end
+                t:AddLine("Click: address the mail and attach them (12 per mail).", 0.6, 0.6, 0.6, true)
+            end
+        else
+            r:SetItem(item.id, item.link,
+                string.format("|cffff9944%s|r  %s", item.alt, item.gain and string.format("+%.0f%%", item.gain * 100) or ""))
+            r:SetScript("OnClick", function() attachToMail(item) end)
+            r.tip = function(t)
+                t:SetHyperlink(item.link)
+                t:AddLine(" ")
+                t:AddLine(string.format("|cffffd040Haulwise|r: upgrade for %s%s. Click to attach.", item.alt,
+                    item.atLevel and (" at level " .. item.atLevel) or ""), 1, 1, 1, true)
+            end
         end
         r:Show()
     end
@@ -296,6 +395,10 @@ function GP:ShowSendToAlts()
 end
 
 GP:On("MAIL_SHOW", function()
-    if GP.db.settings.sendToAltsAtMailbox then C_Timer.After(0.5, function() GP:ShowSendToAlts() end) end
+    local s = GP.db.settings
+    if s.sendToAltsAtMailbox or s.matsToCrafters then C_Timer.After(0.5, function() GP:ShowSendToAlts() end) end
+end)
+GP:On("BAG_UPDATE_DELAYED", function()
+    if sendFrame and sendFrame:IsShown() then C_Timer.After(0.2, function() GP:ShowSendToAlts() end) end
 end)
 GP:On("MAIL_CLOSED", function() if sendFrame then sendFrame:Hide() end end)

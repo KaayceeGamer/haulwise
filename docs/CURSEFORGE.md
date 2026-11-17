@@ -19,7 +19,7 @@ Every item is valued at the highest of:
 - **auction** price after the 5% cut. Freshness is shown by colour.
 - expected **disenchant** value, if you or one of your characters can disenchant it
 
-The tooltip shows the whole calculation.
+The tooltip shows the whole calculation, and **Best move** says what gets the most for each item: sell on the AH, sell to a vendor, disenchant it, or send it to an alt who can. When disenchanting wins, a **Disenchant** button does the best one for you.
 
 **When your bags are full while looting**, Haulwise compares the loot with your cheapest item and offers a one-click swap. If the swap would lose you money, the popup turns red and says how much.
 
@@ -36,6 +36,7 @@ The tooltip shows the whole calculation.
 ### ⚔️ Upgrade Advisor, for you and your alts
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
 - Bind-on-Equip gear is checked for **all your characters**. At a mailbox, *Send to alts* lists it and attaches it with one click.
+- **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price and click to find it.
 
 ### 🐺 Farm: the best gold per hour for *your* character
 Haulwise measures:
@@ -43,18 +44,24 @@ Haulwise measures:
 - Coins, skinning and pickpocket
 - How fast **you** kill each mob
 
-Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you.
+Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
 
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin and 7-day trend.
+- **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, and where the rest is cheapest.
+- **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself.
 
 ### 📈 Deals and Market
 - **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays).
 - **Market**: 7-day trends for what you farm, craft and use, with a tip for each: *Sell now*, *Hold* or *Stock up*. After two weeks of scans it also shows which weekday your auction house is cheapest.
 
-### 📦 Holdings
-What every character owns and where: bags, bank, equipped, mail and auctions, with values.
+### 🏷️ Selling help at the auction house
+When you put an item up for sale, Haulwise suggests a price from the live listings and your scans, and warns you when a vendor would pay more. **Use price** fills it in; you press Post.
+
+### 📦 Holdings and mail
+- What every character owns and where: bags, bank, equipped, mail and auctions, with values.
+- **Mats to crafters**: at a mailbox, one click sends the crafting mats in your bags to the alt whose recipes use them.
 
 ### 🌍 Community data
 Every release includes data pooled from everyone who shares:
@@ -102,7 +109,7 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 ## Good to know
 - Deleting items can't be undone. If the game wants you to confirm a delete, the item stays on your cursor until you do.
 - Drop rates are recorded only while you're solo, because group loot skews them. You can change this in Settings.
-- Haulwise never buys, sells on the auction house, posts or sends mail for you. It only fills things in for you to confirm.
+- Haulwise never buys, posts auctions or sends mail for you. It only fills in prices, recipients and attachments for you to confirm.
 - Haulwise can't reach the internet. Everything it learns stays in your SavedVariables until you choose to export it. Shared data is anonymous: no character, account or realm names are kept.
 - Auction house scans use the game's own full scan, which the game allows once every 15 minutes.
 

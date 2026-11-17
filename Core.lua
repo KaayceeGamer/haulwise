@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.5.0"
+GP.VERSION = "0.6.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -43,7 +43,11 @@ local DEFAULTS = {
         usePawn = true,         -- use Pawn's stat weights when Pawn is installed
         upgradePopups = true,
         sendToAltsAtMailbox = true,
-        shareReminder = true,   -- nudge in chat every 100 kills that aren't shared yet
+        shareReminder = true,
+        ahUpgradeMax = 0,
+        sellHelper = true,      -- price panel next to the AH sell frame
+        matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
+        views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
         hudLocked = false,
         winShown = false,
@@ -74,7 +78,8 @@ local handlers = {}
 function GP:On(event, fn)
     if not handlers[event] then
         handlers[event] = {}
-        frame:RegisterEvent(event)
+        -- pcall: an event this client doesn't have shouldn't break the addon.
+        pcall(frame.RegisterEvent, frame, event)
     end
     table.insert(handlers[event], fn)
 end

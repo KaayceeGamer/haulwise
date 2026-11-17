@@ -27,6 +27,8 @@ Holdings.lua
 Gear.lua
 Bags.lua
 Share.lua
+Shopping.lua
+Selling.lua
 UI.lua
 Popups.lua
 HUD.lua

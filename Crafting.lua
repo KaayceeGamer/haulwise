@@ -72,12 +72,15 @@ local function readModern(char)
                 n = info.name, prof = prof, out = sch.outputItemID,
                 oq = ((sch.quantityMin or 1) + (sch.quantityMax or sch.quantityMin or 1)) / 2,
                 r = packReagents(reagents), learned = info.learned and true or false, src = src,
+                d = info.learned and info.relativeDifficulty or nil,
             }
             n = n + 1
         end
     end
     return n > 0
 end
+
+local CLASSIC_DIFFICULTY = { optimal = 0, medium = 1, easy = 2, trivial = 3 }
 
 local function readClassic(char)
     if not (GetNumTradeSkills and GetTradeSkillLine) then return false end
@@ -98,7 +101,7 @@ local function readClassic(char)
                 local lo, hi = GetTradeSkillNumMade(i)
                 char.recipes[prof .. ":" .. name] = {
                     n = name, prof = prof, out = out, oq = ((lo or 1) + (hi or lo or 1)) / 2,
-                    r = packReagents(reagents), learned = true,
+                    r = packReagents(reagents), learned = true, d = CLASSIC_DIFFICULTY[kind],
                 }
             end
         end
@@ -177,6 +180,33 @@ function GP:CraftRows()
         local am, bm = #a.missing > 0, #b.missing > 0
         if am ~= bm then return bm end
         return a.profit > b.profit
+    end)
+    return rows
+end
+
+-- Skill-ups: learned recipes that still give skill (orange 0, yellow 1, green 2), by what each
+-- skill point costs: reagents minus what the result sells for, divided by the chance of a point.
+-- The chances are rough (the game doesn't tell addons the exact ones).
+local SKILL_CHANCE = { [0] = 1.0, [1] = 0.75, [2] = 0.25 }
+
+function GP:SkillRows()
+    local rows = {}
+    for key, rec in pairs(self:Char().recipes) do
+        local chance = rec.learned and rec.d and SKILL_CHANCE[rec.d]
+        if chance then
+            local r = self:EvalRecipe(key, rec)
+            r.d, r.chance = rec.d, chance
+            r.priced = #r.missing == 0
+            r.back = r.sell
+            if r.priced then r.perPoint = (r.cost - r.back) / chance end
+            rows[#rows + 1] = r
+        end
+    end
+    table.sort(rows, function(a, b)
+        if (a.perPoint ~= nil) ~= (b.perPoint ~= nil) then return a.perPoint ~= nil end
+        if a.perPoint and a.perPoint ~= b.perPoint then return a.perPoint < b.perPoint end
+        if a.d ~= b.d then return a.d < b.d end
+        return (a.name or "") < (b.name or "")
     end)
     return rows
 end

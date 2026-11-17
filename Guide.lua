@@ -30,19 +30,24 @@ local GUIDE = {
         G .. "Never offered for deletion:" .. E .. " crafting materials of any kind, quest items, tools, ammo, epics, reagents your recipes use, gear upgrades for you or your alts, and anything you keep (shift-click in the Bags tab).",
         G .. "Bags full while looting:" .. E .. " a popup offers to swap the cheapest item for the loot. Red means you'd lose money; it says how much.",
         G .. "\"Inventory is full\" elsewhere:" .. E .. " Make room offers the cheapest items, one click each.",
+        G .. "Best move" .. E .. " tells you what gets the most for each item: sell on the AH, sell to a vendor, disenchant, or send to an alt who can disenchant it. When disenchanting wins, a purple Disenchant button does the best one.",
         D .. "Deleting can't be undone. If the game asks you to confirm, the item stays on your cursor until you do." .. E,
     } },
     { "Gear: upgrades for you and your alts", {
         "New gear is scored and compared with what you wear. With Pawn installed, Haulwise uses your Pawn scales; otherwise its own weights per talent tree (button in the Gear tab).",
         "Bind-on-Equip gear is also checked for your alts. At a mailbox, Send to alts lists it: click to attach. Haulwise never presses Send.",
+        G .. "On the AH" .. E .. " (Gear tab) every full AH scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price with the button on the right.",
     } },
     { "Farm: where to make gold", {
         "Every mob you kill and loot is counted: real drop chances, coins, skinning and pickpocket, and how fast you kill it. Rows are mobs, ranked by gold per hour.",
+        G .. "By zone" .. E .. " ranks zones by the best gold per hour there. Click a zone to see its mobs. " .. G .. "This zone only" .. E .. " shows just the zone you're in.",
         G .. "Safe" .. E .. " ranks by the low end of each drop chance, so a lucky streak can't put a mob on top. " .. G .. "Expected" .. E .. " uses the average.",
         D .. "Kills count only while you're solo (group loot skews drop rates) unless you turn that on in Settings." .. E,
     } },
     { "Craft and Recipes", {
         G .. "Craft" .. E .. " shows every recipe you know: reagent cost, sale price, profit and margin. \"?\" means a reagent has no price yet: visit a vendor or scan the AH.",
+        G .. "Shopping list" .. E .. " click a recipe in Craft to add it. The list sums every reagent, subtracts what's in your bags and bank, and says where each is cheapest. Click a reagent to find it on the AH.",
+        G .. "Skill up" .. E .. " (Craft tab) ranks the recipes that still give skill by what each point costs: reagents minus what the result sells for. Colours come from your profession window.",
         G .. "Recipes" .. E .. " shows recipes you don't know yet, ranked by profit, with where to get them (trainer, vendor, drop, AH) and how many crafts until they pay for themselves.",
     } },
     { "Deals and Market", {
@@ -65,12 +70,14 @@ local GUIDE = {
 }
 
 local NEWS = {
+    "Gear → On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold.",
+    "Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession.",
+    "Selling at the AH: a price suggestion next to the sell frame, and a warning when a vendor pays more.",
+    "At the mailbox: send crafting mats to the alt whose recipes use them, in one click.",
+    "Bags: Best move for every item, and a Disenchant button when disenchanting pays most.",
+    "Farm: By zone, and This zone only.",
     "Share kills: the Export button is now Share kills, the footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings).",
     "/haul feedback shows where to report bugs and suggest ideas.",
-    "Recipe sources: trainers and vendors you visit are remembered and shared with everyone.",
-    "Click column titles to sort. Craft no longer shows a profit when a reagent has no price.",
-    "Gear upgrades use your Pawn scales when Pawn is installed.",
-    "Resize the window and HUD by dragging the corner. Settings: font, text size, opacity.",
 }
 
 local guide

@@ -81,7 +81,7 @@ local function setScale(name, key, v)
 end
 
 local function build()
-    panel = GP.Panel("HaulwiseSettings", 400, 584, "Haulwise settings")
+    panel = GP.Panel("HaulwiseSettings", 400, 640, "Haulwise settings")
     panel:SetFrameStrata("DIALOG")
     local s = GP.db.settings
     local draws = {}
@@ -155,6 +155,11 @@ local function build()
     add(check(panel, "Record in groups", 200, y, "trackInGroup", "Group loot makes drop rates less accurate, so Haulwise records solo kills only unless this is on."))
     y = y - 22
     add(check(panel, "Remind me to share", 18, y, "shareReminder", "A chat line every 100 kills you haven't shared yet. Sharing is always manual."))
+    y = y - 34
+    heading(panel, "Auction house and mail", y)
+    y = y - 26
+    add(check(panel, "Price help when selling", 18, y, "sellHelper", "Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."))
+    add(check(panel, "Mats to crafters", 200, y, "matsToCrafters", "At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."))
 
     local reset = GP.FlatButton(panel, "Reset positions and sizes", 180, 22)
     reset:SetPoint("BOTTOMLEFT", 14, 12)

@@ -159,12 +159,24 @@ function GP:Evaluate(npc, m)
     }
 end
 
-function GP:Rank()
+function GP:CurrentZone()
+    local z = GP.Safe and GP.Safe(GetRealZoneText and GetRealZoneText()) or (GetRealZoneText and GetRealZoneText())
+    return (z and z ~= "") and z or nil
+end
+
+-- The zone the Farm tab is limited to: nil (all), the one you're in, or one you clicked.
+function GP:FarmZoneFilter()
+    local z = self.db.settings.farmZone
+    if z == "here" then return self:CurrentZone() end
+    return z
+end
+
+function GP:Rank(zone)
     local s = self.db.settings
     local level = UnitLevel("player") or 60
     local rows = {}
     for npc, m in pairs(self:MergedMobs()) do
-        if m.kills > 0 then
+        if m.kills > 0 and (not zone or (m.zones and m.zones[zone])) then
             local tooHigh = s.levelWindow and m.minL and m.minL > level + 2
             if not tooHigh then rows[#rows + 1] = self:Evaluate(npc, m) end
         end
@@ -173,6 +185,36 @@ function GP:Rank()
     table.sort(rows, function(a, b)
         if a[key] ~= b[key] then return a[key] > b[key] end
         return a.npc < b.npc
+    end)
+    return rows
+end
+
+-- Zones ranked by the best gold per hour you can make there.
+function GP:ZoneRows()
+    local key = self.db.settings.sortBy == "est" and "est" or "safe"
+    local here = self:CurrentZone()
+    local byZone = {}
+    for _, r in ipairs(self:Rank()) do
+        local z = byZone[r.zone]
+        if not z then
+            z = { zone = r.zone, mobs = 0, kills = 0, list = {}, here = r.zone == here }
+            byZone[r.zone] = z
+        end
+        z.mobs, z.kills = z.mobs + 1, z.kills + r.kills
+        z.list[#z.list + 1] = r
+        if r.minL then z.minL = math.min(z.minL or r.minL, r.minL) end
+        if r.maxL then z.maxL = math.max(z.maxL or r.maxL, r.maxL) end
+    end
+    local rows = {}
+    for _, z in pairs(byZone) do
+        -- Rank() is already sorted, so the first mob is the zone's best.
+        local b = z.list[1]
+        z.bestName, z.est, z.safe = b.name, b.est, b.safe
+        rows[#rows + 1] = z
+    end
+    table.sort(rows, function(a, b)
+        if a[key] ~= b[key] then return a[key] > b[key] end
+        return a.zone < b.zone
     end)
     return rows
 end

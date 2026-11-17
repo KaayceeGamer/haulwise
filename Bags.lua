@@ -111,6 +111,18 @@ function GP:BagItems()
     return rows, vendorTotal, bestTotal
 end
 
+-- What to do with an item that isn't protected: the move that gets the most for it.
+function GP:BagAdvice(r)
+    if r.src == "DE" then
+        local who = r.d and r.d.deWho or {}
+        for _, n in ipairs(who) do if n == UnitName("player") then return "|cffc48cffdisenchant|r" end end
+        return "|cffc48cffsend to " .. (who[1] or "an enchanter") .. " to disenchant|r"
+    elseif r.src == "AH" then
+        return "|cffffd040sell on the AH|r"
+    end
+    return "|cffaaaaaasell to a vendor|r"
+end
+
 -- Items that may go, cheapest first.
 function GP:DeleteCandidates()
     local items = self:BagItems()

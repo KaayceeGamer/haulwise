@@ -136,6 +136,23 @@ end
 local S = function() return GP.db.settings end
 local TAB = {}
 
+-- A tab can have more than one view (Gear: your bags / the AH). The view is TAB["gear_ah"] etc.
+local function current()
+    local tab = TAB[S().tab] and S().tab or "farm"
+    local v = S().views and S().views[tab]
+    if v and TAB[tab .. "_" .. v] then return tab .. "_" .. v end
+    return tab
+end
+local function viewToggle(tab, view, label, tipText)
+    return { label, nil, tipText,
+        get = function() return S().views and S().views[tab] == view end,
+        set = function(on)
+            S().views = S().views or {}
+            S().views[tab] = on and view or nil
+            GP.scrollToTop = true
+        end }
+end
+
 TAB.farm = {
     cols = {
         { key = "name", title = "Mob", w = 196, icon = true },
@@ -148,7 +165,7 @@ TAB.farm = {
         { key = "safe", title = "Safe/h", w = 92, align = "RIGHT" },
         { key = "top", title = "Main earner", w = 130 },
     },
-    rows = function() return GP:Rank() end,
+    rows = function() return GP:Rank(GP:FarmZoneFilter()) end,
     bar = function(r) return r.est end,
     cells = function(r)
         local top = r.lines[1]
@@ -165,12 +182,17 @@ TAB.farm = {
     end,
     hero = function(rows)
         local b = rows[1]
-        if not b then return nil end
-        return string.format("Best farm right now:  |cffffffff%s|r in %s   %s/h  %s",
+        local zone = GP:FarmZoneFilter()
+        if not b then return zone and ("No mobs recorded in " .. zone .. " yet.") or nil end
+        return string.format("%s  |cffffffff%s|r in %s   %s/h  %s", zone and "Best farm here:" or "Best farm right now:",
             b.name, b.zone, Coins(b.est, true), grey("(safe " .. Coins(b.safe, true) .. "/h)"))
     end,
     empty = "No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house.",
     toggles = {
+        viewToggle("farm", "zones", "By zone", "Rank zones instead of single mobs: the best gold per hour in each zone."),
+        { "This zone only", nil, "Only show mobs from one zone: the zone you're in, or the one you clicked in By zone.",
+          get = function() return S().farmZone ~= nil end,
+          set = function(on) S().farmZone = on and "here" or nil; GP.scrollToTop = true end },
         { "Hide mobs above my level", "levelWindow", "Hide mobs more than 2 levels above you." },
         { "Community data", "useShared", "Add everyone's pooled kills (shipped with the addon) and friends' imports to your own." },
         { "Skinning/gathering", "includeGather", "Count skinning, mining and herbing off corpses.", function() return GP:PlayerHasGathering() end },
@@ -236,11 +258,21 @@ TAB.craft = {
         return string.format("Best craft:  %s   |cff5fd35f+%s|r each%s", itemName(b.out), Coins(b.profit, true), tail)
     end,
     empty = "No recipes yet.\n\nOpen each of your profession windows once. Haulwise reads your recipes and works out what every craft costs and earns at your auction house.",
-    click = function(r) GP:SearchAH(r.out) end,
+    click = function(r)
+        if IsShiftKeyDown and IsShiftKeyDown() then GP:SearchAH(r.out) else GP:AddToShopping(r.key, 1) end
+    end,
+    toggles = {
+        viewToggle("craft", "skill", "Skill up", "Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."),
+    },
+    extraTip = "Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest.",
+    extraButton = function(b)
+        b:SetLabel("Shopping list")
+        b:SetScript("OnClick", function() GP:ToggleShopping() end)
+    end,
     tooltip = function(t, r)
         t:SetItemByID(r.out)
         t:AddLine(" ")
-        t:AddDoubleLine("|cffffd040Haulwise|r", "Click to search the AH", 1, 1, 1, 0.6, 0.6, 0.6)
+        t:AddDoubleLine("|cffffd040Haulwise|r", "Click: add to shopping list  ·  Shift-click: search AH", 1, 1, 1, 0.6, 0.6, 0.6)
         for _, rg in ipairs(r.reagents) do
             local unit, where = GP:BuyCost(rg[1])
             t:AddDoubleLine(string.format("  |T%s:14|t %s x%g", GP.ItemIcon(rg[1]), itemName(rg[1]), rg[2]),
@@ -422,7 +454,7 @@ TAB.bags = {
         { key = "unit", title = "Each", w = 96, align = "RIGHT" },
         { key = "total", title = "Worth", w = 112, align = "RIGHT", bar = true },
         { key = "src", title = "From", w = 52, align = "CENTER" },
-        { key = "status", title = "Status", w = 210 },
+        { key = "status", title = "Best move", w = 210 },
     },
     rows = function()
         local rows = GP:BagItems()
@@ -439,7 +471,7 @@ TAB.bags = {
         if r.protect then
             status = (r.protect == "kept" and "|cff88ccffkept (shift-click to release)|r") or ("|cff8a8880protected: " .. r.protect .. "|r")
         else
-            status = "|cff5fd35fcan go|r " .. grey("(shift-click to keep)")
+            status = GP:BagAdvice(r) .. grey("  ·  can go")
         end
         return {
             name = itemName(r.id), icon = GP.ItemIcon(r.id), count = r.count > 1 and tostring(r.count) or "",
@@ -532,6 +564,7 @@ TAB.gear = {
         end
     end,
     toggles = {
+        viewToggle("gear", "ah", "On the AH", "Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."),
         { "Upgrade Advisor", "upgradeAdvisor", "Check gear you pick up against what you wear." },
         { "Upgrade popups", "upgradePopups", "Show a popup when new loot is an upgrade (once per item)." },
         { "Send to alts at mailbox", "sendToAltsAtMailbox", "At a mailbox, list gear that's an upgrade for one of your alts." },
@@ -606,6 +639,184 @@ TAB.holdings = {
     end,
 }
 
+-- Gear → On the AH: upgrades for sale, from the last full scan.
+local AH_MAX_STEPS = { 0, 10000, 50000, 100000, 250000, 500000, 1000000 }
+TAB.gear_ah = {
+    cols = {
+        { key = "name", title = "For sale on the AH", w = 250, icon = true },
+        { key = "who", title = "For", w = 100 },
+        { key = "slot", title = "Slot", w = 80 },
+        { key = "gain", title = "Better by", w = 90, align = "RIGHT", bar = true },
+        { key = "price", title = "Price", w = 100, align = "RIGHT" },
+        { key = "value", title = "Per gold", w = 80, align = "RIGHT" },
+        { key = "lvl", title = "", w = 90 },
+    },
+    rows = function() return GP:AHUpgradeRows() end,
+    bar = function(r) return math.min(r.gain or 0, 2) end,
+    cells = function(r)
+        return {
+            name = itemName(r.id), icon = GP.ItemIcon(r.id),
+            who = r.forMe and "|cff5fd35fYou|r" or ("|cffff9944" .. (r.alt or "?") .. "|r"),
+            slot = grey(r.slotName or ""), gain = string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100),
+            price = Coins(r.price, true), value = grey(string.format("%.1f%%", r.perGold * 100)),
+            lvl = r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r") or "",
+        }
+    end,
+    hero = function(rows)
+        local d = GP.db.ahUpgrades
+        if not d then return "No AH scan with gear yet.  " .. grey("Open the auction house and press Scan AH.") end
+        local b = rows[1]
+        if not b then return "No gear upgrades for sale" .. ((S().ahUpgradeMax or 0) > 0 and " under your max price." or ".") .. "  " .. grey("Scanned " .. ago(time() - d.t) .. ".") end
+        return string.format("Best buy:  %s for %s  |cff5fd35f+%.0f%%|r for %s   %s", itemName(b.id),
+            b.forMe and "you" or ("|cffff9944" .. (b.alt or "?") .. "|r"), b.gain * 100, Coins(b.price, true),
+            grey("·  scanned " .. ago(time() - d.t) .. "  ·  click a row to find it"))
+    end,
+    empty = "No gear upgrades found on the auction house.\n\nOpen the auction house and press Scan AH. Haulwise checks every piece of gear for sale against what you and your alts wear (log in on each alt once), and ranks them by how much upgrade each gold buys.",
+    click = function(r) GP:SearchAH(r.id) end,
+    tooltip = function(t, r)
+        t:SetHyperlink(r.link)
+        t:AddLine(" ")
+        t:AddLine(string.format("|cffffd040Haulwise|r: %s +%.0f%% for %s", r.forMe and "upgrade for you" or ("upgrade for " .. (r.alt or "?")),
+            (r.gain or 0) * 100, Coins(r.price, true)), 1, 1, 1)
+        t:AddLine("Weights: " .. (r.label or "?"), 0.6, 0.6, 0.6)
+        for i, d in ipairs(GP.StatDiff(r.link, r.replaces)) do
+            if i > 8 then break end
+            local delta = d[3] - d[2]
+            t:AddDoubleLine("  " .. d[1], string.format("%s → %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
+                0.75, 0.75, 0.75, 1, 1, 1)
+        end
+        t:AddLine("Click: search for it on the AH. The listing may be gone since your scan.", 0.6, 0.6, 0.6, true)
+    end,
+    toggles = {
+        viewToggle("gear", "ah", "On the AH", "Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."),
+    },
+    extraTip = "Hide listings above this price.",
+    extraButton = function(b)
+        local m = S().ahUpgradeMax or 0
+        b:SetLabel(m == 0 and "Max price: any" or ("Max price: " .. Coins(m, true)))
+        b:SetScript("OnClick", function()
+            local idx = 1
+            for i, v in ipairs(AH_MAX_STEPS) do if v == m then idx = i end end
+            S().ahUpgradeMax = AH_MAX_STEPS[idx % #AH_MAX_STEPS + 1]
+            GP:RefreshUI()
+        end)
+    end,
+}
+
+-- Craft → Skill up: the cheapest recipes to raise your profession right now.
+TAB.craft_skill = {
+    cols = {
+        { key = "name", title = "Recipe", w = 230, icon = true },
+        { key = "prof", title = "Profession", w = 104 },
+        { key = "color", title = "Colour", w = 70 },
+        { key = "chance", title = "Skill-up", w = 70, align = "RIGHT" },
+        { key = "cost", title = "Reagents", w = 96, align = "RIGHT" },
+        { key = "back", title = "Sell result", w = 96, align = "RIGHT" },
+        { key = "point", title = "Per point", w = 110, align = "RIGHT", bar = true },
+    },
+    rows = function() return GP:SkillRows() end,
+    bar = function(r) return r.perPoint and -r.perPoint or 0 end,
+    cells = function(r)
+        local col = ({ [0] = "|cffff8040orange|r", [1] = "|cffffff00yellow|r", [2] = "|cff40c040green|r" })[r.d] or grey("?")
+        return {
+            name = itemName(r.out), icon = GP.ItemIcon(r.out), prof = grey(r.prof or ""), color = col,
+            chance = grey(string.format("~%.0f%%", r.chance * 100)),
+            cost = r.priced and Coins(r.cost, true) or "|cffff9944no price|r",
+            back = Coins(r.back, true),
+            point = r.perPoint and (r.perPoint <= 0 and "|cff5fd35fprofit|r" or Coins(r.perPoint, true)) or "|cffff9944?|r",
+        }
+    end,
+    hero = function(rows)
+        local b
+        for _, r in ipairs(rows) do if r.perPoint then b = r; break end end
+        local profs = {}
+        for name, p in pairs(GP:MyProfessions()) do
+            if p.rank and p.max and GP.RECIPE_SUBCLASS[name] then
+                profs[#profs + 1] = string.format("%s %d/%d%s", name, p.rank, p.max, p.rank >= p.max and " |cffff9944(train!)|r" or "")
+            end
+        end
+        table.sort(profs)
+        local tail = #profs > 0 and grey("   ·   " .. table.concat(profs, "  ·  ")) or ""
+        if not b then return grey("Open your profession windows to see which recipes still give skill.") .. tail end
+        return string.format("Cheapest skill-up:  %s   %s per point%s", itemName(b.out),
+            b.perPoint <= 0 and "|cff5fd35fearns gold|r" or Coins(b.perPoint, true), tail)
+    end,
+    empty = "No recipes that still give skill.\n\nOpen your profession windows: recipe colours (orange, yellow, green) are read from there. Grey recipes no longer give skill, so they're left out. If everything is grey, visit your trainer.",
+    click = function(r)
+        if IsShiftKeyDown and IsShiftKeyDown() then GP:SearchAH(r.out) else GP:AddToShopping(r.key, 1) end
+    end,
+    tooltip = function(t, r)
+        t:AddLine(r.name or "?", GOLD[1], GOLD[2], GOLD[3])
+        t:AddLine("Chances are estimates: orange always gives a point, yellow usually, green rarely. The colour is from the last time you opened the profession window.", 0.8, 0.8, 0.8, true)
+        t:AddLine(" ")
+        t:AddDoubleLine("Reagents", r.priced and Coins(r.cost) or "no price", 0.7, 0.7, 0.7, 1, 1, 1)
+        t:AddDoubleLine("You get back by selling the result", Coins(r.back), 0.7, 0.7, 0.7, 1, 1, 1)
+        if r.perPoint then t:AddDoubleLine("Cost per skill point", Coins(r.perPoint), 0.7, 0.7, 0.7, 1, 1, 1) end
+        t:AddLine(" ")
+        t:AddLine("Click: add to your shopping list.  Shift-click: search the result on the AH.", 0.6, 0.6, 0.6, true)
+    end,
+    toggles = {
+        viewToggle("craft", "skill", "Skill up", "Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."),
+    },
+    extraTip = "Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest.",
+    extraButton = function(b)
+        b:SetLabel("Shopping list")
+        b:SetScript("OnClick", function() GP:ToggleShopping() end)
+    end,
+}
+
+-- Farm → By zone: where to go, not just which mob.
+TAB.farm_zones = {
+    cols = {
+        { key = "name", title = "Zone", w = 190 },
+        { key = "lvl", title = "Lvl", w = 60, align = "CENTER" },
+        { key = "mobs", title = "Mobs", w = 56, align = "RIGHT" },
+        { key = "kills", title = "Kills", w = 60, align = "RIGHT" },
+        { key = "best", title = "Best mob", w = 200 },
+        { key = "est", title = "Gold/h", w = 110, align = "RIGHT", bar = true },
+        { key = "safe", title = "Safe/h", w = 96, align = "RIGHT" },
+    },
+    rows = function() return GP:ZoneRows() end,
+    bar = function(r) return r.est end,
+    cells = function(r)
+        local lv = r.minL and (r.minL == r.maxL and tostring(r.minL) or (r.minL .. "-" .. r.maxL)) or "?"
+        return {
+            name = (r.here and "|cff5fd35f" or "|cffffffff") .. r.zone .. "|r" .. (r.here and grey("  (you're here)") or ""),
+            lvl = lv, mobs = tostring(r.mobs), kills = confColor(r.kills) .. r.kills .. "|r",
+            best = r.bestName, est = Coins(r.est, true), safe = grey(Coins(r.safe, true)),
+        }
+    end,
+    hero = function(rows)
+        local b = rows[1]
+        if not b then return nil end
+        local here
+        for _, r in ipairs(rows) do if r.here then here = r end end
+        local tail = (here and here ~= b) and grey(string.format("   ·   here in %s: %s/h", here.zone, Coins(here.est, true))) or ""
+        return string.format("Best zone:  |cffffffff%s|r   %s/h on %s%s", b.zone, Coins(b.est, true), b.bestName, tail)
+    end,
+    empty = "No kills recorded yet.\n\nGo farm and loot what you kill. Zones are ranked by the best gold per hour you can make there.",
+    click = function(r)
+        S().farmZone = r.zone
+        S().views.farm = nil
+        GP.scrollToTop = true
+        GP:RefreshUI()
+    end,
+    tooltip = function(t, r)
+        t:AddLine(r.zone, GOLD[1], GOLD[2], GOLD[3])
+        for i, m in ipairs(r.list) do
+            if i > 8 then break end
+            t:AddDoubleLine(m.name, Coins(m.est, true) .. "/h", 1, 1, 1, 1, 1, 1)
+        end
+        t:AddLine(" ")
+        t:AddLine("Click: show only this zone's mobs.", 0.6, 0.6, 0.6)
+    end,
+    toggles = {
+        viewToggle("farm", "zones", "By zone", "Rank zones instead of single mobs: the best gold per hour in each zone."),
+        { "Hide mobs above my level", "levelWindow", "Hide mobs more than 2 levels above you." },
+        { "Community data", "useShared", "Add everyone's pooled kills (shipped with the addon) and friends' imports to your own." },
+    },
+}
+
 -- Sorting by column ---------------------------------------------------------------------------
 -- Each tab says how to get a sortable value per column. Missing values always go last.
 local function nm(id) return ((GP.ItemInfo(id)) or ""):lower() end
@@ -626,6 +837,21 @@ TAB.gear.sort = {
     slot = function(r) return r.slotName end, gain = function(r) return r.gain end,
     replaces = function(r) return r.replaces and nm(tonumber(r.replaces:match("item:(%d+)"))) or "" end,
     lvl = function(r) return r.atLevel end,
+}
+TAB.gear_ah.sort = {
+    name = function(r) return nm(r.id) end, who = function(r) return r.forMe and "" or (r.alt or ""):lower() end,
+    slot = function(r) return r.slotName end, gain = function(r) return r.gain end, price = function(r) return r.price end,
+    value = function(r) return r.perGold end, lvl = function(r) return r.atLevel end,
+}
+TAB.craft_skill.sort = {
+    name = function(r) return nm(r.out) end, prof = function(r) return r.prof end, color = function(r) return r.d end,
+    chance = function(r) return r.chance end, cost = function(r) return r.priced and r.cost or nil end,
+    back = function(r) return r.back end, point = function(r) return r.perPoint end,
+}
+TAB.farm_zones.sort = {
+    name = function(r) return r.zone:lower() end, lvl = function(r) return r.minL end, mobs = function(r) return r.mobs end,
+    kills = function(r) return r.kills end, best = function(r) return r.bestName:lower() end,
+    est = function(r) return r.est end, safe = function(r) return r.safe end,
 }
 local function priced(r) return #(r.missing or {}) == 0 end
 TAB.craft.sort = {
@@ -656,7 +882,7 @@ TAB.holdings.sort = {
 function GP:SortBy(key)
     local s = self.db.settings
     s.sorts = s.sorts or {}
-    local tab = s.tab
+    local tab = current()
     local cur = s.sorts[tab]
     if cur and cur.key == key then
         cur.desc = not cur.desc
@@ -672,7 +898,7 @@ function GP:SortBy(key)
 end
 
 function GP:ApplySort(t, rows)
-    local cur = self.db.settings.sorts and self.db.settings.sorts[self.db.settings.tab]
+    local cur = self.db.settings.sorts and self.db.settings.sorts[current()]
     if not (cur and t.sort and t.sort[cur.key]) then return end
     local get = t.sort[cur.key]
     local keyed = {}
@@ -699,8 +925,8 @@ end
 
 local f, rows, offset, data = nil, {}, 0, {}
 local tabButtons, toggleBar = {}, {}
+local updateDisenchant -- defined below RefreshUI's helpers
 
-local function current() return TAB[S().tab] and S().tab or "farm" end
 
 local function makeRow(parent, i)
     local row = CreateFrame("Button", nil, parent)
@@ -857,6 +1083,7 @@ local function build()
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", 0, 0)
     close:SetScript("OnClick", function() GP.db.settings.winShown = false; f:Hide() end)
+    f:HookScript("OnHide", function() updateDisenchant(false) end)
 
     -- Tabs
     local x = 12
@@ -1089,13 +1316,77 @@ local function buildToggles(t)
     end
 end
 
+-- Disenchant button (Bags tab). A secure button can't live inside the window (that would block
+-- opening and closing it in combat), so it sits on UIParent, lined up with the window, and only
+-- appears out of combat.
+local deButton
+local function disenchantName()
+    if C_Spell and C_Spell.GetSpellName then return C_Spell.GetSpellName(13262) end
+    if GetSpellInfo then return (GetSpellInfo(13262)) end
+end
+
+function GP:DisenchantCandidate()
+    local name = disenchantName()
+    if not name then return nil end
+    local best
+    for _, r in ipairs(self:BagItems()) do
+        if r.src == "DE" and not r.protect and r.d and r.d.deWho then
+            local mine = false
+            for _, who in ipairs(r.d.deWho) do if who == UnitName("player") then mine = true end end
+            if mine and (not best or r.total > best.total) then best = r end
+        end
+    end
+    return best, name
+end
+
+updateDisenchant = function(show)
+    if InCombatLockdown and InCombatLockdown() then return end
+    local cand, spell = nil, nil
+    if show then cand, spell = GP:DisenchantCandidate() end
+    if not cand then if deButton then deButton:Hide() end return end
+    if not deButton then
+        deButton = CreateFrame("Button", "HaulwiseDisenchantButton", UIParent, "SecureActionButtonTemplate,BackdropTemplate")
+        deButton:SetSize(170, 22)
+        deButton:SetFrameStrata("HIGH")
+        deButton:SetBackdrop(FLAT)
+        deButton:SetBackdropColor(0.16, 0.1, 0.2, 1)
+        deButton:SetBackdropBorderColor(0.6, 0.45, 0.8, 1)
+        deButton:RegisterForClicks("AnyUp", "AnyDown")
+        deButton.label = deButton:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+        deButton.label:SetPoint("LEFT", 8, 0)
+        deButton.label:SetPoint("RIGHT", -8, 0)
+        deButton.label:SetWordWrap(false)
+        deButton:SetAttribute("type", "macro")
+        deButton:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            if self.link then GameTooltip:SetHyperlink(self.link) end
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Disenchanting this gives more than selling it. Click to disenchant.", 0.77, 0.55, 1, true)
+            GameTooltip:Show()
+        end)
+        deButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    end
+    deButton:SetAttribute("macrotext", string.format("/cast %s\n/use %d %d", spell, cand.bag, cand.slot))
+    deButton.link = cand.link
+    deButton.label:SetText("|cffc48cffDisenchant|r " .. itemName(cand.id))
+    deButton:ClearAllPoints()
+    deButton:SetPoint("RIGHT", f.extra, "LEFT", -6, 0)
+    deButton:Show()
+end
+
+GP:On("PLAYER_REGEN_DISABLED", function()
+    if deButton then deButton:Hide(); deButton:ClearAllPoints() end
+end)
+GP:On("PLAYER_REGEN_ENABLED", function() if f and f:IsShown() then GP:RefreshUI() end end)
+
 function GP:RefreshUI()
-    if not f or not f:IsShown() then return end
+    if not f or not f:IsShown() then updateDisenchant(false); return end
     local key = current()
     local t = TAB[key]
+    updateDisenchant(key == "bags")
 
     for _, b in ipairs(tabButtons) do
-        local on = b.key == key
+        local on = b.key == S().tab
         b.under:SetShown(on)
         b.bg:SetShown(on)
         b.fs:SetTextColor(on and GOLD[1] or 0.62, on and GOLD[2] or 0.6, on and GOLD[3] or 0.55)

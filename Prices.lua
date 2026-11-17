@@ -156,7 +156,11 @@ function GP:CanScan()
     return true
 end
 
-local function finish(lists, names)
+-- Gear listings (one link per listing) for the AH upgrade finder in Gear.lua.
+local GEAR_CLASS = { [2] = true, [4] = true }
+local MAX_GEAR = 30000
+
+local function finish(lists, names, gear)
     local db = GP.db
     local prices, t, day = {}, time(), GP.Day()
     local n = 0
@@ -196,6 +200,7 @@ local function finish(lists, names)
     db.scanDays[day] = true
     scanning = false
     GP.Print(string.format("Prices updated for %d items.", n))
+    if gear and GP.FindAHUpgrades then GP:FindAHUpgrades(gear) end
     if GP.OnScanFinished then GP:OnScanFinished() end
     if GP.RefreshUI then GP:RefreshUI() end
 end
@@ -203,6 +208,9 @@ end
 local function process()
     local total = C_AuctionHouse.GetNumReplicateItems()
     local lists, names, i = {}, {}, 0
+    local gear, nGear = {}, 0
+    local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
+    local getLink = C_AuctionHouse.GetReplicateItemLink
     local function step()
         local stop = math.min(total - 1, i + CHUNK - 1)
         for idx = i, stop do
@@ -213,10 +221,21 @@ local function process()
                 if not l then l = {}; lists[itemID] = l end
                 l[#l + 1] = { buyout / count, count }
                 if name then names[itemID] = name end
+                if count == 1 and nGear < MAX_GEAR and getLink and instant then
+                    local _, _, _, equipLoc, _, classID = instant(itemID)
+                    if GEAR_CLASS[classID] and equipLoc and equipLoc ~= "" then
+                        local ok, link = pcall(getLink, idx)
+                        if ok and link then
+                            local old = gear[link]
+                            if not old then nGear = nGear + 1 end
+                            if not old or buyout < old.price then gear[link] = { id = itemID, price = buyout } end
+                        end
+                    end
+                end
             end
         end
         i = stop + 1
-        if i < total then C_Timer.After(0, step) else finish(lists, names) end
+        if i < total then C_Timer.After(0, step) else finish(lists, names, gear) end
     end
     step()
 end
@@ -271,4 +290,4 @@ GP:On("MERCHANT_SHOW", function()
 end)
 
 GP._test = GP._test or {}
-GP._test.finishPrices = function(lists) finish(lists, {}) end
+GP._test.finishPrices = function(lists, gear) finish(lists, {}, gear) end

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.0
+
+### Gold
+- **Gear → On the AH**: every full auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Max price button; click to search.
+- **Shopping list**: click recipes in Craft to add them. It sums every reagent, subtracts what's in your bags and bank, and shows where the rest is cheapest.
+- **Craft → Skill up**: the cheapest recipes to raise your profession, by cost per skill point.
+- **Selling help**: next to the AH sell frame, a suggested price from live listings and your scans, with a warning when a vendor pays more. Use price fills it in; you press Post.
+
+### Bags and mail
+- **Best move** for every item: sell on the AH, sell to a vendor, disenchant, or send to an alt who can disenchant it.
+- **Disenchant button** on the Bags tab when disenchanting pays most (out of combat only).
+- **Mats to crafters**: at a mailbox, one click sends crafting mats to the alt whose recipes use them.
+
+### Farm
+- **By zone**: zones ranked by the best gold per hour there; click one to see its mobs.
+- **This zone only**: just the mobs where you are.
+
 ## 0.5.0 — First public release
 
 Everything below is new.
