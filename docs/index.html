@@ -3,100 +3,216 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Haulwise: community drop rates for WoW Forever</title>
-<meta name="description" content="Free, open-source gold, bag and gear addon for WoW Forever. Share your kills anonymously and get everyone's drop rates back.">
+<title>Haulwise: share your kills, get everyone's drop rates</title>
+<meta name="description" content="Haulwise is a free, open-source WoW Forever addon for gold, bags and gear. Share your kills anonymously and get drop rates from every player back.">
+<meta property="og:title" content="Haulwise for WoW Forever">
+<meta property="og:description" content="Gold, bags and gear in one addon. Share your kills and get everyone's drop rates back.">
+<meta property="og:image" content="https://kaayceegamer.github.io/haulwise/assets/logo-400.png">
+<link rel="icon" type="image/png" href="assets/logo-64.png">
 <style>
-  :root { --bg:#0e0f12; --panel:#16171b; --line:#2a2a2e; --gold:#ffd040; --gold-d:#806629; --text:#e6e3da; --muted:#8f8b80; --ok:#5fd35f; --bad:#ff6b5b; }
+  @font-face { font-family: "Alegreya"; font-weight: 500; font-style: normal; font-display: swap; src: url(fonts/alegreya-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Alegreya"; font-weight: 500; font-style: italic; font-display: swap; src: url(fonts/alegreya-latin-500-italic.woff2) format("woff2"); }
+  @font-face { font-family: "Alegreya"; font-weight: 700; font-style: normal; font-display: swap; src: url(fonts/alegreya-latin-700-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Alegreya Sans"; font-weight: 400; font-display: swap; src: url(fonts/alegreya-sans-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Alegreya Sans"; font-weight: 500; font-display: swap; src: url(fonts/alegreya-sans-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Alegreya Sans"; font-weight: 700; font-display: swap; src: url(fonts/alegreya-sans-latin-700-normal.woff2) format("woff2"); }
+
+  :root {
+    --night: #0f2531;      /* page */
+    --deep: #163646;       /* raised surfaces */
+    --rim: #24505f;        /* edges */
+    --gold: #ecb23a;       /* coin */
+    --gold-pale: #ffe08a;  /* coin highlight */
+    --wood: #6e3e22;       /* chest, used once */
+    --text: #e8eeee;
+    --muted: #9db5bd;
+    --ok: #7fd88f;
+    --bad: #ff8a7a;
+    --serif: "Alegreya", Georgia, serif;
+    --sans: "Alegreya Sans", system-ui, sans-serif;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
-  header { display:flex; align-items:center; gap:14px; margin-bottom: 8px; }
-  .logo { width:44px; height:44px; border-radius:50%; background:#e8b923; border:3px solid #8a6a14; color:#5a4208; display:grid; place-items:center; font-weight:700; font-size:20px; flex:none; }
-  h1 { margin:0; color:var(--gold); font-size:28px; font-weight:600; }
-  h2 { color:var(--gold); font-size:18px; font-weight:600; margin: 0 0 10px; }
-  p { margin: 0 0 12px; }
-  .sub { color: var(--muted); }
-  section { background:var(--panel); border:1px solid var(--gold-d); border-radius:8px; padding:20px; margin-top:20px; }
-  .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top: 20px; }
-  .stat { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--gold); padding:12px 14px; border-radius:4px; }
-  .stat b { display:block; font-size:24px; color:var(--text); font-weight:600; }
-  .stat span { color:var(--muted); font-size:13px; }
-  textarea { width:100%; min-height:130px; background:#0b0b0d; color:var(--text); border:1px solid var(--line); border-radius:4px; padding:10px; font:12px/1.4 ui-monospace, Menlo, monospace; resize: vertical; }
-  textarea:focus { outline: 2px solid var(--gold-d); }
-  label.consent { display:flex; gap:10px; align-items:flex-start; margin:12px 0; font-size:14px; color:#cfccc2; cursor:pointer; }
-  label.consent input { margin-top:4px; accent-color: var(--gold); }
-  button { background:#221c10; color:var(--gold); border:1px solid var(--gold-d); border-radius:4px; padding:9px 18px; font-size:14px; cursor:pointer; }
-  button:hover { background:#2e2614; }
-  button:disabled { opacity:.5; cursor:default; }
-  .msg { margin-top:12px; font-size:14px; min-height: 1.4em; }
+  html { background: var(--night); }
+  body {
+    margin: 0; color: var(--text); font: 18px/1.55 var(--sans);
+    background: radial-gradient(1100px 620px at 18% -8%, #1d4657 0%, rgba(29,70,87,0) 70%), var(--night);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gold-pale); text-underline-offset: 3px; }
+  a:hover { color: var(--gold); }
+  :focus-visible { outline: 2px solid var(--gold-pale); outline-offset: 3px; border-radius: 3px; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 28px 24px 72px; }
+
+  /* top bar */
+  .bar { display: flex; align-items: center; gap: 14px; }
+  .bar img { width: 52px; height: 52px; border-radius: 12px; }
+  .bar .name { font: 700 26px/1 var(--serif); letter-spacing: .01em; }
+  .bar nav { margin-left: auto; display: flex; gap: 20px; font-size: 16px; }
+  .bar nav a { color: var(--muted); text-decoration: none; }
+  .bar nav a:hover { color: var(--text); }
+
+  /* hero */
+  h1 { font: 700 clamp(40px, 7vw, 58px)/1.04 var(--serif); margin: 64px 0 18px; letter-spacing: -.01em; }
+  .lede { font-size: 20px; color: #cfdcdf; margin: 0 0 40px; max-width: 34em; }
+
+  /* the tally: the one loud thing on the page */
+  .tally {
+    position: relative; margin: 0 0 64px; padding: 26px 28px 24px 30px;
+    background: linear-gradient(180deg, #7a4626 0%, var(--wood) 100%);
+    border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(255,224,138,.18), 0 18px 40px -22px rgba(0,0,0,.8);
+  }
+  .tally::before {   /* gold band, like the chest */
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+    background: linear-gradient(180deg, var(--gold-pale), var(--gold)); border-radius: 6px 0 0 6px;
+  }
+  .tally p { margin: 0; font: 500 clamp(22px, 3.6vw, 28px)/1.35 var(--serif); color: #f6e7d2; }
+  .tally b { font-weight: 700; color: var(--gold-pale); font-variant-numeric: lining-nums tabular-nums; }
+  .tally small { display: block; margin-top: 10px; font: 400 15px/1.4 var(--sans); color: #d9bfa3; }
+
+  h2 { font: 700 30px/1.15 var(--serif); margin: 0 0 14px; }
+  section { margin-top: 64px; }
+  section > p { margin: 0 0 14px; }
+  .muted { color: var(--muted); }
+
+  /* steps: a real sequence, so it's numbered */
+  ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 0 0 22px; }
+  ol.steps li { counter-increment: s; position: relative; padding-left: 44px; margin-bottom: 10px; }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -1px; width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font: 700 17px/1 var(--serif); color: #3b2610;
+    background: radial-gradient(circle at 35% 30%, var(--gold-pale), var(--gold) 70%);
+  }
+  kbd, code {
+    font: 500 .9em/1 var(--sans); background: var(--deep); border: 1px solid var(--rim);
+    padding: 2px 7px; border-radius: 4px; color: var(--gold-pale); white-space: nowrap;
+  }
+
+  textarea {
+    width: 100%; min-height: 140px; resize: vertical; display: block;
+    background: #0b1c25; color: var(--text); border: 1px solid var(--rim); border-radius: 6px;
+    padding: 12px 14px; font: 14px/1.45 ui-monospace, Consolas, monospace;
+  }
+  textarea::placeholder { color: #5d7984; }
+  label.consent { display: flex; gap: 12px; align-items: flex-start; margin: 16px 0 20px; font-size: 16px; color: #cfdcdf; cursor: pointer; }
+  label.consent input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--gold); flex: none; }
+
+  button {
+    font: 700 17px/1 var(--sans); cursor: pointer; border-radius: 6px; padding: 13px 22px;
+    color: #2e1d0b; border: 0; background: linear-gradient(180deg, var(--gold-pale), var(--gold));
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 6px 16px -8px rgba(236,178,58,.7);
+  }
+  button:hover { filter: brightness(1.06); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .55; cursor: default; transform: none; }
+  button.quiet { background: transparent; color: var(--gold-pale); border: 1px solid var(--rim); box-shadow: none; }
+  button.quiet:hover { border-color: var(--gold); }
+  .msg { margin-top: 14px; font-size: 16px; min-height: 1.5em; }
   .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
-  code { background:#0b0b0d; border:1px solid var(--line); padding:1px 6px; border-radius:3px; font-size: 13px; }
-  ol { padding-left: 20px; margin: 0 0 12px; } li { margin-bottom: 4px; }
-  footer { color:var(--muted); font-size:13px; margin-top:28px; text-align:center; }
-  a { color: var(--gold); }
+
+  /* what it does */
+  dl.does { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px 20px; margin: 0; }
+  dl.does dt { font: 700 20px/1.35 var(--serif); color: var(--gold-pale); }
+  dl.does dd { margin: 0; }
+
+  dl.privacy { margin: 0; }
+  dl.privacy dt { font-weight: 700; margin-top: 14px; }
+  dl.privacy dd { margin: 2px 0 0; color: #c3d3d7; }
+
+  footer { margin-top: 80px; padding-top: 22px; border-top: 1px solid var(--rim); font-size: 15px; color: var(--muted); }
+  footer p { margin: 0 0 6px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; }
+    .bar nav { gap: 14px; font-size: 15px; }
+    h1 { margin-top: 44px; }
+    dl.does { grid-template-columns: 1fr; gap: 2px; }
+    dl.does dd { margin-bottom: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } button:active { transform: none; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <div class="logo" aria-hidden="true">G</div>
-    <div>
-      <h1>Haulwise</h1>
-      <div class="sub">Gold, bags and gear for WoW Forever, with drop rates from everyone's kills</div>
-    </div>
+<div class="wrap">
+  <header class="bar">
+    <img src="assets/logo-400.png" alt="" width="52" height="52">
+    <span class="name">Haulwise</span>
+    <nav aria-label="Links">
+      <a id="cf-link" href="#" hidden>CurseForge</a>
+      <a href="https://github.com/KaayceeGamer/haulwise">Source code</a>
+    </nav>
   </header>
 
-  <div class="stats" aria-live="polite">
-    <div class="stat"><b id="s-players">–</b><span>players sharing</span></div>
-    <div class="stat"><b id="s-kills">–</b><span>kills pooled</span></div>
-    <div class="stat"><b id="s-mobs">–</b><span>mobs covered</span></div>
-    <div class="stat"><b id="s-recipes">–</b><span>recipe sources</span></div>
-    <div class="stat"><b id="s-updated">–</b><span>last updated</span></div>
-  </div>
+  <main>
+    <h1>Every kill makes everyone's drop rates better.</h1>
+    <p class="lede">Haulwise is a free addon for WoW Forever that shows what everything you carry is worth, which gear is an upgrade and where the gold is. Its drop rates and recipe sources come from players like you.</p>
 
-  <section>
-    <h2>Share your kills</h2>
-    <ol>
-      <li>In game, type <code>/haul export</code> (or press Export in the Haulwise window).</li>
-      <li>Press <code>Ctrl+C</code> to copy, then paste it here.</li>
-    </ol>
-    <textarea id="data" placeholder="CF1,..." spellcheck="false" aria-label="Your Haulwise export string"></textarea>
-    <label class="consent"><input type="checkbox" id="consent">
-      <span>Share my kills and loot anonymously with every Haulwise user. I understand they're pooled and published as community drop rates.</span></label>
-    <button id="send">Share my data</button>
-    <div class="msg" id="msg" role="status"></div>
-    <p class="sub" style="margin-top:10px">You can upload again any time. Your new upload replaces your old one, so nothing is counted twice.</p>
-  </section>
+    <div class="tally" aria-live="polite">
+      <p id="tally">Counting the shared kills…</p>
+      <small id="tally-when">The pool is rebuilt every night.</small>
+    </div>
 
-  <section>
-    <h2>Get the latest community data</h2>
-    <p>Every Haulwise release on CurseForge already includes the community data, rebuilt each week. Want it sooner? Copy it here and paste it in game with <code>/haul import</code>.</p>
-    <button id="copy">Copy community data</button>
-    <div class="msg" id="copymsg" role="status"></div>
-  </section>
+    <section aria-labelledby="share">
+      <h2 id="share">Share your kills</h2>
+      <ol class="steps">
+        <li>In game, type <code>/haul export</code> or press <b>Export</b> in the Haulwise window.</li>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy, then paste it below.</li>
+        <li>Tick the box and press <b>Share my kills</b>.</li>
+      </ol>
+      <textarea id="data" placeholder="Paste your export here. It starts with CF2," spellcheck="false" aria-label="Your Haulwise export"></textarea>
+      <label class="consent"><input type="checkbox" id="consent">
+        <span>Share my kills, loot and the recipes I've seen anonymously. They're pooled with everyone else's and published as community data.</span></label>
+      <button id="send">Share my kills</button>
+      <div class="msg" id="msg" role="status"></div>
+      <p class="muted">Share again whenever you like. Your new upload replaces your old one, so nothing is counted twice.</p>
+    </section>
 
-  <section>
-    <h2>Privacy</h2>
-    <p>Your export contains kills, loot, coins, levels and zones per mob, the recipes you've seen at trainers and vendors (with their prices), what vendors charge for reagents, and a random id the addon made up. That id is how a new upload replaces your old one.</p>
-    <p><b>What's stored:</b> those numbers, under a one-way hash of the random id. Your character name in the export is thrown away. No account names, no email, no cookies, no tracking.</p>
-    <p><b>Your IP address</b> is never stored. A hash of it, which changes every day, is used for one day to limit spam uploads, then deleted.</p>
-    <p><b>Nothing is sent automatically.</b> The addon can't reach the internet; data only leaves your PC if you paste it here yourself. Uploads can't be linked to you, your character or your account. Haulwise is a free hobby project with no ads and no money involved.</p>
-  </section>
+    <section aria-labelledby="get">
+      <h2 id="get">Get the newest community data</h2>
+      <p>Every Haulwise release already includes the pool, refreshed weekly. To get tonight's numbers sooner, copy them here and type <code>/haul import</code> in game.</p>
+      <button class="quiet" id="copy">Copy community data</button>
+      <div class="msg" id="copymsg" role="status"></div>
+    </section>
+
+    <section aria-labelledby="what">
+      <h2 id="what">What the addon does</h2>
+      <dl class="does">
+        <dt>Bags</dt><dd>Values every item at the best of vendor, auction house and disenchant. When your bags are full, it offers a one-click swap and never touches crafting materials, quest items or upgrades.</dd>
+        <dt>Gear</dt><dd>Checks new gear against what you and your alts wear, using your Pawn scales or built-in stat weights.</dd>
+        <dt>Farming</dt><dd>Ranks mobs by gold per hour for your character, from real drop rates and your own kill speed.</dd>
+        <dt>Gold</dt><dd>Crafting profits, recipes worth learning and where to get them, auction deals and weekly price trends.</dd>
+      </dl>
+    </section>
+
+    <section aria-labelledby="privacy">
+      <h2 id="privacy">What gets shared</h2>
+      <dl class="privacy">
+        <dt>Only what you paste</dt>
+        <dd>The addon can't reach the internet. Data leaves your PC only when you paste it here.</dd>
+        <dt>What's in an export</dt>
+        <dd>Kills, loot, coins, levels and zones per mob; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; and a random id the addon made up, so a new upload replaces your old one.</dd>
+        <dt>What's kept</dt>
+        <dd>Those numbers, stored under a one-way hash of the random id. Character names are thrown away. No accounts, no email, no cookies, no tracking.</dd>
+        <dt>Your IP address</dt>
+        <dd>Never stored. A hash of it that changes every day limits spam uploads for one day, then it's deleted.</dd>
+      </dl>
+    </section>
+  </main>
 
   <footer>
-    Haulwise is free and open source. It's a fan project, not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.<br>
-    Questions or bugs: use the comments on the Haulwise CurseForge page.
+    <p>Haulwise is free and open source, with no ads and no money involved. Questions and bug reports go in the comments on its CurseForge page or in <a href="https://github.com/KaayceeGamer/haulwise/issues">GitHub issues</a>.</p>
+    <p>A fan project, not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.</p>
   </footer>
-</main>
+</div>
 
 <script>
-  // Fill these in after creating your Supabase project (see SETUP.md). The publishable key is
-  // meant to be public: it can only call the two read-only functions.
+  // The publishable key is meant to be public: it can only call the two read-only functions.
   const SUPABASE_URL = "https://njpkpiufvdrwuhlhwvof.supabase.co";
   const PUBLISHABLE_KEY = "sb_publishable_kmTESVC8h-492aAnqZK0NA_s1DUZ605";
   const SUBMIT_FUNCTION = "bright-handler";
+  const CURSEFORGE_URL = ""; // fill in once the CurseForge page is live
 
   const $ = (id) => document.getElementById(id);
+  if (CURSEFORGE_URL) { $("cf-link").href = CURSEFORGE_URL; $("cf-link").hidden = false; }
 
   async function rpc(name) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
@@ -106,34 +222,41 @@
     return r.json();
   }
 
+  const n = (x) => Number(x || 0).toLocaleString("en-US");
+  const plural = (x, one, many) => `<b>${n(x)}</b> ${Number(x) === 1 ? one : many}`;
+
   async function loadStats() {
     try {
       const s = await rpc("community_stats");
-      if (!s) return;
-      const n = (x) => Number(x || 0).toLocaleString("en-US");
-      $("s-players").textContent = n(s.contributors);
-      $("s-kills").textContent = n(s.kills);
-      $("s-mobs").textContent = n(s.mobs);
-      $("s-recipes").textContent = n((s.trainers || 0) + (s.vendors || 0));
-      $("s-updated").textContent = s.refreshed_at ? new Date(s.refreshed_at).toLocaleDateString() : "–";
-    } catch { /* stats are optional */ }
+      if (!s) throw new Error("empty");
+      const recipes = (s.trainers || 0) + (s.vendors || 0);
+      let text = `So far ${plural(s.contributors, "player has", "players have")} shared ${plural(s.kills, "kill", "kills")} on ${plural(s.mobs, "mob", "mobs")}`;
+      text += recipes ? `, and ${plural(recipes, "recipe source", "recipe sources")}.` : ".";
+      $("tally").innerHTML = text;
+      if (s.refreshed_at) {
+        const d = new Date(s.refreshed_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+        $("tally-when").textContent = `Last counted ${d}. The pool is rebuilt every night.`;
+      }
+    } catch {
+      $("tally").textContent = "Every shared kill is pooled into drop rates for everyone.";
+    }
   }
 
   function say(el, text, ok) { el.textContent = text; el.className = "msg " + (ok ? "ok" : "bad"); }
 
   $("send").addEventListener("click", async () => {
     const data = $("data").value.trim();
-    if (!data.startsWith("CF1,")) return say($("msg"), "Paste the text from /haul export first. It starts with CF1.", false);
+    if (!/^CF[12],/.test(data)) return say($("msg"), "Paste the text from /haul export first. It starts with CF2.", false);
     if (!$("consent").checked) return say($("msg"), "Tick the box to agree to sharing first.", false);
     $("send").disabled = true;
-    say($("msg"), "Sending…", true);
+    say($("msg"), "Sharing…", true);
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/${SUBMIT_FUNCTION}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: data });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) say($("msg"), `Thanks! ${j.kills.toLocaleString("en-US")} kills on ${j.mobs} mobs, ${j.trainers} trainer recipes and ${j.vendors} vendor recipes added. They'll be in the community data after tonight's update.`, true);
-      else say($("msg"), j.error || "Something went wrong. Try again later.", false);
+      if (r.ok && j.ok) say($("msg"), `Shared: ${n(j.kills)} kills on ${n(j.mobs)} mobs, ${n(j.trainers)} trainer and ${n(j.vendors)} vendor recipes. They'll be in the community data after tonight's update.`, true);
+      else say($("msg"), j.error || "The server didn't accept it. Try again in a few minutes.", false);
     } catch {
-      say($("msg"), "Couldn't reach the server. Try again later.", false);
+      say($("msg"), "Couldn't reach the server. Check your connection and try again.", false);
     }
     $("send").disabled = false;
   });
@@ -144,7 +267,7 @@
       await navigator.clipboard.writeText(s);
       say($("copymsg"), "Copied. In game, type /haul import and paste it.", true);
     } catch {
-      say($("copymsg"), "Couldn't load the data right now. Try again later.", false);
+      say($("copymsg"), "Couldn't load the community data. Try again in a few minutes.", false);
     }
   });
 

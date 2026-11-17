@@ -277,7 +277,7 @@ TAB.deals = {
         }
     end,
     hero = function(rows)
-        if #rows == 0 then return nil end
+        if #rows == 0 then return "No deals right now.  " .. grey("Scan the AH to find them.") end
         local sum = 0
         for _, r in ipairs(rows) do sum = sum + r.profit end
         return string.format("%d deals worth |cff5fd35f%s|r in total.  %s", #rows, Coins(sum, true), grey("Click a row to search the AH."))
@@ -347,7 +347,9 @@ TAB.recipes = {
                 return string.format("Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%d crafts|r", r.name, r.payback)
             end
         end
-        return nil
+        if #rows == 0 then return nil end
+        return string.format("%d recipes you don't know yet.  %s", #rows,
+            grey("Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."))
     end,
     empty = "No recipes to suggest yet.\n\nOpen your profession windows once and scan the AH. Recipes you don't know yet are ranked by profit per craft and how fast they pay for themselves.",
     click = function(r) if r.itemID then GP:SearchAH(r.itemID) end end,
