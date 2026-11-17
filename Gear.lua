@@ -80,6 +80,8 @@ local function pawnReady()
     return PawnGetItemData and PawnGetSingleValueFromItem and PawnGetAllScalesEx and PawnIsInitialized
 end
 
+function GP.PawnLoaded() return pawnReady() and true or false end
+
 function GP:UsePawn()
     return self.db.settings.usePawn and pawnReady() and true or false
 end

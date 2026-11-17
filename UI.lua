@@ -145,6 +145,18 @@ local function current()
     if v and TAB[tab .. "_" .. v] then return tab .. "_" .. v end
     return tab
 end
+local function pawnToggle()
+    return { "Use Pawn", nil, "Compare gear with your Pawn scales instead of Haulwise's own stat weights.",
+        function() return GP.PawnLoaded() end,
+        get = function() return GP.db.settings.usePawn end,
+        set = function(on)
+            GP.db.settings.usePawn = on
+            if on then GP:Char().specOverride = nil end
+            GP:ScanUpgrades()
+            GP:RecheckAHUpgrades(true)
+        end }
+end
+
 local function viewToggle(tab, view, label, tipText)
     return { label, nil, tipText,
         get = function() return S().views and S().views[tab] == view end,
@@ -572,6 +584,7 @@ TAB.gear = {
     end,
     toggles = {
         viewToggle("gear", "ah", "On the AH", "Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."),
+        pawnToggle(),
         { "Upgrade Advisor", "upgradeAdvisor", "Check gear you pick up against what you wear." },
         { "Upgrade popups", "upgradePopups", "Show a popup when new loot is an upgrade (once per item)." },
         { "Send to alts at mailbox", "sendToAltsAtMailbox", "At a mailbox, list gear that's an upgrade for one of your alts." },
@@ -696,6 +709,7 @@ TAB.gear_ah = {
     end,
     toggles = {
         viewToggle("gear", "ah", "On the AH", "Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."),
+        pawnToggle(),
     },
     extraTip = "Hide listings above this price.",
     extraButton = function(b)
