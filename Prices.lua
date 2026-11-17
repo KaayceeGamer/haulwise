@@ -205,13 +205,21 @@ local function finish(lists, names, gear)
     if GP.RefreshUI then GP:RefreshUI() end
 end
 
+local function fail(why)
+    scanning = false
+    GP.scanProgress = nil
+    GP.Print("Scan stopped: " .. tostring(why) .. ". Nothing was saved; try again.")
+    if GP.RefreshUI then GP:RefreshUI() end
+end
+
 local function process()
-    local total = C_AuctionHouse.GetNumReplicateItems()
+    local total = C_AuctionHouse.GetNumReplicateItems() or 0
+    if total == 0 then return fail("the auction house sent an empty list") end
     local lists, names, i = {}, {}, 0
     local gear, nGear = {}, 0
     local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
     local getLink = C_AuctionHouse.GetReplicateItemLink
-    local function step()
+    local function rows()
         local stop = math.min(total - 1, i + CHUNK - 1)
         for idx = i, stop do
             local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID =
@@ -235,7 +243,21 @@ local function process()
             end
         end
         i = stop + 1
-        if i < total then C_Timer.After(0, step) else finish(lists, names, gear) end
+    end
+    -- Each chunk runs in a pcall: one bad row must not leave the scan stuck at "scanning...".
+    local function step()
+        if not scanning then return end
+        local ok, err = pcall(rows)
+        if not ok then return fail(err) end
+        GP.scanProgress = i / total
+        if i < total then
+            if GP.RefreshScanButton then GP:RefreshScanButton() end
+            C_Timer.After(0, step)
+        else
+            GP.scanProgress = nil
+            local ok2, err2 = pcall(finish, lists, names, gear)
+            if not ok2 then fail(err2) end
+        end
     end
     step()
 end
@@ -244,8 +266,16 @@ function GP:ScanAH()
     local ok, why = self:CanScan()
     if not ok then self.Print("Can't scan: " .. why); return end
     scanning = true
+    self.scanProgress = 0
     self.Print("Scanning the auction house...")
     C_AuctionHouse.ReplicateItems()
+    -- If the auction house never answers, don't stay stuck: give up after a minute.
+    local started = GetTime()
+    C_Timer.After(60, function()
+        if scanning == true and GetTime() - started >= 59 then
+            fail("no answer from the auction house within a minute (it allows one full scan every 15 minutes)")
+        end
+    end)
     if self.RefreshUI then self:RefreshUI() end
 end
 
@@ -264,7 +294,11 @@ function GP:SearchAH(id)
 end
 
 GP:On("AUCTION_HOUSE_SHOW", function() GP.ahOpen = true; if GP.RefreshUI then GP:RefreshUI() end end)
-GP:On("AUCTION_HOUSE_CLOSED", function() GP.ahOpen = false; if GP.RefreshUI then GP:RefreshUI() end end)
+GP:On("AUCTION_HOUSE_CLOSED", function()
+    GP.ahOpen = false
+    if scanning == true then fail("the auction house was closed before it answered") end
+    if GP.RefreshUI then GP:RefreshUI() end
+end)
 GP:On("REPLICATE_ITEM_LIST_UPDATE", function()
     -- The event can fire more than once per scan; only process the first.
     if scanning == true then scanning = "processing"; process() end

@@ -1449,11 +1449,17 @@ function GP:RefreshUI()
     if unshared > 0 then extra = extra .. string.format("  ·  |cffffd040%d not shared yet|r", unshared) end
     f.footer:SetText(string.format("%s  ·  %d days of history  ·  %d of your kills%s", priceText, days, ownKills, extra))
 
-    local canScan = self:CanScan()
-    f.scan.label:SetTextColor(canScan and GOLD[1] or 0.5, canScan and GOLD[2] or 0.5, canScan and GOLD[3] or 0.5)
+    self:RefreshScanButton()
 
     self:DrawSession()
     self:DrawRows()
+end
+
+function GP:RefreshScanButton()
+    if not (f and f.scan) then return end
+    local canScan = self:CanScan()
+    f.scan.label:SetTextColor(canScan and GOLD[1] or 0.5, canScan and GOLD[2] or 0.5, canScan and GOLD[3] or 0.5)
+    f.scan:SetLabel(self.scanProgress and string.format("Scanning %d%%", math.floor(self.scanProgress * 100)) or "Scan AH")
 end
 
 local function place()
