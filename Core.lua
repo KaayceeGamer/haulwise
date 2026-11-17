@@ -21,6 +21,7 @@ local DEFAULTS = {
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
     shared = {},        -- [sourceId] = { label, time, mobs }
+    names = {},         -- [itemID] = name from AH scans, for items the game hasn't loaded yet
     sharedKills = 0,    -- your kill total the last time you opened Share
     shareNudgedAt = 0,  -- kill total at the last share reminder
     settings = {

@@ -314,9 +314,13 @@ TAB.deals = {
         if #rows == 0 then return "No deals right now.  " .. grey("Scan the AH to find them.") end
         local sum = 0
         for _, r in ipairs(rows) do sum = sum + r.profit end
-        return string.format("%d deals worth |cff5fd35f%s|r in total.  %s", #rows, Coins(sum, true), grey("Click a row to search the AH."))
+        local days = 0
+        for _ in pairs(GP.db.scanDays or {}) do days = days + 1 end
+        local note = days < 3 and grey(string.format("Click a row to search the AH.  Rare items show up after 3 days of scans (%d so far).", days))
+            or grey("Click a row to search the AH.")
+        return string.format("%s worth |cff5fd35f%s|r in total.  %s", plural(#rows, "deal"), Coins(sum, true), note)
     end,
-    empty = "No deals right now.\n\nScan the auction house (button at the bottom). Deals are listings 30%+ below an item's usual price, and vendor flips: items listed for less than a vendor pays.",
+    empty = "No deals right now.\n\nScan the auction house (button at the bottom). Deals are listings 30%+ below an item's usual price, and vendor flips: items listed for less than a vendor pays.\n\nThe usual price of rare items (recipes, single listings) needs 3 days of scans, so those show up from day 3.",
     click = function(r) GP:SearchAH(r.id) end,
     toggles = { { "Include gear", "dealsGear", "Weapons and armor have random stats per listing, so prices jump around. Off by default." } },
     extraTip = "Hide deals that make less than this.",
@@ -536,7 +540,8 @@ TAB.gear = {
         return {
             name = itemName(r.id), icon = GP.ItemIcon(r.id),
             who = r.forMe and "|cff5fd35fYou|r" or ("|cffff9944" .. (r.alt or "?") .. "|r"),
-            slot = grey(r.slotName or ""), gain = string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100),
+            slot = grey(r.slotName or ""),
+            gain = r.replaces and string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100) or "|cff5fd35fnew|r",
             replaces = rep, lvl = r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r") or "",
         }
     end,
@@ -650,8 +655,7 @@ TAB.gear_ah = {
         { key = "slot", title = "Slot", w = 80 },
         { key = "gain", title = "Better by", w = 90, align = "RIGHT", bar = true },
         { key = "price", title = "Price", w = 100, align = "RIGHT" },
-        { key = "value", title = "Per gold", w = 80, align = "RIGHT" },
-        { key = "lvl", title = "", w = 90 },
+        { key = "value", title = "Replaces", w = 170 },
     },
     rows = function() return GP:AHUpgradeRows() end,
     bar = function(r) return math.min(r.gain or 0, 2) end,
@@ -660,8 +664,9 @@ TAB.gear_ah = {
             name = itemName(r.id), icon = GP.ItemIcon(r.id),
             who = r.forMe and "|cff5fd35fYou|r" or ("|cffff9944" .. (r.alt or "?") .. "|r"),
             slot = grey(r.slotName or ""), gain = string.format("|cff5fd35f+%.0f%%|r", (r.gain or 0) * 100),
-            price = Coins(r.price, true), value = grey(string.format("%.1f%%", r.perGold * 100)),
-            lvl = r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r") or "",
+            price = Coins(r.price, true),
+            value = (r.atLevel and ("|cffff9944at level " .. r.atLevel .. "|r  ") or "")
+                .. (r.replaces and grey(r.replaces:match("%[(.-)%]") or "?") or "|cff88ccffempty slot|r"),
         }
     end,
     hero = function(rows)
@@ -843,7 +848,7 @@ TAB.gear.sort = {
 TAB.gear_ah.sort = {
     name = function(r) return nm(r.id) end, who = function(r) return r.forMe and "" or (r.alt or ""):lower() end,
     slot = function(r) return r.slotName end, gain = function(r) return r.gain end, price = function(r) return r.price end,
-    value = function(r) return r.perGold end, lvl = function(r) return r.atLevel end,
+    value = function(r) return r.replaces and (r.replaces:match("%[(.-)%]") or ""):lower() or "" end,
 }
 TAB.craft_skill.sort = {
     name = function(r) return nm(r.out) end, prof = function(r) return r.prof end, color = function(r) return r.d end,

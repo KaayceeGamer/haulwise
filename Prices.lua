@@ -18,11 +18,15 @@ local RECIPE_CLASS = 9
 GP.ahOpen = false
 local scanning = false
 
+-- Items the game hasn't loaded yet come back without a name. Ask for them, remember names the AH
+-- scan gave us, and redraw once the game has sent them.
+local waitingNames = false
 local function itemInfo(id)
     local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
     local name, _, quality, _, _, _, _, _, _, icon, sellPrice, classID, subclassID, bindType = get(id)
-    if not name and C_Item and C_Item.RequestLoadItemDataByID then
-        C_Item.RequestLoadItemDataByID(id)
+    if not name then
+        if C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id); waitingNames = true end
+        name = GP.db and GP.db.names and GP.db.names[id]
     end
     return name, quality, icon, sellPrice, bindType, classID, subclassID
 end
@@ -191,6 +195,7 @@ local function finish(lists, names, gear)
             if classID == RECIPE_CLASS then rec.n = names[id] or itemInfo(id) end
         end
         prices[id] = rec
+        if names[id] then db.names[id] = names[id] end
         addHistory(db, id, day, rec.p, total)
         n = n + 1
     end
@@ -292,6 +297,12 @@ function GP:SearchAH(id)
         end)
     end
 end
+
+GP:On("GET_ITEM_INFO_RECEIVED", function()
+    if not waitingNames then return end
+    waitingNames = false
+    C_Timer.After(0.5, function() if GP.RefreshUI then GP:RefreshUI() end end)
+end)
 
 GP:On("AUCTION_HOUSE_SHOW", function() GP.ahOpen = true; if GP.RefreshUI then GP:RefreshUI() end end)
 GP:On("AUCTION_HOUSE_CLOSED", function()

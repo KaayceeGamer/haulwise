@@ -46,8 +46,11 @@ function GP:Deals()
 
             -- Under market: 30%+ below the item's usual price, capped at a quarter of the
             -- market so you don't buy more than you can resell.
+            -- One scan of a thin market (a few recipes, one rare pattern) says nothing about the
+            -- usual price: then it takes 3 days of scans, or 20+ units listed, to trust it.
+            local trusted = (days or 0) >= 3 or (p.q or 0) >= 20
             local uUnits, uCost, uProfit = 0, 0, 0
-            if market and market > 0 then
+            if market and market > 0 and trusted then
                 for _, l in ipairs(cheap) do
                     if l.u <= market * 0.70 and uUnits < maxUnits then
                         local take = math.min(l.c, maxUnits - uUnits)
