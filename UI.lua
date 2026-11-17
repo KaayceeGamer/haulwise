@@ -1213,7 +1213,7 @@ local function build()
     f.export:SetScript("OnClick", function() GP:ShowExport() end)
     tip(f.export, function(t)
         t:AddLine("Share your kills", 1, 0.82, 0.25)
-        t:AddLine("Haulwise can't reach the internet, so sharing is manual: copy the text and paste it on " .. GP.SITE_URL .. ". Your kills join everyone's drop rates in the next release.", 1, 1, 1, true)
+        t:AddLine("Haulwise can't reach the internet, so sharing is manual: copy the text and paste it on " .. GP.SITE_URL .. ". The pool is rebuilt every night: press Import and paste the community data from the same page to get it right away, or get it with the next update.", 1, 1, 1, true)
         local new = GP:UnsharedKills()
         if new > 0 then t:AddLine(new .. " kills not shared yet.", 0.37, 0.83, 0.37) end
     end)
