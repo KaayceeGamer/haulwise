@@ -13,6 +13,11 @@
 - **Disenchant button** on the Bags tab when disenchanting pays most (out of combat only).
 - **Mats to crafters**: at a mailbox, one click sends crafting mats to the alt whose recipes use them.
 
+### Tooltips and disenchanting
+- Gear tooltips show the **best move** (vendor, AH or disenchant), what it **disenchants into** with chances and AH prices, and what **your own disenchants** of that item (or items like it) actually gave.
+- WoW Forever lets anyone with Enchanting disenchant anything, so the old skill limits are gone.
+- The swap card sits next to the loot window, and only one popup shows at a time. Class reagents (Light Feather, candles, runes...) are never offered for deletion.
+
 ### Farm
 - **By zone**: zones ranked by the best gold per hour there; click one to see its mobs.
 - **This zone only**: just the mobs where you are.

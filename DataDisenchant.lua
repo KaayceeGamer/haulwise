@@ -76,7 +76,8 @@ function GP.DisenchantOutcomes(quality, itemLevel, isWeapon)
     return nil
 end
 
-function GP.DisenchantSkill(itemLevel)
-    for _, s in ipairs(SKILL) do if itemLevel <= s[1] then return s[2] end end
-    return 225
+-- WoW Forever removed the skill requirement: anyone with Enchanting can disenchant anything.
+-- (The Classic table is kept above for reference.)
+function GP.DisenchantSkill()
+    return 1
 end

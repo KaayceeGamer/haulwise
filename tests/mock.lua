@@ -120,7 +120,7 @@ C_Container = {
   GetContainerItemInfo = function(b, s)
     local bg = W.bags[b]; local it = bg and bg.slots[s]; if not it then return nil end
     local def = W.items[it.id]
-    return { itemID = it.id, stackCount = it.count or 1, quality = def.quality or 1, hyperlink = LINK(it.id), isBound = it.bound or false }
+    return { itemID = it.id, stackCount = it.count or 1, quality = def.quality or 1, hyperlink = LINK(it.id), isBound = it.bound or false, isLocked = it.locked or false }
   end,
   GetContainerItemQuestInfo = function(b, s) local it = W.bags[b].slots[s]; return { isQuestItem = it and it.quest or false } end,
   PickupContainerItem = function(b, s) W.cursor = { b, s } end,

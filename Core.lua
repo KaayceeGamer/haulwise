@@ -45,7 +45,8 @@ local DEFAULTS = {
         sendToAltsAtMailbox = true,
         shareReminder = true,
         ahUpgradeMax = 0,
-        sellHelper = true,      -- price panel next to the AH sell frame
+        sellHelper = true,
+        tooltipDisenchant = true, -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,

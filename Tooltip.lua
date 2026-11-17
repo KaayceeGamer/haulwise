@@ -37,6 +37,21 @@ local function moveText(src, d, who)
     return "|cffaaaaaasell to a vendor|r"
 end
 
+local function whoText(who)
+    local out = {}
+    for _, n in ipairs(who or {}) do out[#out + 1] = (n == UnitName("player")) and "you" or n end
+    return table.concat(out, ", ")
+end
+
+local function matList(list, max)
+    local parts = {}
+    for i, m in ipairs(list) do
+        if i > max then break end
+        parts[#parts + 1] = string.format("%s x%d", GP.ItemInfo(m[1]) or "?", m[2])
+    end
+    return table.concat(parts, ", ")
+end
+
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
     if not GP.db or tooltip ~= GameTooltip or not tooltip.GetItem then return end
     local _, link = tooltip:GetItem()
@@ -48,19 +63,23 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     local bound = info.bindType == 1
     local id = tonumber(link:match("item:(%d+)"))
     local best, src, d = GP:BagValue(id, link, bound)
-    local _, outcomes, who, need, estimate = GP:DisenchantValue(link, bound, info)
+    local _, outcomes, who, _, estimate = GP:DisenchantValue(link, bound, info)
     tooltip:AddDoubleLine("|cffffd040Haulwise|r best: " .. moveText(src, d, d.deWho), GP.Coins(best, true), 1, 1, 1, 1, 1, 1)
-    if outcomes then
-        local right = estimate and ("~" .. GP.Coins(estimate, true)) or "|cff999999no price: scan the AH|r"
-        local whoText
-        if who and #who > 0 then
-            whoText = "|cff8a8880" .. table.concat(who, ", ") .. "|r"
-        else
-            local mine = GP:MyProfessions()["Enchanting"]
-            whoText = string.format("|cffff9944needs Enchanting %d%s|r", need or 0,
-                mine and mine.rank and string.format(" (you: %d)", mine.rank) or "")
-        end
-        tooltip:AddDoubleLine("  Disenchant  " .. whoText, right, 0.77, 0.55, 1, 0.77, 0.55, 1)
+    if not outcomes or not GP.db.settings.tooltipDisenchant then return end
+    local right = estimate and ("~" .. GP.Coins(estimate, true)) or "|cff999999no price: scan the AH|r"
+    local left = (who and #who > 0) and ("  Disenchant |cff8a8880(" .. whoText(who) .. ")|r") or "  Disenchant |cffff9944(learn Enchanting)|r"
+    tooltip:AddDoubleLine(left, right, 0.77, 0.55, 1, 0.77, 0.55, 1)
+    for _, o in ipairs(outcomes) do
+        local name = GP.ItemInfo(o[1]) or ("#" .. o[1])
+        local qty = o[3] == o[4] and tostring(o[3]) or (o[3] .. "-" .. o[4])
+        tooltip:AddDoubleLine(string.format("    %s %s  |cff8a8880%.0f%%|r", qty, name, o[2] * 100),
+            o.unit and (GP.Coins(o.unit, true) .. " each") or "", 0.75, 0.75, 0.75, 0.6, 0.6, 0.6)
+    end
+    local mine, similar = GP:DisenchantHistory(id, info)
+    if mine then
+        tooltip:AddLine(string.format("    You got from %d: %s", mine.n, matList(mine.list, 3)), 0.37, 0.83, 0.37, true)
+    elseif similar then
+        tooltip:AddLine(string.format("    Items like this (%d done): %s", similar.n, matList(similar.list, 3)), 0.37, 0.83, 0.37, true)
     end
 end)
 

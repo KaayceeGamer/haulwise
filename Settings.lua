@@ -81,7 +81,7 @@ local function setScale(name, key, v)
 end
 
 local function build()
-    panel = GP.Panel("HaulwiseSettings", 400, 640, "Haulwise settings")
+    panel = GP.Panel("HaulwiseSettings", 400, 662, "Haulwise settings")
     panel:SetFrameStrata("DIALOG")
     local s = GP.db.settings
     local draws = {}
@@ -159,7 +159,9 @@ local function build()
     heading(panel, "Auction house and mail", y)
     y = y - 26
     add(check(panel, "Price help when selling", 18, y, "sellHelper", "Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."))
-    add(check(panel, "Mats to crafters", 200, y, "matsToCrafters", "At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."))
+    y = y - 22
+    add(check(panel, "Disenchant in tooltips", 18, y, "tooltipDisenchant", "Item tooltips show what gear disenchants into, at your AH prices, and what your own disenchants gave."))
+    add(check(panel, "Mats to crafters", 200, y + 22, "matsToCrafters", "At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."))
 
     local reset = GP.FlatButton(panel, "Reset positions and sizes", 180, 22)
     reset:SetPoint("BOTTOMLEFT", 14, 12)

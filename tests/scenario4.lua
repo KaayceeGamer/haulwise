@@ -147,6 +147,18 @@ GP:ShowMakeRoom()
 ok(not HaulwiseMakeRoom.shown, "Make room stays away while the swap card is up")
 fire("LOOT_CLOSED")
 ok(not HaulwiseSwap.shown, "swap card closes with the loot window")
+-- Disenchant results are recorded -----------------------------------------------------------------
+W.items[11174] = { name = "Lesser Nether Essence", sell = 0, k = 7 }
+W.items[11176] = { name = "Dream Dust", sell = 0, k = 7 }
+W.bags = { [0] = { size = 4, slots = { { id = 7010, locked = true }, { id = 2589, count = 5 } } } }
+fire("UNIT_SPELLCAST_START", "player", "cast-1", 13262)
+W.loot = { { id = 11176, q = 3, src = { "Item-1-2-3", 3 } } }
+fire("LOOT_OPENED")
+local mine, similar = GP:DisenchantHistory(7010, GP.LinkInfo(LINK(7010)))
+ok(mine and mine.n == 1 and mine.list[1][1] == 11176 and mine.list[1][2] == 3, "a disenchant you did is remembered: 3 Dream Dust")
+ok(similar and similar.n == 1, "and counted for items like it")
+W.loot = {}
+
 -- Item tooltip: best move and disenchant line ----------------------------------------------------
 local calls = {}
 TooltipDataProcessor = { AddTooltipPostCall = function(_, fn) calls[#calls + 1] = fn end }
@@ -167,4 +179,7 @@ for _, l in ipairs(lines) do
 end
 print("     " .. tostring(best)); print("     " .. tostring(de))
 ok(best and de, "tooltip shows the best move and what disenchanting gives")
+local gotLine
+for _, l in ipairs(lines) do if l:find("You got from 1") then gotLine = l end end
+ok(gotLine, "tooltip shows what your own disenchant gave")
 print("NEW FEATURES PASSED")

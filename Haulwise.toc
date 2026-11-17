@@ -19,6 +19,7 @@ DataWeights.lua
 Tracker.lua
 Prices.lua
 Values.lua
+Disenchant.lua
 Model.lua
 Crafting.lua
 Market.lua

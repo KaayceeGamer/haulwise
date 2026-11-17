@@ -1320,10 +1320,7 @@ end
 -- opening and closing it in combat), so it sits on UIParent, lined up with the window, and only
 -- appears out of combat.
 local deButton
-local function disenchantName()
-    if C_Spell and C_Spell.GetSpellName then return C_Spell.GetSpellName(13262) end
-    if GetSpellInfo then return (GetSpellInfo(13262)) end
-end
+local function disenchantName() return GP.DisenchantSpellName() end
 
 function GP:DisenchantCandidate()
     local name = disenchantName()

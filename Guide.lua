@@ -70,6 +70,7 @@ local GUIDE = {
 }
 
 local NEWS = {
+    "Gear tooltips: best move, what it disenchants into, and what your own disenchants gave.",
     "Gear → On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold.",
     "Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession.",
     "Selling at the AH: a price suggestion next to the sell frame, and a warning when a vendor pays more.",
