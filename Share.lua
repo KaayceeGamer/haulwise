@@ -58,6 +58,13 @@ function GP:ExportString()
     for key, id in pairs(self.db.recipeItems or {}) do
         if okText(key) then out[#out + 1] = table.concat({ "R", clean(key), id }, ",") end
     end
+    -- Where trainers and vendors you opened stand (P), so everyone's waypoints get better.
+    for id, p in pairs(self.db.places or {}) do
+        if okText(p.n) and p.m and p.x and p.y then
+            out[#out + 1] = table.concat({ "P", id, clean(p.n), p.k or "V", clean(p.p or ""), p.f or "", p.m,
+                string.format("%.2f", p.x), string.format("%.2f", p.y) }, ",")
+        end
+    end
     return table.concat(out, ";")
 end
 
@@ -101,7 +108,7 @@ function GP:ParseExport(str)
     if (head[1] ~= "CF1" and head[1] ~= "CF2") or not head[2] then error(L["not a Haulwise string"]) end
     local uid, label, when = head[2], head[3], num(head[4], 4e9)
     local mobs, n = {}, 0
-    local sources, vendorBuy, recipeItems = {}, {}, {}
+    local sources, vendorBuy, recipeItems, places = {}, {}, {}, {}
     local function src(key)
         local e = sources[key]
         if not e then e = { trainer = {}, vendor = {} }; sources[key] = e end
@@ -120,6 +127,13 @@ function GP:ParseExport(str)
             vendorBuy[num(f[2], 1e7)] = num(f[3], 1e9)
         elseif kind == "R" then
             recipeItems[f[2]] = num(f[3], 1e7)
+        elseif kind == "P" then
+            local x, y = tonumber(f[8]), tonumber(f[9])
+            if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then
+                places[num(f[2], 1e7)] = { n = f[3], k = f[4], p = f[5] ~= "" and f[5] or nil, f = f[6], m = num(f[7], 1e5), x = x, y = y }
+            end
+        elseif kind and kind:match("^%u$") then
+            -- A record type from a newer Haulwise: skip it.
         else
             if #f < 15 then error(L["record "] .. i .. L[" is cut short"]) end
             local npc = num(f[1], 1e7)
@@ -138,7 +152,7 @@ function GP:ParseExport(str)
         end
     end
     return uid, { label = label, time = when, build = head[5], contributors = tonumber(head[6]), mobs = mobs, n = n,
-                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems }
+                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems, places = places }
 end
 
 -- Returns ok, message.

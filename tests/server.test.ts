@@ -115,4 +115,26 @@ writeFileSync(new URL("./community_export.txt", import.meta.url), exp);
 console.log("     export:", exp.length, "chars:", exp.slice(0, 140), "...");
 
 if (failures) { console.log(`${failures} FAILED`); process.exit(1); }
+// Trainer and vendor positions (migration 003; pg_cron isn't in PGlite, so the schedule is left out).
+const m3 = readFileSync(new URL("../supabase/migrations/003_places.sql", import.meta.url), "utf8")
+  .split("\n").filter((l) => !l.startsWith("select cron.")).join("\n");
+await db.exec(m3);
+const withPlaces = "CF2,abcdef0123456789,Me,1763340000,1.60.1;P,1346,Georgio Bolero,T,Tailoring,A,1453,53.20,81.50;" +
+  "P,1347,Bad,X,,A,1453,1,1;P,1348,Too Far,V,,A,1453,150,1;Z,from,a,newer,addon";
+const pp = parseExport(withPlaces);
+check(pp.extra.places.length === 1 && pp.extra.places[0].npc === 1346 && pp.extra.places[0].x === 53.2,
+  "places are parsed; bad ones and unknown record types are skipped");
+await db.query("select replace_places($1, $2::jsonb)", ["h_p1", JSON.stringify(pp.extra.places)]);
+await db.query("select replace_places($1, $2::jsonb)", ["h_p2", JSON.stringify([{ ...pp.extra.places[0], x: 53.4, y: 81.7 }])]);
+await db.query("select replace_places($1, $2::jsonb)", ["h_p3", JSON.stringify([{ ...pp.extra.places[0], map: 1, x: 10, y: 10 }])]);
+await db.exec("select refresh_places()");
+const pe = (await db.query("select community_places_export() as s")).rows[0] as { s: string };
+console.log("     places: " + pe.s);
+check(/^P,1346,Georgio Bolero,T,Tailoring,A,1453,53\.[23]\d*,81\.[56]\d*$/.test(pe.s), "pool keeps the map most saw it on and the median spot there");
+await db.exec("set role anon");
+let blockedP = false;
+try { await db.query("select replace_places('x','[]'::jsonb)"); } catch { blockedP = true; }
+check(blockedP, "anon cannot call replace_places");
+await db.exec("reset role");
+if (failures) throw new Error(failures + " failures");
 console.log("SERVER TESTS PASSED");

@@ -71,9 +71,18 @@ Deno.serve(async (req) => {
     p_extra: parsed.extra,
   });
   if (error) return json({ error: "The server rejected this data." }, 400);
+  // Trainer and vendor positions (migration 003). An older database without it still takes the rest.
+  let places = 0;
+  if (parsed.extra.places.length > 0) {
+    const { data: n, error: placeErr } = await db.rpc("replace_places", {
+      p_uid_hash: await sha256(`${parsed.uid}|${salt}`),
+      p_places: parsed.extra.places,
+    });
+    if (!placeErr) places = n ?? 0;
+  }
 
   return json({
     ok: true, mobs: parsed.mobs.length, kills: parsed.kills,
-    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length,
+    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places,
   });
 });

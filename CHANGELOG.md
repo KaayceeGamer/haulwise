@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.4
+- **Shared trainer and vendor positions**: *Share data* now includes where the trainers and vendors you opened stand, and the community data brings back everyone else's. Find trainer and recipe waypoints use them, so NPCs that moved in WoW Forever are right for everyone once one player has been there.
+- Imports skip record types from newer Haulwise versions instead of failing.
+
 ## 0.8.3
 - **The arrow stays until you get there**: it no longer disappears 8 yards out (positions can be a few yards off). Close by it says "you're there, look around"; it goes away when you talk to the trainer or vendor, or when you right-click it.
 - Under the arrow: the direction (north-east...), and the target's and your own coordinates. Its tooltip explains that it points in a straight line through walls and floors. Click it to open the world map.

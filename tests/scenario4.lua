@@ -350,6 +350,16 @@ local srcs = GP:RecipeSources("Some Recipe", vid)
 local hasV = false
 for _, s in ipairs(srcs) do if s.kind == "Vendor" and s.npcID then hasV = true end end
 print("     recipe " .. vid .. " vendor from data: " .. tostring(hasV))
+-- Places go out with Share data and come back from other players.
+local exp = GP:ExportString()
+ok(exp:find(";P,99999,Test Vendor,V,", 1, true), "Share data includes where the vendors you opened stand")
+local _, imported = GP:ParseExport("CF2,abcd1234abcd1234,Friend,1700000000,1.60.1;P,77777,Far Trainer,T,Tailoring,A,1453,10.5,20.25;Z,whatever,from,the,future")
+ok(imported.places[77777] and imported.places[77777].x == 10.5 and imported.places[77777].p == "Tailoring", "and are read back from someone else's data (unknown record types skipped)")
+GP.db.shared.friend = imported
+local found = false
+for _, id in ipairs(GP:TrainersFor("Tailoring")) do if id == 77777 then found = true end end
+ok(found and GP:NpcPlace(77777).from == "players", "other players' trainers count for Find trainer")
+GP.db.shared.friend = nil
 UnitName = function() return "Alkhara" end
 C_Map = nil
 

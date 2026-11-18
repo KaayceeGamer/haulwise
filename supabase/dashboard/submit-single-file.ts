@@ -20,11 +20,13 @@ interface Mob {
 
 interface Trainer { recipe: string; npc: string; zone: string; cost: number; skill: number; prof: string }
 interface Vendor { recipe: string; npc: string; zone: string; price: number; limited: boolean; item: number }
+interface Place { npc: number; name: string; kind: string; prof: string; fac: string; map: number; x: number; y: number }
 interface Extra {
   trainers: Trainer[];
   vendors: Vendor[];
   buys: [number, number][];        // [itemID, price a vendor sells it for]
   recipeItems: [string, number][]; // [recipe name, itemID of the pattern]
+  places: Place[];                 // where trainers and vendors stand (for waypoints)
 }
 interface Parsed { uid: string; build: string; mobs: Mob[]; kills: number; extra: Extra }
 
@@ -83,6 +85,17 @@ function extraRecord(kind: string, f: string[], extra: Parsed["extra"]): void {
     extra.vendors.push({ recipe: text(f[1], "vendor recipe").toLowerCase(), npc: text(f[2], "vendor name"),
       zone: text(f[3], "vendor zone"), price: int(f[4], 100_000_000, "vendor price"), limited: f[5] === "1",
       item: int(f[6], 9_999_999, "vendor item") });
+  } else if (kind === "P") {
+    const coord = (v: string | undefined, what: string) => {
+      if (!v || !/^\d{1,3}(\.\d{1,2})?$/.test(v) || Number(v) > 100) throw new Error(`bad ${what}`);
+      return Number(v);
+    };
+    const k = (f[3] ?? "").trim();
+    if (k !== "T" && k !== "V") throw new Error("bad place kind");
+    const fac = (f[5] ?? "").trim();
+    extra.places.push({ npc: int(f[1], 9_999_999, "place npc"), name: text(f[2], "place name"), kind: k,
+      prof: (f[4] ?? "").trim().slice(0, 40), fac: fac === "A" || fac === "H" ? fac : "",
+      map: int(f[6], 99_999, "place map"), x: coord(f[7], "place x"), y: coord(f[8], "place y") });
   } else if (kind === "B") {
     extra.buys.push([int(f[1], 9_999_999, "vendor item"), int(f[2], 100_000_000, "vendor price")]);
   } else {
@@ -104,17 +117,19 @@ function parseExport(raw: string): Parsed {
 
   const mobs: Mob[] = [];
   const seen = new Set<number>();
-  const extra: Extra = { trainers: [], vendors: [], buys: [], recipeItems: [] };
+  const extra: Extra = { trainers: [], vendors: [], buys: [], recipeItems: [], places: [] };
   let kills = 0;
   for (let i = 1; i < records.length; i++) {
     const f = records[i].split(",");
     const kind = f[0];
     // Trainer, vendor, price and recipe records are extras: one bad one (an empty name from an
     // older addon version) is skipped instead of throwing the whole upload away.
-    if (kind === "T" || kind === "V" || kind === "B" || kind === "R") {
+    if (kind === "T" || kind === "V" || kind === "B" || kind === "R" || kind === "P") {
       try { extraRecord(kind, f, extra); } catch { /* skip this record */ }
       continue;
     }
+    // A record type from a newer addon version: skip it instead of failing the upload.
+    if (/^[A-Z]$/.test(kind)) continue;
     if (f.length < 15) throw new Error(`record ${i} is cut short`);
     const what = `mob ${f[0]}`;
     const npc = int(f[0], 9_999_999, what);
@@ -145,7 +160,7 @@ function parseExport(raw: string): Parsed {
   for (const [k, list] of Object.entries(extra)) {
     if ((list as unknown[]).length > MAX_EXTRA) throw new Error(`too many ${k}`);
   }
-  if (mobs.length === 0 && extra.trainers.length + extra.vendors.length + extra.buys.length === 0) {
+  if (mobs.length === 0 && extra.trainers.length + extra.vendors.length + extra.buys.length + extra.places.length === 0) {
     throw new Error("nothing to share yet: kill and loot something, or visit a trainer or vendor");
   }
   return { uid, build, mobs, kills, extra };
@@ -216,9 +231,18 @@ Deno.serve(async (req) => {
     p_extra: parsed.extra,
   });
   if (error) return json({ error: "The server rejected this data." }, 400);
+  // Trainer and vendor positions (migration 003). An older database without it still takes the rest.
+  let places = 0;
+  if (parsed.extra.places.length > 0) {
+    const { data: n, error: placeErr } = await db.rpc("replace_places", {
+      p_uid_hash: await sha256(`${parsed.uid}|${salt}`),
+      p_places: parsed.extra.places,
+    });
+    if (!placeErr) places = n ?? 0;
+  }
 
   return json({
     ok: true, mobs: parsed.mobs.length, kills: parsed.kills,
-    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length,
+    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places,
   });
 });

@@ -92,13 +92,21 @@ local function questieSpawn(id)
     end
 end
 
+-- What other players saw (community data and friends' imports).
+local function sharedPlace(id)
+    for _, src in ipairs(GP:SharedSources()) do
+        local p = src.places and src.places[id]
+        if p then return p end
+    end
+end
+
 -- Returns { id, name, sub, faction, map, x, y, from } or nil.
 function GP:NpcPlace(id)
-    local own = self.db.places and self.db.places[id]
+    local own = (self.db.places and self.db.places[id]) or sharedPlace(id)
     local data = HaulwiseData and HaulwiseData.npcs and HaulwiseData.npcs[id]
     if own then
         return { id = id, name = own.n or (data and data[1]) or "?", sub = data and data[2], faction = own.f,
-                 map = own.m, x = own.x, y = own.y, from = "you" }
+                 map = own.m, x = own.x, y = own.y, from = (self.db.places and self.db.places[id]) and "you" or "players" }
     end
     if data and data[4] then
         local p = data[4]
@@ -325,6 +333,11 @@ function GP:TrainersFor(prof)
     local ids, seen = {}, {}
     for id, p in pairs(self.db.places or {}) do
         if p.k == "T" and p.p == prof then ids[#ids + 1] = id; seen[id] = true end
+    end
+    for _, src in ipairs(self:SharedSources()) do
+        for id, p in pairs(src.places or {}) do
+            if p.k == "T" and p.p == prof and not seen[id] then ids[#ids + 1] = id; seen[id] = true end
+        end
     end
     for _, id in ipairs(HaulwiseData and HaulwiseData.trainers and HaulwiseData.trainers[prof] or {}) do
         if not seen[id] then ids[#ids + 1] = id end
