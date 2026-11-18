@@ -31,7 +31,7 @@ jobs:
           git push origin "$tag"
       - uses: BigWigsMods/packager@v2
         with:
-          args: -p 1812709
+          args: -p 1812709 -n "Haulwise {project-version}:{package-name}-{project-version}"
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
