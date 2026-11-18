@@ -38,4 +38,5 @@ HUD.lua
 Settings.lua
 Guide.lua
 Tooltip.lua
+QuestRewards.lua
 Minimap.lua

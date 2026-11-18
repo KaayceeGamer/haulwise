@@ -64,6 +64,7 @@ local DEFAULTS = {
         upgradeAdvisor = true,
         usePawn = true,         -- use Pawn's stat weights when Pawn is installed
         upgradePopups = true,
+        questPick = true,       -- mark the quest reward to pick
         sendToAltsAtMailbox = true,
         shareReminder = true,
         ahUpgradeMax = 0,
@@ -228,6 +229,12 @@ GP:On("ADDON_LOADED", function(name)
     GP.session = { start = time(), value = 0, money = 0, kills = 0 }
     if GP.ApplyFonts then GP.ApplyFonts() end
     if GP.OnLoaded then GP:OnLoaded() end
+    if not GP.db.introShown then
+        GP.db.introShown = true
+        C_Timer.After(8, function()
+            GP.Print(L["Welcome! Open Haulwise with the chest button on your minimap, |cffffd040Open window|r on the small box, or /haul. The guide (the i button) explains everything."])
+        end)
+    end
 end)
 
 -- Slash commands -------------------------------------------------------------

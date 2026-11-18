@@ -66,7 +66,8 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     local id = tonumber(link:match("item:(%d+)"))
     local best, src, d = GP:BagValue(id, link, bound)
     local _, outcomes, who, _, estimate = GP:DisenchantValue(link, bound, info)
-    if GP.db.settings.deForMats and src ~= "DE" and GP.CanDisenchantMyself(d) and not (d.de and d.de > 0 and best > d.de * 3) then
+    local sellsFor = math.max(best or 0, d.vendor or 0, (select(11, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(link))) or 0)
+    if GP.db.settings.deForMats and src ~= "DE" and GP.CanDisenchantMyself(d) and not (d.de and d.de > 0 and sellsFor > d.de * 3) then
         tooltip:AddDoubleLine(L["|cffffd040Haulwise|r best: "] .. L["|cffe0c0ffdisenchant for mats|r"], d.de and ("~" .. GP.Coins(d.de, true)) or "", 1, 1, 1, 1, 1, 1)
     else
         tooltip:AddDoubleLine(L["|cffffd040Haulwise|r best: "] .. moveText(src, d, d.deWho), GP.Coins(best, true), 1, 1, 1, 1, 1, 1)

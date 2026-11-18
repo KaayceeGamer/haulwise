@@ -178,6 +178,8 @@ local function build()
     add(check(panel, L["Use Pawn's stat weights"], 200, y, "usePawn",
         L["With Pawn installed, judge gear with the Pawn scales you have switched on for each character (log in on an alt once so Haulwise knows its scales). Off: Haulwise's own weights per talent tree."],
         function() GP:ScanUpgrades() end))
+    y = y - 22
+    add(check(panel, L["Quest reward pick"], 18, y, "questPick", L["When a quest lets you choose a reward, mark the best one: your biggest gear upgrade, or else the one worth the most gold."]))
 
     y = y - 34
     heading(panel, L["Farming"], y)

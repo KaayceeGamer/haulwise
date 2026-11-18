@@ -266,6 +266,22 @@ row.protect, row.d.deWho = nil, { "Someone Else" }
 ok(not GP:MatsDisenchant(row), "only gear you can disenchant yourself")
 GP.db.settings.deForMats = false
 
+-- Quest reward pick --------------------------------------------------------------------------------
+W.quest = { 4865, 7010 }
+GetNumQuestChoices = function() return #W.quest end
+GetQuestItemLink = function(_, i) return LINK(W.quest[i]) end
+GetQuestItemInfo = function(_, i) return W.items[W.quest[i]].name, nil, 1 end
+GetTitleText = function() return "A Test Quest" end
+local qp = GP:QuestRewardPick()
+print("     quest pick: " .. tostring(qp and qp.index) .. " " .. tostring(qp and qp.kind))
+ok(qp and qp.index == 2 and qp.kind == "upgrade", "quest reward: the gear upgrade is picked")
+W.quest = { 17056, 4865 }
+qp = GP:QuestRewardPick()
+ok(qp and qp.index == 2 and qp.kind == "value", "no upgrade: the reward worth the most")
+fire("QUEST_COMPLETE")
+W.quest = { 4865 }
+ok(GP:QuestRewardPick() == nil, "nothing to choose with one reward")
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

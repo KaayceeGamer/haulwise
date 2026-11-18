@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.7.2
+- **Quest reward pick**: when a quest lets you choose, Haulwise marks the best reward with a gold frame and says why in chat: your biggest gear upgrade, or else the one worth the most (vendor, auction house or disenchanting). Off in Settings → Gear.
+- **Easier to find the big window**: the small box has an **Open window** button instead of a tiny icon, and a first-time tip says where everything is.
 - **Farm → By zone**: no more question-mark icons over the zone names, the Rank button (Safe/Expected) is there too, and the best zone line shows the same figure the zones are ranked by.
 
 ## 0.7.1
