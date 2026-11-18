@@ -132,9 +132,15 @@ function GP.CanDisenchantMyself(d)
     return false
 end
 
+-- Not when selling pays more than 3 times what the mats are worth: that's gold thrown away
+-- (an 88s ring for 13s of dust). Gear whose mats have no price yet still counts.
+local MATS_MAX_RATIO = 3
 function GP:MatsDisenchant(r)
     if not self.db.settings.deForMats or r.protect or r.src == "DE" then return false end
-    return GP.CanDisenchantMyself(r.d)
+    if not GP.CanDisenchantMyself(r.d) then return false end
+    local de = r.d.de
+    if de and de > 0 and (r.unit or 0) > de * MATS_MAX_RATIO then return false end
+    return true
 end
 
 -- What to do with an item that isn't protected: the move that gets the most for it.

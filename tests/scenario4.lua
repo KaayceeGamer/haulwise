@@ -252,12 +252,14 @@ PawnIsReady = nil
 PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx = oldInit, oldItem, oldSingle, oldAll
 -- Disenchant for mats: disenchant gear you can do yourself even when a vendor pays more ----------
 local me = UnitName("player")
-local row = { src = "V", total = 2700, count = 1, d = { de = 1300, deOutcomes = { {} }, deWho = { me } } }
+local row = { src = "V", unit = 2700, total = 2700, count = 1, d = { de = 1300, deOutcomes = { {} }, deWho = { me } } }
 GP.db.settings.deForMats = false
 ok(not GP:BagAdvice(row):find("mats"), "off: the move that pays most (vendor)")
 GP.db.settings.deForMats = true
 local adv = GP:BagAdvice(row)
 ok(adv:find("for mats") and adv:find("less than selling"), "on: disenchant for mats, and what it costs you")
+local pricey = { src = "V", unit = 8827, total = 8827, count = 1, d = { de = 1350, deOutcomes = { {} }, deWho = { me } } }
+ok(not GP:MatsDisenchant(pricey), "not when selling pays over 3 times more (88s ring for 13s of dust)")
 row.protect = "kept"
 ok(not GP:MatsDisenchant(row), "kept items are never disenchanted")
 row.protect, row.d.deWho = nil, { "Someone Else" }
