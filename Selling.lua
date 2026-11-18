@@ -5,7 +5,7 @@ local _, GP = ...
 local L = GP.L
 
 local AH_CUT = 0.95
-local LOWBALL = 0.8   -- ignore a cheapest listing under 80% of the usual price: it's a deal, not the market
+local LOWBALL = 0.8   -- a few listings under 80% of the market price are a bargain, not the market
 local panel, current
 
 local function getItemID(loc)
@@ -14,42 +14,66 @@ local function getItemID(loc)
     return ok and id or nil
 end
 
--- Cheapest live listing, if Blizzard's sell frame search has come back.
-local function liveCheapest(id, loc, commodity)
-    if not C_AuctionHouse then return nil end
+-- The live listings, cheapest first (up to 30), if Blizzard's sell frame search has come back.
+local function liveListings(id, loc, commodity)
+    local out = {}
+    if not C_AuctionHouse then return out end
     if commodity then
-        local ok, info = pcall(C_AuctionHouse.GetCommoditySearchResultInfo, id, 1)
-        if ok and info and info.unitPrice then return info.unitPrice, info.quantity end
+        local okN, n = pcall(C_AuctionHouse.GetNumCommoditySearchResults, id)
+        for i = 1, math.min(30, (okN and n) or 1) do
+            local ok, info = pcall(C_AuctionHouse.GetCommoditySearchResultInfo, id, i)
+            if not (ok and info and info.unitPrice) then break end
+            out[#out + 1] = { u = info.unitPrice, c = info.quantity or 1 }
+        end
     else
         local ok, key = pcall(C_AuctionHouse.GetItemKeyFromItem, loc)
         if ok and key then
-            local ok2, info = pcall(C_AuctionHouse.GetItemSearchResultInfo, key, 1)
-            if ok2 and info and info.buyoutAmount then return info.buyoutAmount, info.quantity end
+            local okN, n = pcall(C_AuctionHouse.GetNumItemSearchResults, key)
+            for i = 1, math.min(30, (okN and n) or 1) do
+                local ok2, info = pcall(C_AuctionHouse.GetItemSearchResultInfo, key, i)
+                if not (ok2 and info and info.buyoutAmount) then break end
+                local q = info.quantity or 1
+                out[#out + 1] = { u = info.buyoutAmount / math.max(1, q), c = q }
+            end
         end
     end
-    return nil
+    return out
 end
 
--- The suggestion: undercut the cheapest listing by 1 copper, unless it's far below the usual
--- price (then the usual price), and never below what a vendor pays after the AH cut.
+-- Where the market really is: the price at which a handful of units are listed. A few cheap
+-- ones under that are someone's bargain (or mistake); undercutting them throws gold away.
+local function marketWall(list, need)
+    local run = 0
+    for _, l in ipairs(list) do
+        run = run + (l.c or 1)
+        if run >= need then return l.u end
+    end
+    return list[#list] and list[#list].u
+end
+
+-- The suggestion: 1 copper under the market (the cheapest listing, unless only a few units sit
+-- far below the rest), and never below what a vendor pays after the AH cut.
 function GP:SellAdvice(id, loc, commodity)
     local usual = self:MarketValue(id)
-    local scanned = self:Price(id)
-    local live = liveCheapest(id, loc, commodity)
-    local cheapest = live or (self:Cheapest(id)[1] and self:Cheapest(id)[1].u) or scanned
+    local list = liveListings(id, loc, commodity)
+    if #list == 0 then list = self:Cheapest(id) end
+    local cheapest = list[1] and list[1].u
     local vendor = self:VendorSell(id) or 0
     local price, why
-    if cheapest and usual and cheapest < usual * LOWBALL then
-        price, why = usual, L["the cheapest listing is far below the usual price, so it's set to the usual price"]
-    elseif cheapest then
-        price, why = math.max(1, math.floor(cheapest) - 1), L["1 copper under the cheapest listing"]
+    if cheapest then
+        local wall = marketWall(list, commodity and 10 or 3) or cheapest
+        if cheapest < wall * LOWBALL then
+            price, why = wall - 1, L["a few cheap listings sit far below the rest; this undercuts the main market"]
+        else
+            price, why = cheapest - 1, L["1 copper under the cheapest listing"]
+        end
     elseif usual then
         price, why = usual, L["nobody else is selling it: the usual price"]
     end
+    if price then price = math.max(1, math.floor(price)) end
     local vendorBetter = price and vendor > 0 and price * AH_CUT < vendor
     if price and vendor > 0 then price = math.max(price, math.ceil(vendor / AH_CUT)) end
-    return { price = price and math.floor(price), why = why, live = live, usual = usual, vendor = vendor,
-             vendorBetter = vendorBetter }
+    return { price = price, why = why, live = cheapest, usual = usual, vendor = vendor, vendorBetter = vendorBetter }
 end
 
 local function sellFrame()

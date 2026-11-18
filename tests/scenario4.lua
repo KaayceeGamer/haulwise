@@ -95,6 +95,17 @@ W.items[4307] = { name = "Vendor Junk", sell = 500, k = 15 }
 GP._test.finishPrices({ [4307] = { { 300, 10 } } })
 local v = GP:SellAdvice(4307, nil, true)
 ok(v.vendorBetter and v.price >= 500 / 0.95, "warns when a vendor pays more, never suggests below vendor")
+-- A deep market at 260 (like Fadeleaf: 48 at 2s60, then more): undercut it, not the old "usual".
+C_AuctionHouse = C_AuctionHouse or {}
+local live = { { 260, 48 }, { 265, 71 }, { 273, 18 } }
+C_AuctionHouse.GetNumCommoditySearchResults = function() return #live end
+C_AuctionHouse.GetCommoditySearchResultInfo = function(_, i) local l = live[i]; return l and { unitPrice = l[1], quantity = l[2] } end
+local f = GP:SellAdvice(4306, nil, true)
+ok(f.price == 259, "deep market: 1 copper under it (" .. tostring(f.price) .. ")")
+live = { { 100, 2 }, { 255, 30 }, { 260, 40 } }
+f = GP:SellAdvice(4306, nil, true)
+ok(f.price == 254, "two cheap ones far below the rest: undercut the main market (" .. tostring(f.price) .. ")")
+C_AuctionHouse.GetNumCommoditySearchResults, C_AuctionHouse.GetCommoditySearchResultInfo = nil, nil
 
 -- Mats for crafters -----------------------------------------------------------------------------
 GP.db.chars["Alkhara-Testrealm"].recipes = {
