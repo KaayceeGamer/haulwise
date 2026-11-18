@@ -155,7 +155,7 @@
 
     <div class="tally" aria-live="polite">
       <p id="tally">Counting the shared kills…</p>
-      <small id="tally-when">The pool is rebuilt every night.</small>
+      <small id="tally-when">The pool is rebuilt every hour.</small>
     </div>
 
     <section aria-labelledby="share">
@@ -176,7 +176,7 @@
 
     <section aria-labelledby="get">
       <h2 id="get">Get the newest community data</h2>
-      <p>Every Haulwise release already includes the pool, refreshed weekly. To get tonight's numbers sooner, copy them here and type <code>/haul import</code> in game.</p>
+      <p>Haulwise brings the pool along and gets a fresh copy every day through CurseForge. To get the latest numbers right now, copy them here and type <code>/haul import</code> in game.</p>
       <button class="quiet" id="copy">Copy community data</button>
       <div class="msg" id="copymsg" role="status"></div>
     </section>
@@ -259,7 +259,7 @@
       $("tally").innerHTML = text;
       if (s.refreshed_at) {
         const d = new Date(s.refreshed_at).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
-        $("tally-when").textContent = `Last counted ${d}. The pool is rebuilt every night.`;
+        $("tally-when").textContent = `Last counted ${d}. The pool is rebuilt every hour.`;
       }
     } catch {
       $("tally").textContent = "Every shared kill is pooled into drop rates for everyone.";
@@ -277,7 +277,7 @@
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/${SUBMIT_FUNCTION}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: data });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) say($("msg"), `Shared: ${n(j.kills)} kills on ${n(j.mobs)} mobs, ${n(j.trainers)} trainer and ${n(j.vendors)} vendor recipes. They'll be in the community data after tonight's update.`, true);
+      if (r.ok && j.ok) say($("msg"), `Shared: ${n(j.kills)} kills on ${n(j.mobs)} mobs, ${n(j.trainers)} trainer and ${n(j.vendors)} vendor recipes. They'll be in the community data within the hour.`, true);
       else say($("msg"), j.error || "The server didn't accept it. Try again in a few minutes.", false);
     } catch {
       say($("msg"), "Couldn't reach the server. Check your connection and try again.", false);

@@ -176,7 +176,7 @@ function GP:ImportString(str)
     return ok, ok and result or (L["Import failed: "] .. tostring(result):gsub("^.-:%d+: ", ""))
 end
 
--- Community data shipped inside the addon (Data.lua, rebuilt weekly from everyone's uploads).
+-- Community data shipped inside the addon (Data.lua, rebuilt daily from everyone's uploads).
 -- Kept in memory only; a newer string pasted with /haul import replaces it.
 function GP:LoadBundledCommunity()
     if type(Haulwise_Community) ~= "string" or Haulwise_Community == "" then return end

@@ -1,10 +1,10 @@
-# Every Wednesday: pull the pooled community data into Data.lua and commit it. When a CurseForge
+# Every day: pull the pooled community data into Data.lua and commit it. When a CurseForge
 # API key is set (secret CF_API_KEY), also release it as a new file so everyone gets the bigger
 # data pool through the CurseForge app.
 name: Community data
 on:
   schedule:
-    - cron: "37 4 * * 3"
+    - cron: "37 4 * * *"
   workflow_dispatch:
 
 permissions:

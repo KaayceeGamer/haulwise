@@ -48,7 +48,7 @@ Every release includes **community drop rates**, pooled from everyone who choose
 
 Sharing is anonymous: no character names, no IPs. Your newest upload replaces your old one, so nothing is counted twice. Each player's weight per mob is capped, and uploads that don't match everyone else's drop rates are left out, so one player can't skew the numbers.
 
-The community data is rebuilt every night. A new release ships each week. You can also get the latest data from the site and paste it in with `/haul import`.
+The community data is rebuilt every hour, and a data update ships through CurseForge every day it has changed. You can also get the latest data from the site and paste it in with `/haul import`.
 
 ## Gold making tabs
 

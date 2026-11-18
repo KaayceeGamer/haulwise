@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.5
+- **Fresher community data**: the pool is rebuilt every hour (was nightly), and Haulwise gets the newest data through CurseForge every day it has changed (was weekly).
+
 ## 0.8.4
 - **Shared trainer and vendor positions**: *Share data* now includes where the trainers and vendors you opened stand, and the community data brings back everyone else's. Find trainer and recipe waypoints use them, so NPCs that moved in WoW Forever are right for everyone once one player has been there.
 - Imports skip record types from newer Haulwise versions instead of failing.
