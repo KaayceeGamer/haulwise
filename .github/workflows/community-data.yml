@@ -1,5 +1,6 @@
-# Every Wednesday: pull the pooled community data into Data.lua and, if it changed,
-# release a new version to CurseForge so everyone gets the bigger data pool.
+# Every Wednesday: pull the pooled community data into Data.lua and commit it. When a CurseForge
+# API key is set (secret CF_API_KEY), also release it as a new file so everyone gets the bigger
+# data pool through the CurseForge app.
 name: Community data
 on:
   schedule:
@@ -12,11 +13,13 @@ permissions:
 jobs:
   update:
     runs-on: ubuntu-latest
+    env:
+      HAS_CF_KEY: ${{ secrets.CF_API_KEY != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
       - id: data
@@ -25,20 +28,27 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
       - if: steps.data.outputs.changed == 'true'
-        id: tag
+        name: Commit Data.lua
         run: |
           git config user.name "haulwise-bot"
           git config user.email "haulwise-bot@users.noreply.github.com"
           git add Data.lua
           git commit -m "Community data $(date -u +%Y-%m-%d)"
-          base=$(git describe --tags --abbrev=0 --match 'v*' | sed 's/-data.*//')
-          tag="${base}-data$(date -u +%Y%m%d)"
+          git push origin HEAD:main
+      # The version comes from Core.lua (GP.VERSION), so this works before any tag exists.
+      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true'
+        name: Tag the data release
+        run: |
+          version=$(grep -o 'GP.VERSION = "[^"]*"' Core.lua | cut -d'"' -f2)
+          tag="v${version}-data$(date -u +%Y%m%d)"
           git tag "$tag"
-          git push origin HEAD --tags
-      - if: steps.data.outputs.changed == 'true'
+          git push origin "$tag"
+      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true'
         uses: BigWigsMods/packager@v2
         with:
           args: -p 1812709
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY != 'true'
+        run: echo "::notice::Data.lua updated. No CF_API_KEY secret yet, so nothing was uploaded to CurseForge."
