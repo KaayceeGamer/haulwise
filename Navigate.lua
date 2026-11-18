@@ -63,6 +63,10 @@ local function reached()
     local name = GP.Safe(UnitName("npc"))
     if (target.npc and id == target.npc) or (name and name == target.name) then
         GP.Print(string.format(L["You've arrived: %s."], target.title))
+        if target.tomtom and GP.tomtomUid and TomTom and TomTom.RemoveWaypoint then
+            pcall(TomTom.RemoveWaypoint, TomTom, GP.tomtomUid)
+            GP.tomtomUid = nil
+        end
         target = nil
         if arrow then arrow:Hide() end
     end
@@ -302,7 +306,14 @@ function GP:Waypoint(place, why)
     local title = place.name .. (place.sub and place.sub ~= "" and (" <" .. place.sub .. ">") or "")
     local tomtom = _G.TomTom
     if tomtom and tomtom.AddWaypoint then
-        pcall(tomtom.AddWaypoint, tomtom, place.map, place.x / 100, place.y / 100, { title = title, from = "Haulwise" })
+        -- One Haulwise waypoint at a time, and TomTom mustn't clear it 10 yards out (positions can be
+        -- a few yards off): it goes when you talk to the NPC, like Haulwise's own arrow.
+        if GP.tomtomUid and tomtom.RemoveWaypoint then pcall(tomtom.RemoveWaypoint, tomtom, GP.tomtomUid) end
+        local ok, uid = pcall(tomtom.AddWaypoint, tomtom, place.map, place.x / 100, place.y / 100,
+            { title = title, from = "Haulwise", persistent = false, cleardistance = 0, arrivaldistance = 5 })
+        GP.tomtomUid = ok and uid or nil
+        target = { npc = place.id, name = place.name, title = title, tomtom = true }
+        if arrow then arrow:Hide() end
     else
         -- The game's pin on the map, plus Haulwise's own arrow on screen.
         if C_Map and C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates then

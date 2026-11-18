@@ -350,6 +350,19 @@ local srcs = GP:RecipeSources("Some Recipe", vid)
 local hasV = false
 for _, s in ipairs(srcs) do if s.kind == "Vendor" and s.npcID then hasV = true end end
 print("     recipe " .. vid .. " vendor from data: " .. tostring(hasV))
+-- With TomTom: its arrow, not cleared 10 yards out, removed when you talk to the NPC.
+local tt = { added = {}, removed = {} }
+TomTom = { AddWaypoint = function(_, m, x, y, o) tt.opts = o; tt.added[#tt.added + 1] = m; return "uid" .. #tt.added end,
+           RemoveWaypoint = function(_, uid) tt.removed[#tt.removed + 1] = uid end }
+GP:Waypoint({ id = 1346, name = "Georgio Bolero", map = 1453, x = 53.2, y = 81.5 })
+ok(tt.opts and tt.opts.cleardistance == 0, "TomTom's waypoint isn't cleared before you get there")
+GP:Waypoint({ id = 1346, name = "Georgio Bolero", map = 1453, x = 53.2, y = 81.5 })
+ok(tt.removed[1] == "uid1", "a new Haulwise waypoint replaces the old one")
+UnitGUID = function() return "Creature-0-1-2-3-1346-0000" end
+fire("GOSSIP_SHOW")
+ok(tt.removed[2] == "uid2", "and it's removed when you talk to them")
+TomTom = nil
+
 -- Places go out with Share data and come back from other players.
 local exp = GP:ExportString()
 ok(exp:find(";P,99999,Test Vendor,V,", 1, true), "Share data includes where the vendors you opened stand")
