@@ -106,6 +106,12 @@
   button:disabled { opacity: .55; cursor: default; transform: none; }
   button.quiet { background: transparent; color: var(--gold-pale); border: 1px solid var(--rim); box-shadow: none; }
   button.quiet:hover { border-color: var(--gold); }
+  a.cta { display: inline-block; margin: -16px 0 40px; padding: 12px 22px; border-radius: 6px; background: linear-gradient(#f7c95c, #e8a93a);
+          color: #241806; font: 700 17px/1.2 var(--serif); text-decoration: none; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  a.cta:hover { filter: brightness(1.06); }
+  a.cta:focus-visible { outline: 2px solid var(--gold-pale); outline-offset: 3px; }
+  ol.start { margin: 0; padding-left: 1.3em; }
+  ol.start li { margin: 6px 0; }
   .msg { margin-top: 14px; font-size: 16px; min-height: 1.5em; }
   .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
 
@@ -144,7 +150,8 @@
 
   <main>
     <h1>Every kill makes everyone's drop rates better.</h1>
-    <p class="lede">Haulwise is a free addon for WoW Forever that shows what everything you carry is worth, which gear is an upgrade and where the gold is. Its drop rates and recipe sources come from players like you.</p>
+    <p class="lede">Haulwise is a free addon for WoW Forever that shows what everything you carry is worth, which gear is an upgrade, where the gold is, and the way to your next trainer. Its drop rates and recipe sources come from players like you. In English, German and French.</p>
+    <a class="cta" id="cf-cta" href="https://www.curseforge.com/wow/addons/haulwise">Get Haulwise on CurseForge</a>
 
     <div class="tally" aria-live="polite">
       <p id="tally">Counting the shared kills…</p>
@@ -161,7 +168,7 @@
       </ol>
       <textarea id="data" placeholder="Paste your export here. It starts with CF2," spellcheck="false" aria-label="Your Haulwise export"></textarea>
       <label class="consent"><input type="checkbox" id="consent">
-        <span>Share my kills, loot, and the recipes and vendor prices I've seen, anonymously. They're pooled with everyone else's and published as community data.</span></label>
+        <span>Share my kills, loot, the recipes and vendor prices I've seen, and where the trainers and vendors I opened stand, anonymously. They're pooled with everyone else's and published as community data.</span></label>
       <button id="send">Share my data</button>
       <div class="msg" id="msg" role="status"></div>
       <p class="muted">Share again whenever you like. Your new upload replaces your old one, so nothing is counted twice.</p>
@@ -177,11 +184,26 @@
     <section aria-labelledby="what">
       <h2 id="what">What the addon does</h2>
       <dl class="does">
-        <dt>Bags</dt><dd>Values every item at the best of vendor, auction house and disenchant. When your bags are full, it offers a one-click swap and never touches crafting materials, quest items or upgrades.</dd>
-        <dt>Gear</dt><dd>Checks new gear against what you and your alts wear, using your Pawn scales or built-in stat weights.</dd>
-        <dt>Farming</dt><dd>Ranks mobs by gold per hour for your character, from real drop rates and your own kill speed.</dd>
-        <dt>Gold</dt><dd>Crafting profits, recipes worth learning and where to get them, auction deals and weekly price trends.</dd>
+        <dt>Bags</dt><dd>Values every item at the best of vendor, auction house and disenchant, and says the best move for each: sell, auction, disenchant, or send it to an alt. When your bags are full, it offers a one-click swap and never touches crafting materials, quest items or upgrades. Leveling Enchanting? <i>Disenchant for mats</i> puts the dust first.</dd>
+        <dt>Gear</dt><dd>Checks new gear against what you and your alts wear, using your Pawn scales or built-in stat weights. It finds upgrades for sale on the auction house, ranked by upgrade per gold, and marks the best quest reward to pick.</dd>
+        <dt>Farming</dt><dd>Ranks mobs and zones by gold per hour for your character, from real drop rates and your own kill speed.</dd>
+        <dt>Crafting</dt><dd>Profit per recipe, a shopping list for what you want to make, the cheapest way to skill up, and recipes worth learning with where to get them.</dd>
+        <dt>Waypoints</dt><dd>An arrow to the nearest trainer who teaches your next rank, or to the vendor who sells a recipe. Uses TomTom when you have it.</dd>
+        <dt>Auction house</dt><dd>Deals under the usual price, vendor flips, price trends, and a suggested price when you sell. You always press the buttons yourself.</dd>
       </dl>
+    </section>
+
+    <section aria-labelledby="start">
+      <h2 id="start">Getting started</h2>
+      <p>Install Haulwise from CurseForge, then spend five minutes so it knows what you have:</p>
+      <ol class="start">
+        <li>Open each of your <b>profession windows</b> once.</li>
+        <li>Visit a <b>trade goods vendor</b> once.</li>
+        <li>Press <b>Scan AH</b> at the auction house. Once a day is ideal.</li>
+        <li><b>Log in on each of your characters</b> once.</li>
+        <li>Open your <b>bank</b> and <b>mailbox</b> once.</li>
+      </ol>
+      <p>Then just play. Open Haulwise with the chest button on your minimap or <code>/haul</code>; the <b>i</b> button inside explains everything.</p>
     </section>
 
     <section aria-labelledby="privacy">
@@ -190,7 +212,7 @@
         <dt>Only what you paste</dt>
         <dd>The addon can't reach the internet. Data leaves your PC only when you paste it here.</dd>
         <dt>What's in an export</dt>
-        <dd>Kills, loot, coins, levels and zones per mob; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; and a random id the addon made up, so a new upload replaces your old one.</dd>
+        <dd>Kills, loot, coins, levels and zones per mob; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; where the trainers and vendors you opened stand (map and coordinates); and a random id the addon made up, so a new upload replaces your old one.</dd>
         <dt>What's kept</dt>
         <dd>Those numbers, stored under a one-way hash of the random id. Character names are thrown away. No accounts, no email, no cookies, no tracking.</dd>
         <dt>Your IP address</dt>
@@ -201,6 +223,7 @@
 
   <footer>
     <p>Haulwise is free and open source, with no ads and no money involved. Questions and bug reports go in the comments on its CurseForge page or in <a href="https://github.com/KaayceeGamer/haulwise/issues">GitHub issues</a>.</p>
+    <p>Trainer and vendor positions in Haulwise Data come from the Forever data of <a href="https://github.com/Questie/QuestieDB">QuestieDB</a> (GPLv3). Thanks to the Questie team and its contributors; Haulwise isn't affiliated with them.</p>
     <p>A fan project, not affiliated with Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment, Inc.</p>
   </footer>
 </div>
