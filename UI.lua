@@ -146,6 +146,34 @@ local function current()
     if v and TAB[tab .. "_" .. v] then return tab .. "_" .. v end
     return tab
 end
+-- Profession filter (Craft, Skill up, Recipes): one button that cycles All -> each profession.
+-- Kept per character, since each has its own professions.
+local function profFilter() return GP:Char().profFilter end
+local function byProf(rows)
+    local p = profFilter()
+    if not p then return rows end
+    local out = {}
+    for _, r in ipairs(rows) do if r.prof == p then out[#out + 1] = r end end
+    return out
+end
+local function profToggle()
+    return { kind = "cycle",
+        label = function()
+            local p = profFilter()
+            return L["Profession: "] .. (p and L[p] or L["All"])
+        end,
+        click = function()
+            local list = {}
+            for name in pairs(GP:MyProfessions()) do if GP.RECIPE_SUBCLASS[name] then list[#list + 1] = name end end
+            table.sort(list)
+            local cur, idx = profFilter(), 0
+            for i, n in ipairs(list) do if n == cur then idx = i end end
+            GP:Char().profFilter = list[idx + 1] -- after the last one: back to All
+            GP.scrollToTop = true
+        end,
+        tip = function() return L["Show one profession, or all of them. Click to switch."] end }
+end
+
 local function pawnToggle()
     return { L["Use Pawn"], nil, L["Compare gear with your Pawn scales instead of Haulwise's own stat weights."],
         function() return GP.PawnLoaded() end,
@@ -249,7 +277,7 @@ TAB.craft = {
         { key = "listed", title = L["On AH"], w = 64, align = "RIGHT" },
         { key = "trend", title = L["7 days"], w = 64, align = "RIGHT" },
     },
-    rows = function() return GP:CraftRows() end,
+    rows = function() return byProf(GP:CraftRows()) end,
     bar = function(r) return #r.missing > 0 and 0 or r.profit end,
     cells = function(r)
         local name = (r.outQty > 1 and string.format("%s x%g", itemName(r.out), r.outQty) or itemName(r.out))
@@ -278,6 +306,7 @@ TAB.craft = {
     end,
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
+        profToggle(),
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)
@@ -373,7 +402,7 @@ TAB.recipes = {
         { key = "get", title = L["How to get it"], w = 290 },
         { key = "pay", title = L["Pays back"], w = 110, align = "RIGHT" },
     },
-    rows = function() return GP:RecipeRows() end,
+    rows = function() return byProf(GP:RecipeRows()) end,
     bar = function(r) return (#(r.missing or {}) == 0 and r.profit) or 0 end,
     cells = function(r)
         local parts = {}
@@ -410,6 +439,7 @@ TAB.recipes = {
     end,
     empty = L["No recipes to suggest yet.\n\nOpen your profession windows once and scan the AH. Recipes you don't know yet are ranked by profit per craft and how fast they pay for themselves."],
     toggles = {
+        profToggle(),
         { L["Show recipes far above my skill"], "recipesShowAll", L["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."] },
     },
     click = function(r) if r.itemID then GP:SearchAH(r.itemID) end end,
@@ -746,7 +776,7 @@ TAB.craft_skill = {
         { key = "back", title = L["Sell result"], w = 96, align = "RIGHT" },
         { key = "point", title = L["Per point"], w = 110, align = "RIGHT", bar = true },
     },
-    rows = function() return GP:SkillRows() end,
+    rows = function() return byProf(GP:SkillRows()) end,
     bar = function(r) return r.perPoint and -r.perPoint or 0 end,
     cells = function(r)
         local col = ({ [0] = L["|cffff8040orange|r"], [1] = L["|cffffff00yellow|r"], [2] = L["|cff40c040green|r"] })[r.d] or grey("?")
@@ -789,6 +819,7 @@ TAB.craft_skill = {
     end,
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
+        profToggle(),
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)
@@ -1383,6 +1414,18 @@ local function buildToggles(t)
         else
         local key = spec[2]
         local b = toggleBar[current() .. i]
+        if not b and spec.kind == "cycle" then
+            b = GP.FlatButton(f.toggleRow, "", 120, 18)
+            b.sync = function()
+                b.label:SetText(spec.label())
+                b:SetWidth(math.max(90, (b.label:GetStringWidth() or 80) + 22))
+                b:SetLabel(spec.label())
+            end
+            b:SetScript("OnClick", function() spec.click(); GP:RefreshUI() end)
+            tip(b, function(tt) tt:AddLine(spec.tip(), 1, 1, 1, true) end)
+            toggleBar[current() .. i] = b
+            toggleBar[#toggleBar + 1] = b
+        end
         if not b then
             local get = spec.get or function() return S()[key] end
             local set = spec.set or function(v) S()[key] = v end

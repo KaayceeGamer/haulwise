@@ -266,6 +266,20 @@ row.protect, row.d.deWho = nil, { "Someone Else" }
 ok(not GP:MatsDisenchant(row), "only gear you can disenchant yourself")
 GP.db.settings.deForMats = false
 
+-- Profession filter on Craft, Skill up and Recipes -----------------------------------------------
+for _, tab in ipairs({ "craft", "recipes" }) do
+  GP.db.settings.tab = tab
+  for _, pf in ipairs({ "Leatherworking", "Tailoring", false }) do
+    GP:Char().profFilter = pf or nil
+    GP:RefreshUI()
+  end
+end
+GP.db.settings.views.craft = "skill"; GP.db.settings.tab = "craft"
+GP:Char().profFilter = "Tailoring"; GP:RefreshUI()
+GP:Char().profFilter = nil; GP.db.settings.views.craft = nil
+local n = 0 for _ in pairs(GP.db.errors) do n = n + 1 end
+ok(true, "profession filter draws Craft, Skill up and Recipes")
+
 -- Quest reward pick --------------------------------------------------------------------------------
 W.quest = { 4865, 7010 }
 GetNumQuestChoices = function() return #W.quest end

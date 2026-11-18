@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.4
+- **Pick a profession** in Craft, Skill up and Recipes: the *Profession* button switches between All and each of your professions (remembered per character).
+
 ## 0.7.3
 - **Deals** are more careful before there are 3 days of scans: the resale price is the next listing above the cheap ones, not one scan's middle price, and anything over 300% profit is left out. No more "3140%" wine.
 - **Recipes**: "Worth learning" names the recipe that pays for itself fastest, and only if that's within 100 crafts.
