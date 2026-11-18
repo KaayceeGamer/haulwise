@@ -2,6 +2,7 @@
 
 ## 0.8.6
 - **With TomTom**: the waypoint no longer disappears 10 yards before the NPC. It goes when you talk to them, and a new Haulwise waypoint replaces the old one instead of piling up.
+- **Quest rewards**: a profession tool you need and don't have (Mining Pick, Skinning Knife, Blacksmith Hammer, Arclight Spanner) is now the Haulwise pick.
 
 ## 0.8.5
 - **Fresher community data**: the pool is rebuilt every hour (was nightly), and Haulwise gets the newest data through CurseForge every day it has changed (was weekly).

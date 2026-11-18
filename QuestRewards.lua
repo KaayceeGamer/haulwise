@@ -1,15 +1,40 @@
 -- Haulwise: which quest reward to pick. When a quest offers a choice, Haulwise marks one:
 -- the biggest gear upgrade for you (Pawn or Haulwise weights, like the Upgrade Advisor), and when
 -- none of them is an upgrade, the one worth the most (vendor, auction house or disenchanting).
+-- A profession tool you need and don't have (a Mining Pick when you mine) comes first.
 local _, GP = ...
 local L = GP.L
+
+-- Tools a profession can't work without, and the items that count as having one.
+local TOOLS = {
+    [2901] = { prof = "Mining", any = { 2901, 9465, 20723 } },        -- Mining Pick (Digmaster 5000, Brann's Trusty Pick)
+    [7005] = { prof = "Skinning", any = { 7005, 12709, 19901 } },     -- Skinning Knife (Finkle's Skinner, Zulian Slicer)
+    [5956] = { prof = "Blacksmithing", any = { 5956 } },             -- Blacksmith Hammer
+    [6219] = { prof = "Engineering", any = { 6219 } },               -- Arclight Spanner
+}
+
+local function owned(id)
+    local get = (C_Item and C_Item.GetItemCount) or GetItemCount
+    if not get then return false end
+    local ok, n = pcall(get, id, true)
+    return ok and (GP.Safe(n) or 0) > 0
+end
+
+-- The profession this reward is a missing tool for, or nil.
+local function missingTool(id, profs)
+    local t = TOOLS[id]
+    if not t or not profs[t.prof] then return nil end
+    for _, have in ipairs(t.any) do if owned(have) then return nil end end
+    return t.prof
+end
 
 -- Returns pick = { index, link, kind = "upgrade"|"value", gain, slotName, value, src }, or nil.
 function GP:QuestRewardPick()
     local n = GetNumQuestChoices and GetNumQuestChoices() or 0
     if n < 2 then return nil end
     local who = GP.MeForGear and GP.MeForGear()
-    local bestUp, bestVal
+    local profs = GP.MyProfessions and GP:MyProfessions() or {}
+    local tool, bestUp, bestVal
     for i = 1, n do
         local link = GetQuestItemLink and GetQuestItemLink("choice", i)
         if not link then return nil, true end -- not loaded yet: try again in a moment
@@ -22,13 +47,15 @@ function GP:QuestRewardPick()
             bestUp = { index = i, link = link, kind = "upgrade", gain = up.gain, slotName = up.slotName }
         end
         local id = tonumber(link:match("item:(%d+)"))
+        local prof = not tool and missingTool(id, profs)
+        if prof then tool = { index = i, link = link, kind = "tool", prof = prof } end
         local unit, src = self:BagValue(id, link, info.bindType == 1)
         local value = (unit or 0) * count
         if not bestVal or value > bestVal.value then
             bestVal = { index = i, link = link, kind = "value", value = value, src = src }
         end
     end
-    return bestUp or bestVal
+    return tool or bestUp or bestVal
 end
 
 local function rewardButton(i)
@@ -41,6 +68,9 @@ local mark
 local function hideMark() if mark then mark:Hide() end end
 
 local function why(p)
+    if p.kind == "tool" then
+        return string.format(L["you need it for %s and don't have one"], L[p.prof])
+    end
     if p.kind == "upgrade" then
         return string.format(L["upgrade +%.0f%% (%s)"], p.gain * 100, p.slotName or "?")
     end

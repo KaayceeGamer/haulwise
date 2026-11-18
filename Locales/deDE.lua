@@ -334,6 +334,7 @@ GP.LOCALES.deDE = {
     ["no answer from the auction house within a minute (it allows one full scan every 15 minutes)"] = "keine Antwort vom Auktionshaus innerhalb einer Minute (es erlaubt einen vollen Scan alle 15 Minuten)",
     ["Open the auction house, then click again: "] = "Öffne das Auktionshaus und klick dann noch einmal: ",
     ["the auction house was closed before it answered"] = "das Auktionshaus wurde geschlossen, bevor es geantwortet hat",
+    ["you need it for %s and don't have one"] = "du brauchst es für %s und hast keins",
     ["upgrade +%.0f%% (%s)"] = "Verbesserung +%.0f%% (%s)",
     ["disenchant"] = "entzaubern",
     ["auction house"] = "Auktionshaus",

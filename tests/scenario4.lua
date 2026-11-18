@@ -389,6 +389,14 @@ W.quest = { 17056, 4865 }
 qp = GP:QuestRewardPick()
 ok(qp and qp.index == 2 and qp.kind == "value", "no upgrade: the reward worth the most")
 fire("QUEST_COMPLETE")
+W.items[7005] = { name = "Skinning Knife", sell = 1, k = 2, sk = 7 }
+W.quest = { 4865, 7005 }
+W.bags = { [0] = { size = 16, slots = {} } }
+qp = GP:QuestRewardPick()
+ok(qp and qp.index == 2 and qp.kind == "tool" and qp.prof == "Skinning", "a skinner without a Skinning Knife gets the knife")
+W.bags = { [0] = { size = 16, slots = { { id = 12709, count = 1 } } } }
+qp = GP:QuestRewardPick()
+ok(qp and qp.kind ~= "tool", "but not when they already have a skinning tool")
 W.quest = { 4865 }
 ok(GP:QuestRewardPick() == nil, "nothing to choose with one reward")
 

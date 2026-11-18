@@ -334,6 +334,7 @@ GP.LOCALES.frFR = {
     ["no answer from the auction house within a minute (it allows one full scan every 15 minutes)"] = "pas de réponse de l'hôtel des ventes en une minute (il autorise un scan complet toutes les 15 minutes)",
     ["Open the auction house, then click again: "] = "Ouvrez l'hôtel des ventes, puis cliquez à nouveau : ",
     ["the auction house was closed before it answered"] = "l'hôtel des ventes a été fermé avant de répondre",
+    ["you need it for %s and don't have one"] = "il vous en faut un pour %s et vous n'en avez pas",
     ["upgrade +%.0f%% (%s)"] = "amélioration +%.0f%% (%s)",
     ["disenchant"] = "désenchanter",
     ["auction house"] = "hôtel des ventes",
