@@ -74,6 +74,7 @@ local DEFAULTS = {
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
         minimap = true,         -- the minimap button
+        deForMats = false,      -- Bags: disenchant gear for Enchanting mats even when selling pays more
         language = "auto",      -- "auto" (the game's), "enUS", "deDE" or "frFR"
         hudLocked = false,
         winShown = false,

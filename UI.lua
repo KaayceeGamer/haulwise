@@ -527,9 +527,8 @@ TAB.bags = {
     end,
     toggles = {
         { L["Disenchant value"], "useDisenchant", L["Value green, blue and purple gear at what disenchanting it gives, when you or one of your characters can disenchant it."] },
+        { L["Disenchant for mats"], "deForMats", L["Level Enchanting: gear you can disenchant yourself is marked to disenchant (and gets the Disenchant button) even when selling pays more. Off: always the move that makes the most gold."] },
         { L["Protect reagents"], "protectReagents", L["Never offer items your known recipes use. (Crafting materials, dust, essences, shards, cloth, leather, ore, herbs, gems and recipes are never offered at all.)"] },
-        { L["Swap popup"], "swapPopups", L["Bags full while looting: offer to swap the cheapest item for the loot."] },
-        { L["Make room popup"], "makeRoomPopup", L["\"Inventory is full\" elsewhere: offer the cheapest items to delete."] },
     },
     extraTip = L["Delete the cheapest items, one click at a time."],
     extraButton = function(b)
@@ -1401,7 +1400,7 @@ function GP:DisenchantCandidate()
     if not name then return nil end
     local best
     for _, r in ipairs(self:BagItems()) do
-        if r.src == "DE" and not r.protect and r.d and r.d.deWho then
+        if (r.src == "DE" or GP:MatsDisenchant(r)) and not r.protect and r.d and r.d.deWho then
             local mine = false
             for _, who in ipairs(r.d.deWho) do if who == UnitName("player") then mine = true end end
             if mine and (not best or r.total > best.total) then best = r end

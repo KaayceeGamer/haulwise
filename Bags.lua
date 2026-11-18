@@ -124,8 +124,27 @@ function GP:BagItems()
     return rows, vendorTotal, bestTotal
 end
 
+-- "Disenchant for mats" (Bags tab): gear you can disenchant yourself is disenchanted even when
+-- selling pays more, because you want the dust and essences to level Enchanting.
+function GP.CanDisenchantMyself(d)
+    if not (d and d.deOutcomes and d.deWho) then return false end
+    for _, n in ipairs(d.deWho) do if n == UnitName("player") then return true end end
+    return false
+end
+
+function GP:MatsDisenchant(r)
+    if not self.db.settings.deForMats or r.protect or r.src == "DE" then return false end
+    return GP.CanDisenchantMyself(r.d)
+end
+
 -- What to do with an item that isn't protected: the move that gets the most for it.
 function GP:BagAdvice(r)
+    if self:MatsDisenchant(r) then
+        local loss = r.total - (r.d.de or 0) * (r.count or 1)
+        local text = L["|cffc48cffdisenchant for mats|r"]
+        if r.d.de and loss > 0 then text = text .. "|cff8a8880" .. string.format(L[" (%s less than selling)"], GP.Coins(loss, true)) .. "|r" end
+        return text
+    end
     if r.src == "DE" then
         local who = r.d and r.d.deWho or {}
         for _, n in ipairs(who) do if n == UnitName("player") then return L["|cffc48cffdisenchant|r"] end end

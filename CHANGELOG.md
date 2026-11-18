@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.1
+- **Disenchant for mats** (Bags tab): leveling Enchanting? Tick it, and gear you can disenchant yourself is marked to disenchant, with the Disenchant button, even when selling pays more. It shows what that costs you compared with selling. The swap and Make room popup switches now live only in Settings.
 - **Smaller saved data**: auction prices are saved as one short line per item, and old price history and unused item names are cleared out. The saved file shrinks by about a third, so logging in and `/reload` are quicker.
 - **Shopping list**: the profit now counts the reagents you already have too, so it matches the Craft tab (before, it only subtracted what you still had to buy).
 

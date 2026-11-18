@@ -44,8 +44,7 @@ for code in ("deDE", "frFR"):
         m = PAIR.match(line.rstrip("\n"))
         if m:
             have[m.group(1)] = m.group(2)
-    # A key may be left out when the text is the same in that language ("Gold", "HUD").
-    missing = [k for k in keys if k not in have and not re.fullmatch(r"[\s|%\w./#:+\-()·]*", k) and len(k) > 12]
+    missing = [k for k in keys if k not in have]
     assert not missing, "%s is missing %d texts, e.g. %r" % (code, len(missing), missing[:3])
     for k, v in have.items():
         assert SPEC.findall(k) == SPEC.findall(v), "%s: %%-codes differ in %r" % (code, k)

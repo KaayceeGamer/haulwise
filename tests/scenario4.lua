@@ -250,6 +250,20 @@ PawnIsReady = function() return false end
 ok(not GP.PawnLoaded(), "not used while Pawn is still loading")
 PawnIsReady = nil
 PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx = oldInit, oldItem, oldSingle, oldAll
+-- Disenchant for mats: disenchant gear you can do yourself even when a vendor pays more ----------
+local me = UnitName("player")
+local row = { src = "V", total = 2700, count = 1, d = { de = 1300, deOutcomes = { {} }, deWho = { me } } }
+GP.db.settings.deForMats = false
+ok(not GP:BagAdvice(row):find("mats"), "off: the move that pays most (vendor)")
+GP.db.settings.deForMats = true
+local adv = GP:BagAdvice(row)
+ok(adv:find("for mats") and adv:find("less than selling"), "on: disenchant for mats, and what it costs you")
+row.protect = "kept"
+ok(not GP:MatsDisenchant(row), "kept items are never disenchanted")
+row.protect, row.d.deWho = nil, { "Someone Else" }
+ok(not GP:MatsDisenchant(row), "only gear you can disenchant yourself")
+GP.db.settings.deForMats = false
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")
