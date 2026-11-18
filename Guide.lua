@@ -8,7 +8,7 @@ local W = "|cffffffff"
 local D = "|cffb8b4a8"
 local E = "|r"
 
-local GUIDE = {
+local function guideSections() return {
     { L["Getting started"], {
         L["Haulwise learns from what you do. Five things fill it with data, and each takes a minute:"],
         W .. L["1. Open each profession window once"] .. E .. L[" (K, or your profession's button). Haulwise reads your recipes."],
@@ -68,9 +68,12 @@ local GUIDE = {
         W .. L["/haul export"] .. E .. " / " .. W .. "import" .. E .. L[" share data   "] .. W .. L["/haul reset"] .. E .. L[" window positions and sizes"],
         L["Click any column title to sort. Drag a window's corner to resize it. Ctrl + mouse wheel scales it."],
     } },
-}
+} end
 
-local NEWS = {
+local function newsLines() return {
+    L["Minimap button: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap; hide it in Settings or with /haul minimap."],
+    L["Haulwise speaks German and French. It follows your game's language; pick another in Settings → Language."],
+    L["Disenchanting is noted reliably now, also with auto loot, and a chat line confirms what you got."],
     L["The bottom line shows how fresh the community data is. Click it to import the newest."],
     L["Recipes show the skill they need, and hide ones far above yours."],
     L["/haul feedback now includes Haulwise's last errors, ready to paste into a bug report."],
@@ -83,7 +86,7 @@ local NEWS = {
     L["Farm: By zone, and This zone only."],
     L["Share data: the Export button is now Share data (your kills, plus the recipes and vendor prices you've seen). The footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings)."],
     L["/haul feedback shows where to report bugs and suggest ideas."],
-}
+} end
 
 local guide
 
@@ -130,10 +133,10 @@ function GP:ShowGuide(withNews)
     local y = 0
     if withNews then
         y = addText(y, L["What's new in "] .. GP.VERSION, "HaulwiseFontLarge")
-        for _, n in ipairs(NEWS) do y = addText(y, "•  " .. n, "HaulwiseFont", 6) end
+        for _, n in ipairs(newsLines()) do y = addText(y, "•  " .. n, "HaulwiseFont", 6) end
         y = y - 10
     end
-    for _, section in ipairs(GUIDE) do
+    for _, section in ipairs(guideSections()) do
         y = addText(y, section[1], "HaulwiseFontLarge")
         for _, line in ipairs(section[2]) do y = addText(y, line, "HaulwiseFont", 6) end
         y = y - 8

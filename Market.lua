@@ -152,6 +152,6 @@ function GP:WeekdayPattern()
     end
     if not lo then return nil, 0 end
     if avg[hi] - avg[lo] < 0.05 then return { flat = true } end
-    return { avg = avg, cheapest = WEEKDAYS[lo], dearest = WEEKDAYS[hi],
+    return { avg = avg, cheapest = GP.L[WEEKDAYS[lo]], dearest = GP.L[WEEKDAYS[hi]],
              spread = avg[hi] - avg[lo] }
 end

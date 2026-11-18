@@ -1,6 +1,6 @@
 -- Part 5: AH upgrades, shopping list, sell helper, mats for crafters, skill-ups, bag advice, zones.
 local GP = GPT
-local function ok(cond, msg) if not cond then if PSEUDO then print("PSEUDO-FAIL " .. msg); return end error("FAIL: " .. msg, 2) end print("ok   " .. msg) end
+local function ok(cond, msg) if not cond then if PSEUDO or LOCALE_RUN then print("TEXT-CHECK " .. msg); return end error("FAIL: " .. msg, 2) end print("ok   " .. msg) end
 
 -- Gear on the AH ------------------------------------------------------------------------------
 W.class, W.level = "MAGE", 34

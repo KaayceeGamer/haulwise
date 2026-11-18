@@ -78,6 +78,8 @@ Shared data is anonymous, each player's weight is capped, and outliers are filte
 - Font and text size
 - Background opacity
 - Click any column title to sort
+- **Minimap button** (drag it anywhere around the minimap), plus a launcher for Titan Panel, ElvUI and other data broker displays
+- **English, German and French**: follows your game's language, or pick one in Settings
 
 ---
 
@@ -95,6 +97,8 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 |---|---|
 | `/haul` | open the window |
 | `/haul hud` | show or hide the HUD |
+| `/haul minimap` | show or hide the minimap button |
+| `/haul lang deDE` | language: `auto`, `enUS`, `deDE` or `frFR` (then `/reload`) |
 | `/haul room` | make room in your bags |
 | `/haul settings` | settings |
 | `/haul guide` | the guide |

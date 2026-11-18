@@ -63,9 +63,9 @@ end
 
 local function ago(sec)
     if not sec then return "?" end
-    if sec < 3600 then return math.max(1, math.floor(sec / 60)) .. L[" min ago"] end
-    if sec < 86400 then return math.floor(sec / 3600) .. L["h ago"] end
-    return math.floor(sec / 86400) .. L["d ago"]
+    if sec < 3600 then return string.format(L["%d min ago"], math.max(1, math.floor(sec / 60))) end
+    if sec < 86400 then return string.format(L["%dh ago"], math.floor(sec / 3600)) end
+    return string.format(L["%dd ago"], math.floor(sec / 86400))
 end
 
 local function confColor(k)
@@ -608,7 +608,8 @@ TAB.gear = {
 
 local holdChar, holdLoc
 local function locToggle(label, loc)
-    return { label, L["_loc_"] .. (loc or "all"), L["Show items in "] .. (loc and GP.LOCATION_LABEL[loc] or L["all places"]) .. ".",
+    return { label, "_loc_" .. (loc or "all"), nil,
+             tip = function() return L["Show items in "] .. (loc and L[GP.LOCATION_LABEL[loc]] or L["all places"]) .. "." end,
              get = function() return holdLoc == loc end, set = function() holdLoc = loc end }
 end
 TAB.holdings = {
@@ -626,7 +627,7 @@ TAB.holdings = {
             if i > 4 then parts[#parts + 1] = "…"; break end
             local cc = RAID_CLASS_COLORS and w.classFile and RAID_CLASS_COLORS[w.classFile]
             local who = cc and cc.colorStr and ("|c" .. cc.colorStr .. w.char .. "|r") or ("|cffffffff" .. w.char .. "|r")
-            parts[#parts + 1] = string.format("%s %s %s", who, grey("· " .. GP.LOCATION_LABEL[w.loc]), w.n)
+            parts[#parts + 1] = string.format("%s %s %s", who, grey("· " .. L[GP.LOCATION_LABEL[w.loc]]), w.n)
         end
         return { name = itemName(r.id), icon = GP.ItemIcon(r.id), count = tostring(r.count), where = table.concat(parts, grey("   |   ")),
                  value = r.worn and grey("worn") or Coins(r.value, true) }
@@ -642,7 +643,7 @@ TAB.holdings = {
     tooltip = function(t, r)
         t:SetItemByID(r.id)
         t:AddLine(" ")
-        for _, w in ipairs(r.where) do t:AddDoubleLine("  " .. w.char .. "  " .. GP.LOCATION_LABEL[w.loc], tostring(w.n), 0.8, 0.8, 0.8, 1, 1, 1) end
+        for _, w in ipairs(r.where) do t:AddDoubleLine("  " .. w.char .. "  " .. L[GP.LOCATION_LABEL[w.loc]], tostring(w.n), 0.8, 0.8, 0.8, 1, 1, 1) end
         t:AddDoubleLine(L["Worth"], r.worn and L["worn, not for sale"] or Coins(r.value))
         if not r.worn and r.sellable < r.count then t:AddLine(L["Only the ones you don't wear are counted."], 0.6, 0.6, 0.6) end
     end,
@@ -1011,7 +1012,7 @@ local function layoutColumns()
         h:SetPoint("TOPLEFT", f, "TOPLEFT", 12 + x + (col.icon and 24 or 0), -158)
         h:SetWidth(col.ww - 8 - (col.icon and 24 or 0))
         h:SetJustifyH(col.align or "LEFT")
-        local title = col.title
+        local title = L[col.title]
         if sort and sort.key == col.key then
             title = title .. (sort.desc and " |TInterface\\Buttons\\Arrow-Down-Up:10:10:0:-2|t" or " |TInterface\\Buttons\\Arrow-Up-Up:10:10:0:2|t")
             h:SetTextColor(1, 0.9, 0.5)
@@ -1134,7 +1135,7 @@ local function build()
         b.ic:SetTexCoord(0.08, 0.92, 0.08, 0.92)
         b.fs = b:CreateFontString(nil, "OVERLAY", "HaulwiseFontGold")
         b.fs:SetPoint("LEFT", b.ic, "RIGHT", 7, 0)
-        b.fs:SetText(t.label)
+        b.fs:SetText(L[t.label])
         local hl = tex(b, "HIGHLIGHT", { 1, 0.82, 0.25, 0.08 })
         hl:SetAllPoints()
         b:SetScript("OnClick", function() S().tab = t.key; offset = 0; GP:RefreshUI() end)
@@ -1376,7 +1377,7 @@ local function buildToggles(t)
         if not b then
             local get = spec.get or function() return S()[key] end
             local set = spec.set or function(v) S()[key] = v end
-            b = toggle(f.toggleRow, spec[1], get, set, spec[3])
+            b = toggle(f.toggleRow, L[spec[1]], get, set, spec.tip and spec.tip() or (spec[3] and L[spec[3]]))
             toggleBar[current() .. i] = b
             toggleBar[#toggleBar + 1] = b
         end
@@ -1437,7 +1438,7 @@ updateDisenchant = function(show)
         end)
         deButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
-    deButton:SetAttribute("macrotext", string.format(L["/cast %s\n/use %d %d"], spell, cand.bag, cand.slot))
+    deButton:SetAttribute("macrotext", string.format("/cast %s\n/use %d %d", spell, cand.bag, cand.slot))
     deButton.link = cand.link
     deButton.target = { bag = cand.bag, slot = cand.slot }
     deButton.label:SetText(L["|cffc48cffDisenchant|r "] .. itemName(cand.id))
@@ -1475,7 +1476,7 @@ function GP:RefreshUI()
         f.extra:Show()
     elseif t.extraButton then
         t.extraButton(f.extra)
-        tip(f.extra, function(tt) tt:AddLine(t.extraTip or "", 1, 1, 1, true) end)
+        tip(f.extra, function(tt) tt:AddLine(L[t.extraTip or ""], 1, 1, 1, true) end)
         f.extra:Show()
     else
         f.extra:Hide()
@@ -1486,7 +1487,7 @@ function GP:RefreshUI()
     if self.scrollToTop then offset, self.scrollToTop = 0, nil end
     offset = math.max(0, math.min(offset, #data - ROWS))
     layoutColumns()
-    f.empty:SetText(t.empty)
+    f.empty:SetText(L[t.empty or ""])
     f.empty:SetShown(#data == 0)
     if #data == 0 then
         for i, h in ipairs(f.headers) do h:Hide(); f.headerBtns[i]:Hide() end

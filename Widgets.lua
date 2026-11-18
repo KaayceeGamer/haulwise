@@ -111,8 +111,17 @@ function GP.FlatButton(parent, text, w, h)
     hl:SetAllPoints()
     b.label = b:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
     b.label:SetPoint("CENTER")
+    -- Longer translations shrink a little to fit instead of spilling over the edge.
+    local function fit(self)
+        local fs = self.label
+        if not fs.SetTextScale then return end
+        fs:SetTextScale(1)
+        local sw, room = fs:GetStringWidth() or 0, (self:GetWidth() or 0) - 8
+        if sw > room and sw > 0 and room > 0 then fs:SetTextScale(math.max(0.72, room / sw)) end
+    end
     b.label:SetText(text)
-    function b:SetLabel(t) self.label:SetText(t) end
+    fit(b)
+    function b:SetLabel(t) self.label:SetText(t); fit(self) end
     function b:SetPrimary(on)
         if on then self:SetBackdropColor(0.16, 0.3, 0.12, 1); self:SetBackdropBorderColor(0.35, 0.7, 0.3, 1)
         else self:SetBackdropColor(0.14, 0.12, 0.08, 1); self:SetBackdropBorderColor(0.42, 0.33, 0.15, 1) end
@@ -169,7 +178,7 @@ function GP.AddValueLines(t, unit, src, d, count)
     t:AddDoubleLine(L["|cffffd040Haulwise|r value"], GP.Coins(unit * count) .. " " .. GP.SourceTag(src, d))
     t:AddDoubleLine(L["  Vendor"], GP.Coins((d.vendor or 0) * count), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     if d.ah then
-        local age = d.ahAge and (d.ahAge < 86400 and L["today"] or (math.floor(d.ahAge / 86400) .. L["d old"])) or "?"
+        local age = d.ahAge and (d.ahAge < 86400 and L["today"] or string.format(L["%dd old"], math.floor(d.ahAge / 86400))) or "?"
         t:AddDoubleLine(L["  Auction (after cut)"], GP.Coins(d.ah * count) .. " " .. GP.AgeColor(d.ahAge) .. age .. "|r", 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     end
     if d.deOutcomes then

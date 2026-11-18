@@ -111,6 +111,33 @@ local function build()
     end)
     add(drawFont)
     y = y - 26
+    -- Language: Auto follows the game; the change shows after /reload.
+    local ll = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+    ll:SetPoint("TOPLEFT", 18, y)
+    ll:SetText(L["Language"])
+    local langBtn = GP.FlatButton(panel, "", 156, 20)
+    langBtn:SetPoint("TOPRIGHT", -14, y + 3)
+    local function drawLang()
+        local code = s.language or "auto"
+        local name = GP.LANGUAGE_NAMES[code] or code
+        if code == "auto" then name = L["Auto (game language)"] end
+        langBtn:SetLabel(code ~= GP.LANG and code ~= "auto" and (name .. "  |cffff9944/reload|r") or name)
+    end
+    langBtn:SetScript("OnClick", function()
+        local idx = 1
+        for i, c in ipairs(GP.LANGUAGES) do if c == (s.language or "auto") then idx = i end end
+        s.language = GP.LANGUAGES[idx % #GP.LANGUAGES + 1]
+        GP.Print(L["Language: "] .. (GP.LANGUAGE_NAMES[s.language] or s.language) .. ". " .. L["Type /reload to apply."])
+        drawLang()
+    end)
+    langBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Haulwise's language. Auto uses your game's language. Type /reload after changing it."], 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    langBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    add(drawLang)
+    y = y - 26
     add(stepper(panel, L["Text size"], y, function() return s.fontSize or 12 end,
         function(v) s.fontSize = v; GP.ApplyFonts(); if GP.RefreshUI then GP:RefreshUI() end end,
         function(v) return v .. L[" pt"] end, 1, 9, 18))

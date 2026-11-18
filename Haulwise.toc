@@ -13,6 +13,8 @@
 
 Data.lua
 Core.lua
+Locales\deDE.lua
+Locales\frFR.lua
 Widgets.lua
 DataDisenchant.lua
 DataWeights.lua

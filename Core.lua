@@ -2,14 +2,22 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.6.3"
+GP.VERSION = "0.7.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
 -- Translations: GP.L["English text"] gives the text in the game's language, or the English text
 -- itself when there is no translation. Locales/*.lua fill GP.LOCALE_STRINGS for their language.
+-- Texts looked up while the files load stay English; screens translate them when they draw, so the
+-- language can be chosen in Settings (it's known only once saved settings load).
+GP.LOCALES = {}
 GP.LOCALE_STRINGS = {}
-GP.L = setmetatable({}, { __index = function(_, k) return GP.LOCALE_STRINGS[k] or k end })
+GP.LANGUAGES = { "auto", "enUS", "deDE", "frFR" }
+GP.LANGUAGE_NAMES = { auto = "Auto", enUS = "English", deDE = "Deutsch", frFR = "Français" }
+GP.L = setmetatable({}, { __index = function(_, k)
+    if not GP.langReady then return k end
+    return GP.LOCALE_STRINGS[k] or k
+end })
 local L = GP.L
 
 -- "3 kills" / "1 kill", in the game's language: the words are looked up as "kill" and "kills".
@@ -66,6 +74,7 @@ local DEFAULTS = {
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
         minimap = true,         -- the minimap button
+        language = "auto",      -- "auto" (the game's), "enUS", "deDE" or "frFR"
         hudLocked = false,
         winShown = false,
         winScale = 1,
@@ -208,6 +217,11 @@ GP:On("ADDON_LOADED", function(name)
         HaulwiseDB.uid = table.concat(parts)
     end
     GP.db = HaulwiseDB
+    local lang = GP.db.settings.language
+    if not lang or lang == "auto" then lang = GetLocale and GetLocale() or "enUS" end
+    GP.LANG = lang
+    if GP.LOCALES[lang] then setmetatable(GP.LOCALE_STRINGS, { __index = GP.LOCALES[lang] }) end
+    GP.langReady = true
     GP:LoadBundledCommunity()
     GP.session = { start = time(), value = 0, money = 0, kills = 0 }
     if GP.ApplyFonts then GP.ApplyFonts() end
@@ -239,6 +253,15 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ToggleSettings()
     elseif cmd == "hud" then
         GP:ToggleHUD()
+    elseif cmd == "lang" or cmd == "language" then
+        local pick
+        for _, code in ipairs(GP.LANGUAGES) do if code:lower() == arg then pick = code end end
+        if pick then
+            s.language = pick
+            GP.Print(GP.LANGUAGE_NAMES[pick] .. ". " .. L["Type /reload to apply."])
+        else
+            GP.Print("/haul lang auto | enUS | deDE | frFR")
+        end
     elseif cmd == "minimap" then
         s.minimap = not (s.minimap ~= false)
         GP:UpdateMinimapButton()

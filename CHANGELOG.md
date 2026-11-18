@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+- **Minimap button**: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap (round or square). Hide it in Settings or with `/haul minimap`. With Titan Panel, ElvUI or another data broker display, Haulwise shows up there too.
+- **German and French**: every text in Haulwise is translated. It follows your game's language; pick another in Settings → Language (or `/haul lang deDE`) and `/reload`.
+- Professions are stored under one name whatever your game's language, so recipes, disenchanting and alts line up on every client.
+- **Disenchanting** is noted reliably now (the item locks a moment after the cast starts, and auto loot is fast), and a chat line confirms what you got.
+
 ## 0.6.3
 - **Community data line** at the bottom of the window: when the pooled data is from, how many players shared, and how many of your kills aren't shared yet. Click it to import the newest data.
 - **Bug reports made easy**: Haulwise keeps its last errors, and `/haul feedback` shows them ready to paste into a report.

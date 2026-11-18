@@ -253,7 +253,7 @@ function GP:CompareGear(link, who)
     if not best then return nil end
     local atLevel = (info.minLevel and info.minLevel > (who.level or 1)) and info.minLevel or armorLevel
     best.atLevel = atLevel
-    best.slotName = SLOT_NAME[best.slot]
+    best.slotName = L[SLOT_NAME[best.slot]]
     return best
 end
 
@@ -535,7 +535,7 @@ function GP.StatDiff(newLink, oldLink)
     local keys, out = {}, {}
     for k in pairs(a) do keys[k] = true end
     for k in pairs(b) do keys[k] = true end
-    for k in pairs(keys) do out[#out + 1] = { GP.STAT_LABEL[k] or k, b[k] or 0, a[k] or 0 } end
+    for k in pairs(keys) do out[#out + 1] = { L[GP.STAT_LABEL[k] or k], b[k] or 0, a[k] or 0 } end
     table.sort(out, function(x, y) return math.abs(x[3] - x[2]) > math.abs(y[3] - y[2]) end)
     return out
 end
