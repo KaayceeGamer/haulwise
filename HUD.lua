@@ -2,6 +2,7 @@
 -- session, bag space and worth, the cheapest thing you could throw away, upgrades waiting, and
 -- "Sell junk" at vendors. Drag to move (unless locked); /haul hud brings it back.
 local _, GP = ...
+local L = GP.L
 
 local hud
 local W = 300
@@ -33,10 +34,10 @@ local function build()
     hud.open:SetPoint("RIGHT", hud.close, "LEFT", 2, 0)
     hud.open:SetNormalTexture("Interface\\Buttons\\UI-GuildButton-PublicNote-Up")
     hud.open:SetScript("OnClick", function() GP:ToggleUI() end)
-    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine("Open the Haulwise window"); GameTooltip:Show() end)
+    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Open the Haulwise window"]); GameTooltip:Show() end)
     hud.open:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    hud.gear = GP.IconButton(hud, "Interface\\Buttons\\UI-OptionsButton", "Settings", 14)
+    hud.gear = GP.IconButton(hud, "Interface\\Buttons\\UI-OptionsButton", L["Settings"], 14)
     hud.lock = CreateFrame("Button", nil, hud)
     hud.lock:SetSize(14, 14)
     hud.lock:SetPoint("RIGHT", hud.open, "LEFT", -2, 0)
@@ -47,7 +48,7 @@ local function build()
         GP.db.settings.hudLocked = not GP.db.settings.hudLocked
         GP:RefreshHUD()
     end)
-    hud.lock:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine("Lock / unlock position"); GameTooltip:Show() end)
+    hud.lock:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Lock / unlock position"]); GameTooltip:Show() end)
     hud.lock:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     hud.session = line(hud, -34)
@@ -87,12 +88,12 @@ local function build()
 
     hud.cheapLabel = hud:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
     hud.cheapLabel:SetPoint("TOPLEFT", 10, -112)
-    hud.cheapLabel:SetText("CHEAPEST TO THROW AWAY")
+    hud.cheapLabel:SetText(L["CHEAPEST TO THROW AWAY"])
     hud.cheap = GP.ItemRow(hud, W - 96)
     hud.cheap:SetPoint("TOPLEFT", 10, -124)
     hud.cheapRows = { hud.cheap }
     hud.sizing = false
-    hud.room = GP.FlatButton(hud, "Make room", 74, 20)
+    hud.room = GP.FlatButton(hud, L["Make room"], 74, 20)
     hud.room:SetPoint("TOPRIGHT", -10, -125)
     hud.room:SetScript("OnClick", function() GP:ShowMakeRoom() end)
 
@@ -126,7 +127,7 @@ function GP:RefreshHUD(sessionOnly)
     if not hud or not hud:IsShown() then return end
     local s = self.session
     local mins = math.max(1, (time() - s.start) / 60)
-    hud.session:SetText(string.format("Session  %s|cff8a8880/h   %s · %d kills|r",
+    hud.session:SetText(string.format(L["Session  %s|cff8a8880/h   %s · %d kills|r"],
         GP.Coins(s.value / mins * 60, true), GP.Coins(s.value, true), s.kills))
     if sessionOnly then return end
 
@@ -136,11 +137,11 @@ function GP:RefreshHUD(sessionOnly)
 
     local free, total = self:FreeSlots(), self:TotalSlots()
     local t = self:Totals()
-    hud.goldL:SetText("Gold")
+    hud.goldL:SetText(L["Gold"])
     hud.goldR:SetText(GP.Coins(t.gold, true))
-    hud.bagsL:SetText(string.format("Bags  %s%d free|r|cff8a8880/%d|r", free == 0 and "|cffff6b5b" or (free <= 3 and "|cffff9944" or "|cff5fd35f"), free, total))
-    hud.bagsR:SetText(string.format("%s |cff8a8880(vendor %s)|r", GP.Coins(t.best, true), GP.Coins(t.vendor, true)))
-    hud.totalL:SetText("Total")
+    hud.bagsL:SetText(string.format(L["Bags  %s%d free|r|cff8a8880/%d|r"], free == 0 and "|cffff6b5b" or (free <= 3 and "|cffff9944" or "|cff5fd35f"), free, total))
+    hud.bagsR:SetText(string.format(L["%s |cff8a8880(vendor %s)|r"], GP.Coins(t.best, true), GP.Coins(t.vendor, true)))
+    hud.totalL:SetText(L["Total"])
     hud.totalR:SetText(GP.Coins(t.total, true))
 
     -- Cheapest items: as many as fit. Drag the HUD taller to see more.
@@ -168,7 +169,7 @@ function GP:RefreshHUD(sessionOnly)
             row.tip = function(t)
                 t:SetHyperlink(c.link)
                 GP.AddValueLines(t, c.unit, c.src, c.d, c.count)
-                t:AddLine("Shift-click to always keep it.", 0.6, 0.6, 0.6)
+                t:AddLine(L["Shift-click to always keep it."], 0.6, 0.6, 0.6)
             end
             row:SetScript("OnClick", function()
                 if IsShiftKeyDown and IsShiftKeyDown() then GP.db.keep[c.id] = true; GP:RefreshHUD() end
@@ -180,18 +181,18 @@ function GP:RefreshHUD(sessionOnly)
     end
     if cands[1] then
         hud.room:Show()
-        hud.cheapLabel:SetText(fit > 1 and "CHEAPEST TO THROW AWAY" or "CHEAPEST TO THROW AWAY  (drag down for more)")
+        hud.cheapLabel:SetText(fit > 1 and L["CHEAPEST TO THROW AWAY"] or L["CHEAPEST TO THROW AWAY  (drag down for more)"])
     else
         hud.room:Hide()
-        hud.cheapLabel:SetText("NOTHING SAFE TO THROW AWAY")
+        hud.cheapLabel:SetText(L["NOTHING SAFE TO THROW AWAY"])
     end
 
     local h = 124 + shown * 24 + 4
     if mine + alts > 0 then
         local parts = {}
-        if mine > 0 then parts[#parts + 1] = string.format("|cff5fd35f%d upgrade%s for you|r", mine, mine > 1 and "s" or "") end
-        if alts > 0 then parts[#parts + 1] = string.format("|cffff9944%d for alts|r", alts) end
-        hud.upText:SetText(table.concat(parts, "  ·  ") .. " |cff8a8880(click)|r")
+        if mine > 0 then parts[#parts + 1] = string.format(L["|cff5fd35f%s for you|r"], GP.Plural(mine, "upgrade")) end
+        if alts > 0 then parts[#parts + 1] = string.format(L["|cffff9944%d for alts|r"], alts) end
+        hud.upText:SetText(table.concat(parts, "  ·  ") .. L[" |cff8a8880(click)|r"])
         hud.upgrades:ClearAllPoints()
         hud.upgrades:SetPoint("TOPLEFT", 10, -h)
         hud.upgrades:SetWidth(w - 20)
@@ -204,7 +205,7 @@ function GP:RefreshHUD(sessionOnly)
         hud.junk:ClearAllPoints()
         hud.junk:SetPoint("TOPLEFT", 10, -h - 2)
         hud.junk:SetWidth(w - 20)
-        hud.junk:SetLabel(string.format("Sell %d grey item%s for %s", nJunk, nJunk > 1 and "s" or "", GP.Coins(junk, true)))
+        hud.junk:SetLabel(string.format(L["Sell %s for %s"], GP.Plural(nJunk, "grey item"), GP.Coins(junk, true)))
         hud.junk:Show()
         h = h + 26
     else

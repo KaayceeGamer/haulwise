@@ -2,6 +2,7 @@
 -- small panel suggests a price from the live listings and your scans, and warns when a vendor
 -- would pay more. "Use price" only fills in the price box: you still press Post yourself.
 local _, GP = ...
+local L = GP.L
 
 local AH_CUT = 0.95
 local LOWBALL = 0.8   -- ignore a cheapest listing under 80% of the usual price: it's a deal, not the market
@@ -39,11 +40,11 @@ function GP:SellAdvice(id, loc, commodity)
     local vendor = self:VendorSell(id) or 0
     local price, why
     if cheapest and usual and cheapest < usual * LOWBALL then
-        price, why = usual, "the cheapest listing is far below the usual price, so it's set to the usual price"
+        price, why = usual, L["the cheapest listing is far below the usual price, so it's set to the usual price"]
     elseif cheapest then
-        price, why = math.max(1, math.floor(cheapest) - 1), "1 copper under the cheapest listing"
+        price, why = math.max(1, math.floor(cheapest) - 1), L["1 copper under the cheapest listing"]
     elseif usual then
-        price, why = usual, "nobody else is selling it: the usual price"
+        price, why = usual, L["nobody else is selling it: the usual price"]
     end
     local vendorBetter = price and vendor > 0 and price * AH_CUT < vendor
     if price and vendor > 0 then price = math.max(price, math.ceil(vendor / AH_CUT)) end
@@ -70,19 +71,19 @@ local function build()
     accent:SetHeight(2)
     panel.title = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontGold")
     panel.title:SetPoint("TOPLEFT", 10, -8)
-    panel.title:SetText("Haulwise price")
+    panel.title:SetText(L["Haulwise price"])
     panel.text = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     panel.text:SetPoint("TOPLEFT", 10, -28)
     panel.text:SetPoint("RIGHT", -10, 0)
     panel.text:SetJustifyH("LEFT")
     panel.text:SetSpacing(2)
-    panel.use = GP.FlatButton(panel, "Use price", 110, 22)
+    panel.use = GP.FlatButton(panel, L["Use price"], 110, 22)
     panel.use:SetPoint("BOTTOMLEFT", 10, 10)
     panel.use:SetScript("OnClick", function()
         local f = sellFrame()
         if not (f and current and current.price) then return end
         local ok = pcall(function() f.PriceInput:SetAmount(current.price) end)
-        if not ok then GP.Print("Couldn't fill in the price. Type it in: " .. GP.Coins(current.price)) end
+        if not ok then GP.Print(L["Couldn't fill in the price. Type it in: "] .. GP.Coins(current.price)) end
     end)
     panel:Hide()
 end
@@ -98,15 +99,15 @@ function GP:UpdateSellHelper()
     current = self:SellAdvice(id, loc, commodity)
     local lines = {}
     if current.price then
-        lines[#lines + 1] = "Suggested: |cffffffff" .. GP.Coins(current.price) .. "|r" .. (commodity and " each" or "")
+        lines[#lines + 1] = L["Suggested: |cffffffff"] .. GP.Coins(current.price) .. "|r" .. (commodity and L[" each"] or "")
         lines[#lines + 1] = "|cff8a8880" .. (current.why or "") .. "|r"
     else
-        lines[#lines + 1] = "|cff8a8880No price yet: scan the AH, or wait for the listings to load.|r"
+        lines[#lines + 1] = L["|cff8a8880No price yet: scan the AH, or wait for the listings to load.|r"]
     end
-    if current.live then lines[#lines + 1] = "Cheapest now: " .. GP.Coins(current.live) end
-    if current.usual then lines[#lines + 1] = "Usual price: " .. GP.Coins(current.usual) end
+    if current.live then lines[#lines + 1] = L["Cheapest now: "] .. GP.Coins(current.live) end
+    if current.usual then lines[#lines + 1] = L["Usual price: "] .. GP.Coins(current.usual) end
     if current.vendorBetter then
-        lines[#lines + 1] = "|cffff9944A vendor pays more (" .. GP.Coins(current.vendor) .. "). Sell it there.|r"
+        lines[#lines + 1] = L["|cffff9944A vendor pays more ("] .. GP.Coins(current.vendor) .. L["). Sell it there.|r"]
     end
     panel.text:SetText(table.concat(lines, "\n"))
     panel.use:SetShown(current.price ~= nil and not current.vendorBetter)

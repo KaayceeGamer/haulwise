@@ -1,13 +1,14 @@
 -- Haulwise: what every one of your characters owns, and where (bags, bank, equipped, mail, AH).
 -- Each character is read while you play it; bank, mail and auctions are read when you open them.
 local _, GP = ...
+local L = GP.L
 
 local BANK = (Enum and Enum.BagIndex and Enum.BagIndex.Bank) or -1
 local REAGENT_BAG = (Enum and Enum.BagIndex and Enum.BagIndex.ReagentBag) or 5
 local NUM_BAGS = NUM_BAG_SLOTS or 4
 local LOCATIONS = { "bags", "bank", "equipped", "mail", "ah" }
 GP.LOCATIONS = LOCATIONS
-GP.LOCATION_LABEL = { bags = "Bags", bank = "Bank", equipped = "Equipped", mail = "Mail", ah = "Auction" }
+GP.LOCATION_LABEL = { bags = L["Bags"], bank = L["Bank"], equipped = L["Equipped"], mail = L["Mail"], ah = L["Auction"] }
 
 local bankOpen = false
 
@@ -247,14 +248,14 @@ local function attachToMail(row)
     local hasItems = false
     for i = 1, (ATTACHMENTS_MAX_SEND or 12) do if HasSendMailItem and HasSendMailItem(i) then hasItems = true end end
     if hasItems and current ~= "" and current ~= row.alt then
-        GP.Print("This mail already has items for " .. current .. ". Send or clear it first.")
+        GP.Print(L["This mail already has items for "] .. current .. L[". Send or clear it first."])
         return
     end
     local free
     for i = 1, (ATTACHMENTS_MAX_SEND or 12) do
         if not (HasSendMailItem and HasSendMailItem(i)) then free = i; break end
     end
-    if not free then GP.Print("The mail is full. Send it first."); return end
+    if not free then GP.Print(L["The mail is full. Send it first."]); return end
     SendMailNameEditBox:SetText(row.alt)
     C_Container.PickupContainerItem(row.bag, row.slot)
     ClickSendMailItemButton(free)
@@ -313,7 +314,7 @@ function GP:AttachMats(g)
     local used = 0
     for i = 1, (ATTACHMENTS_MAX_SEND or 12) do if HasSendMailItem and HasSendMailItem(i) then used = used + 1 end end
     if used > 0 and current ~= "" and current ~= g.alt then
-        GP.Print("This mail already has items for " .. current .. ". Send or clear it first.")
+        GP.Print(L["This mail already has items for "] .. current .. L[". Send or clear it first."])
         return
     end
     SendMailNameEditBox:SetText(g.alt)
@@ -332,8 +333,8 @@ function GP:AttachMats(g)
         end
     end
     local left = #g.items - attached
-    GP.Print(string.format("Attached %d stack%s for %s.%s Press Send.", attached, attached == 1 and "" or "s", g.alt,
-        left > 0 and string.format(" %d more after this mail.", left) or ""))
+    GP.Print(string.format(L["Attached %s for %s.%s Press Send."], GP.Plural(attached, "stack"), g.alt,
+        left > 0 and string.format(L[" %d more after this mail."], left) or ""))
 end
 
 function GP:ShowSendToAlts()
@@ -346,7 +347,7 @@ function GP:ShowSendToAlts()
     end
     if #list == 0 then if sendFrame then sendFrame:Hide() end return end
     if not sendFrame then
-        sendFrame = GP.Panel("HaulwiseSendToAlts", 300, 60, "Send to alts")
+        sendFrame = GP.Panel("HaulwiseSendToAlts", 300, 60, L["Send to alts"])
         sendFrame.rows = {}
     end
     local f = sendFrame
@@ -363,19 +364,19 @@ function GP:ShowSendToAlts()
         if item.mats then
             local g = item.mats
             local profs = {}
-            for p in pairs(g.profs) do profs[#profs + 1] = p end
-            r:SetItem(item.id, nil, string.format("|cffff9944%s|r  %d stack%s", g.alt, g.stacks, g.stacks == 1 and "" or "s"))
-            r.name:SetText("Mats for " .. table.concat(profs, ", "))
+            for p in pairs(g.profs) do profs[#profs + 1] = L[p] end
+            r:SetItem(item.id, nil, string.format(L["|cffff9944%s|r  %s"], g.alt, GP.Plural(g.stacks, "stack")))
+            r.name:SetText(L["Mats for "] .. table.concat(profs, ", "))
             r.link = nil
             r:SetScript("OnClick", function() GP:AttachMats(g) end)
             r.tip = function(t)
-                t:AddLine(string.format("Crafting mats for %s", g.alt), 1, 0.82, 0.25)
-                t:AddLine("Reagents your alt's recipes use and yours don't.", 0.8, 0.8, 0.8, true)
+                t:AddLine(string.format(L["Crafting mats for %s"], g.alt), 1, 0.82, 0.25)
+                t:AddLine(L["Reagents your alt's recipes use and yours don't."], 0.8, 0.8, 0.8, true)
                 for i, it in ipairs(g.items) do
-                    if i > 12 then t:AddLine(string.format("...and %d more", #g.items - 12), 0.6, 0.6, 0.6); break end
+                    if i > 12 then t:AddLine(string.format(L["...and %d more"], #g.items - 12), 0.6, 0.6, 0.6); break end
                     t:AddLine(string.format("|T%s:14|t %s x%d", GP.ItemIcon(it.id), GP.ItemInfo(it.id) or "?", it.count), 1, 1, 1)
                 end
-                t:AddLine("Click: address the mail and attach them (12 per mail).", 0.6, 0.6, 0.6, true)
+                t:AddLine(L["Click: address the mail and attach them (12 per mail)."], 0.6, 0.6, 0.6, true)
             end
         else
             r:SetItem(item.id, item.link,
@@ -384,8 +385,8 @@ function GP:ShowSendToAlts()
             r.tip = function(t)
                 t:SetHyperlink(item.link)
                 t:AddLine(" ")
-                t:AddLine(string.format("|cffffd040Haulwise|r: upgrade for %s%s. Click to attach.", item.alt,
-                    item.atLevel and (" at level " .. item.atLevel) or ""), 1, 1, 1, true)
+                t:AddLine(string.format(L["|cffffd040Haulwise|r: upgrade for %s%s. Click to attach."], item.alt,
+                    item.atLevel and (L[" at level "] .. item.atLevel) or ""), 1, 1, 1, true)
             end
         end
         r:Show()

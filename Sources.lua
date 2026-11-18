@@ -5,6 +5,7 @@
 --   AH       from your auction house scans
 -- Recipes are matched by name: the pattern "Pattern: Red Linen Robe" teaches "Red Linen Robe".
 local _, GP = ...
+local L = GP.L
 
 local RECIPE_CLASS = 9
 
@@ -59,7 +60,7 @@ local function readTrainer()
             if GetTrainerServiceSkillReq then skillName, skillLevel = GetTrainerServiceSkillReq(i) end
             if skillName and skillName ~= "" then
                 local cost = GetTrainerServiceCost and GetTrainerServiceCost(i) or 0
-                entry(name:lower()).trainer[trainer] = { zone = place, cost = cost, skill = skillLevel, prof = skillName, t = time() }
+                entry(name:lower()).trainer[trainer] = { zone = place, cost = cost, skill = skillLevel, prof = GP.ProfKey(skillName), t = time() }
                 n = n + 1
             end
         end
@@ -67,7 +68,7 @@ local function readTrainer()
     if GetTrainerServiceTypeFilter and SetTrainerServiceTypeFilter then
         for f, v in pairs(saved) do pcall(SetTrainerServiceTypeFilter, f, v and 1 or 0) end
     end
-    if n > 0 and GP.debug then GP.Print(string.format("Noted %d recipes taught by %s.", n, trainer)) end
+    if n > 0 and GP.debug then GP.Print(string.format(L["Noted %d recipes taught by %s."], n, trainer)) end
 end
 GP:On("TRAINER_SHOW", function() C_Timer.After(0.3, readTrainer) end)
 
@@ -181,27 +182,27 @@ end
 
 function GP.SourceShort(s)
     if s.kind == "Trainer" then
-        return string.format("|cffffd040Trainer|r %s%s", GP.Coins(s.cost or 0, true), s.skill and ("|cff8a8880 · skill " .. s.skill .. "|r") or "")
+        return string.format(L["|cffffd040Trainer|r %s%s"], GP.Coins(s.cost or 0, true), s.skill and (L["|cff8a8880 · skill "] .. s.skill .. "|r") or "")
     elseif s.kind == "Vendor" then
-        return string.format("|cff5fd35fVendor|r %s |cff8a8880%s%s|r", GP.Coins(s.cost or 0, true), s.who or "?", s.limited and " (limited)" or "")
+        return string.format(L["|cff5fd35fVendor|r %s |cff8a8880%s%s|r"], GP.Coins(s.cost or 0, true), s.who or "?", s.limited and L[" (limited)"] or "")
     elseif s.kind == "Drop" then
-        return string.format("|cffc48cffDrop|r %s |cff8a8880%.1f%%|r", s.who or "?", (s.chance or 0) * 100)
+        return string.format(L["|cffc48cffDrop|r %s |cff8a8880%.1f%%|r"], s.who or "?", (s.chance or 0) * 100)
     elseif s.kind == "AH" then
-        return "|cff88ccffAH|r " .. GP.Coins(s.cost or 0, true)
+        return L["|cff88ccffAH|r "] .. GP.Coins(s.cost or 0, true)
     end
     return ""
 end
 
 function GP.SourceLong(s)
     if s.kind == "Trainer" then
-        return string.format("Trainer: %s, %s", s.who or "?", s.zone or "?"),
-            GP.Coins(s.cost or 0) .. (s.skill and ("  (skill " .. s.skill .. ")") or "")
+        return string.format(L["Trainer: %s, %s"], s.who or "?", s.zone or "?"),
+            GP.Coins(s.cost or 0) .. (s.skill and (L["  (skill "] .. s.skill .. ")") or "")
     elseif s.kind == "Vendor" then
-        return string.format("Vendor: %s, %s%s", s.who or "?", s.zone or "?", s.limited and "  (limited stock)" or ""), GP.Coins(s.cost or 0)
+        return string.format(L["Vendor: %s, %s%s"], s.who or "?", s.zone or "?", s.limited and L["  (limited stock)"] or ""), GP.Coins(s.cost or 0)
     elseif s.kind == "Drop" then
-        return string.format("Drop: %s", s.who or "?"), string.format("%.1f%% of %d kills", (s.chance or 0) * 100, s.kills or 0)
+        return string.format(L["Drop: %s"], s.who or "?"), string.format(L["%.1f%% of %d kills"], (s.chance or 0) * 100, s.kills or 0)
     elseif s.kind == "AH" then
-        return "Auction house", GP.Coins(s.cost or 0)
+        return L["Auction house"], GP.Coins(s.cost or 0)
     end
     return "?", ""
 end

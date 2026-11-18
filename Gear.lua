@@ -2,6 +2,7 @@
 -- compares with what you wear, and does the same for your alts using their stored gear, so
 -- Bind-on-Equip loot can be mailed to the character it helps most.
 local _, GP = ...
+local L = GP.L
 
 local SLOTS = {
     INVTYPE_HEAD = { 1 }, INVTYPE_NECK = { 2 }, INVTYPE_SHOULDER = { 3 }, INVTYPE_CHEST = { 5 }, INVTYPE_ROBE = { 5 },
@@ -11,8 +12,8 @@ local SLOTS = {
     INVTYPE_SHIELD = { 17 }, INVTYPE_WEAPONOFFHAND = { 17 }, INVTYPE_HOLDABLE = { 17 },
     INVTYPE_RANGED = { 18 }, INVTYPE_RANGEDRIGHT = { 18 }, INVTYPE_THROWN = { 18 }, INVTYPE_RELIC = { 18 },
 }
-local SLOT_NAME = { "Head", "Neck", "Shoulder", "Shirt", "Chest", "Waist", "Legs", "Feet", "Wrist", "Hands",
-    "Ring", "Ring", "Trinket", "Trinket", "Back", "Main hand", "Off hand", "Ranged" }
+local SLOT_NAME = { L["Head"], L["Neck"], L["Shoulder"], L["Shirt"], L["Chest"], L["Waist"], L["Legs"], L["Feet"], L["Wrist"], L["Hands"],
+    L["Ring"], L["Ring"], L["Trinket"], L["Trinket"], L["Back"], L["Main hand"], L["Off hand"], L["Ranged"] }
 GP.SLOT_NAME = SLOT_NAME
 
 local RANGED_SUB = { [2] = true, [3] = true, [16] = true, [18] = true }
@@ -64,7 +65,7 @@ end
 function GP:WeightsLabel()
     local scales = self:UsePawn() and self:PawnVisibleScales()
     if scales then return scalesLabel(scales) end
-    return self:CurrentSpec() .. " (Haulwise)"
+    return L[self:CurrentSpec()] .. " (Haulwise)"
 end
 
 local function weightsFor(classFile, spec)
@@ -267,7 +268,7 @@ local function me()
         who.scorer, who.label = pawnScorer(scales), scalesLabel(scales)
         GP:Char().pawnScales = scales
     else
-        who.label = who.spec .. " (Haulwise)"
+        who.label = L[who.spec] .. " (Haulwise)"
     end
     return who
 end
@@ -279,7 +280,7 @@ local function altWho(c)
     if GP:UsePawn() and c.pawnScales then
         who.scorer, who.label = pawnScorer(c.pawnScales), scalesLabel(c.pawnScales)
     else
-        who.label = who.spec .. " (Haulwise)"
+        who.label = L[who.spec] .. " (Haulwise)"
     end
     return who
 end
@@ -396,7 +397,7 @@ function GP:FindAHUpgrades(gear, done)
         end
         self.db.ahUpgrades = { t = time(), rows = rows }
         if #rows > 0 then
-            self.Print(string.format("Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear → On the AH.", #rows))
+            self.Print(string.format(L["Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear → On the AH."], #rows))
         end
         if done then done(rows) end
         if self.RefreshUI then self:RefreshUI() end
@@ -518,7 +519,7 @@ function GP:ShowNextUpgrade()
 end
 
 function GP:Equip(r)
-    if InCombatLockdown and InCombatLockdown() then GP.Print("Can't change gear in combat."); return end
+    if InCombatLockdown and InCombatLockdown() then GP.Print(L["Can't change gear in combat."]); return end
     local equip = (C_Item and C_Item.EquipItemByName) or EquipItemByName
     if equip then equip(r.link) end
 end

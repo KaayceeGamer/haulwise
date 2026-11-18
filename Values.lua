@@ -6,6 +6,7 @@
 --           or one of your characters can disenchant it
 -- The item is worth the highest of the three. Every value carries its source so the UI can say why.
 local _, GP = ...
+local L = GP.L
 
 local AH_CUT = 0.95
 local MAX_AGE = 14 * 86400
@@ -105,7 +106,7 @@ function GP:BagValue(id, link, bound)
 end
 
 function GP.SourceTag(src, d)
-    if src == "AH" then return GP.AgeColor(d and d.ahAge) .. "AH|r" end
-    if src == "DE" then return "|cffc48cffDE|r" end
+    if src == "AH" then return GP.AgeColor(d and d.ahAge) .. L["AH|r"] end
+    if src == "DE" then return L["|cffc48cffDE|r"] end
     return "|cff999999V|r"
 end

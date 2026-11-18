@@ -1,5 +1,6 @@
 -- Haulwise: Settings window. Appearance (font, text size, scale, background) and every option.
 local _, GP = ...
+local L = GP.L
 
 local panel
 
@@ -81,7 +82,7 @@ local function setScale(name, key, v)
 end
 
 local function build()
-    panel = GP.Panel("HaulwiseSettings", 400, 662, "Haulwise settings")
+    panel = GP.Panel("HaulwiseSettings", 400, 662, L["Haulwise settings"])
     panel:SetFrameStrata("DIALOG")
     local s = GP.db.settings
     local draws = {}
@@ -89,12 +90,12 @@ local function build()
     local pct = function(v) return string.format("%d%%", math.floor(v * 100 + 0.5)) end
 
     local y = -38
-    heading(panel, "Appearance", y)
+    heading(panel, L["Appearance"], y)
     y = y - 26
     -- Font: a button that cycles through the game's fonts, showing each in itself.
     local fl = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     fl:SetPoint("TOPLEFT", 18, y)
-    fl:SetText("Font")
+    fl:SetText(L["Font"])
     local fontBtn = GP.FlatButton(panel, "", 156, 20)
     fontBtn:SetPoint("TOPRIGHT", -14, y + 3)
     local function drawFont()
@@ -110,85 +111,85 @@ local function build()
     end)
     add(drawFont)
     y = y - 26
-    add(stepper(panel, "Text size", y, function() return s.fontSize or 12 end,
+    add(stepper(panel, L["Text size"], y, function() return s.fontSize or 12 end,
         function(v) s.fontSize = v; GP.ApplyFonts(); if GP.RefreshUI then GP:RefreshUI() end end,
-        function(v) return v .. " pt" end, 1, 9, 18))
+        function(v) return v .. L[" pt"] end, 1, 9, 18))
     y = y - 26
-    add(stepper(panel, "Window size", y, function() return s.winScale or 1 end,
+    add(stepper(panel, L["Window size"], y, function() return s.winScale or 1 end,
         function(v) setScale("HaulwiseFrame", "winScale", v) end, pct, 0.05, 0.6, 1.6,
-        "Scales the whole window. Drag the bottom-right corner to change its width and height instead."))
+        L["Scales the whole window. Drag the bottom-right corner to change its width and height instead."]))
     y = y - 26
-    add(stepper(panel, "HUD size", y, function() return s.hudScale or 1 end,
+    add(stepper(panel, L["HUD size"], y, function() return s.hudScale or 1 end,
         function(v) setScale("HaulwiseHUD", "hudScale", v) end, pct, 0.05, 0.6, 1.6))
     y = y - 26
-    add(stepper(panel, "Background", y, function() return s.opacity or 0.96 end,
-        function(v) s.opacity = v; GP.ApplyOpacity() end, pct, 0.05, 0.3, 1.0, "How see-through the windows are."))
+    add(stepper(panel, L["Background"], y, function() return s.opacity or 0.96 end,
+        function(v) s.opacity = v; GP.ApplyOpacity() end, pct, 0.05, 0.3, 1.0, L["How see-through the windows are."]))
     y = y - 28
-    add(check(panel, "Show the HUD", 18, y, "hudShown", "The small box that stays on screen.",
+    add(check(panel, L["Show the HUD"], 18, y, "hudShown", L["The small box that stays on screen."],
         function() if s.hudShown then GP:ShowHUD() elseif HaulwiseHUD then HaulwiseHUD:Hide() end end))
-    add(check(panel, "Lock HUD position", 200, y, "hudLocked", "Stop the HUD from being dragged by accident."))
+    add(check(panel, L["Lock HUD position"], 200, y, "hudLocked", L["Stop the HUD from being dragged by accident."]))
     y = y - 22
-    add(check(panel, "Minimap button", 18, y, "minimap", "Click: open Haulwise. Right-click: settings. Shift-click: the HUD. Drag it around the minimap.",
+    add(check(panel, L["Minimap button"], 18, y, "minimap", L["Click: open Haulwise. Right-click: settings. Shift-click: the HUD. Drag it around the minimap."],
         function() GP:UpdateMinimapButton() end))
 
     y = y - 34
-    heading(panel, "Bags and loot", y)
+    heading(panel, L["Bags and loot"], y)
     y = y - 26
-    add(check(panel, "Swap popup", 18, y, "swapPopups", "Bags full while looting: offer to swap the cheapest item for the loot."))
-    add(check(panel, "Make room popup", 200, y, "makeRoomPopup", "\"Inventory is full\" elsewhere: offer the cheapest items to delete."))
+    add(check(panel, L["Swap popup"], 18, y, "swapPopups", L["Bags full while looting: offer to swap the cheapest item for the loot."]))
+    add(check(panel, L["Make room popup"], 200, y, "makeRoomPopup", L["\"Inventory is full\" elsewhere: offer the cheapest items to delete."]))
     y = y - 22
-    add(check(panel, "Disenchant value", 18, y, "useDisenchant", "Value gear at what disenchanting gives, when you or an alt can disenchant it."))
-    add(check(panel, "Protect recipe reagents", 200, y, "protectReagents", "Never offer items your known recipes use. Crafting materials are never offered anyway."))
+    add(check(panel, L["Disenchant value"], 18, y, "useDisenchant", L["Value gear at what disenchanting gives, when you or an alt can disenchant it."]))
+    add(check(panel, L["Protect recipe reagents"], 200, y, "protectReagents", L["Never offer items your known recipes use. Crafting materials are never offered anyway."]))
 
     y = y - 34
-    heading(panel, "Gear", y)
+    heading(panel, L["Gear"], y)
     y = y - 26
-    add(check(panel, "Upgrade Advisor", 18, y, "upgradeAdvisor", "Check gear you pick up against what you wear."))
-    add(check(panel, "Upgrade popups", 200, y, "upgradePopups", "Show a popup when new loot is an upgrade (once per item)."))
+    add(check(panel, L["Upgrade Advisor"], 18, y, "upgradeAdvisor", L["Check gear you pick up against what you wear."]))
+    add(check(panel, L["Upgrade popups"], 200, y, "upgradePopups", L["Show a popup when new loot is an upgrade (once per item)."]))
     y = y - 22
-    add(check(panel, "Send to alts at mailbox", 18, y, "sendToAltsAtMailbox", "At a mailbox, list gear that's an upgrade for one of your alts."))
-    add(check(panel, "Use Pawn's stat weights", 200, y, "usePawn",
-        "With Pawn installed, judge gear with the Pawn scales you have switched on for each character (log in on an alt once so Haulwise knows its scales). Off: Haulwise's own weights per talent tree.",
+    add(check(panel, L["Send to alts at mailbox"], 18, y, "sendToAltsAtMailbox", L["At a mailbox, list gear that's an upgrade for one of your alts."]))
+    add(check(panel, L["Use Pawn's stat weights"], 200, y, "usePawn",
+        L["With Pawn installed, judge gear with the Pawn scales you have switched on for each character (log in on an alt once so Haulwise knows its scales). Off: Haulwise's own weights per talent tree."],
         function() GP:ScanUpgrades() end))
 
     y = y - 34
-    heading(panel, "Farming", y)
+    heading(panel, L["Farming"], y)
     y = y - 26
-    add(check(panel, "Community data", 18, y, "useShared", "Add everyone's pooled kills (shipped with Haulwise) and friends' imports to your own."))
-    add(check(panel, "Record in groups", 200, y, "trackInGroup", "Group loot makes drop rates less accurate, so Haulwise records solo kills only unless this is on."))
+    add(check(panel, L["Community data"], 18, y, "useShared", L["Add everyone's pooled kills (shipped with Haulwise) and friends' imports to your own."]))
+    add(check(panel, L["Record in groups"], 200, y, "trackInGroup", L["Group loot makes drop rates less accurate, so Haulwise records solo kills only unless this is on."]))
     y = y - 22
-    add(check(panel, "Remind me to share", 18, y, "shareReminder", "A chat line every 100 kills you haven't shared yet. Sharing is always manual."))
+    add(check(panel, L["Remind me to share"], 18, y, "shareReminder", L["A chat line every 100 kills you haven't shared yet. Sharing is always manual."]))
     y = y - 34
-    heading(panel, "Auction house and mail", y)
+    heading(panel, L["Auction house and mail"], y)
     y = y - 26
-    add(check(panel, "Price help when selling", 18, y, "sellHelper", "Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."))
+    add(check(panel, L["Price help when selling"], 18, y, "sellHelper", L["Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."]))
     y = y - 22
-    add(check(panel, "Disenchant in tooltips", 18, y, "tooltipDisenchant", "Item tooltips show what gear disenchants into, at your AH prices, and what your own disenchants gave."))
-    add(check(panel, "Mats to crafters", 200, y + 22, "matsToCrafters", "At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."))
+    add(check(panel, L["Disenchant in tooltips"], 18, y, "tooltipDisenchant", L["Item tooltips show what gear disenchants into, at your AH prices, and what your own disenchants gave."]))
+    add(check(panel, L["Mats to crafters"], 200, y + 22, "matsToCrafters", L["At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."]))
 
     -- Four buttons of the same width across the bottom, so nothing overlaps.
     local BW, GAP = 86, 6
-    local reset = GP.FlatButton(panel, "Reset windows", BW, 22)
+    local reset = GP.FlatButton(panel, L["Reset windows"], BW, 22)
     reset:SetPoint("BOTTOMLEFT", 14, 12)
     reset:SetScript("OnClick", function()
         GP.db.positions, GP.db.sizes = {}, {}
         s.winScale, s.hudScale = 1, 1
-        GP.Print("Positions and sizes reset. Type /reload to apply.")
+        GP.Print(L["Positions and sizes reset. Type /reload to apply."])
         for _, d in ipairs(draws) do d() end
     end)
     reset:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Put every Haulwise window back in its place, at its normal size.", 1, 1, 1, true)
+        GameTooltip:AddLine(L["Put every Haulwise window back in its place, at its normal size."], 1, 1, 1, true)
         GameTooltip:Show()
     end)
     reset:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    local guideBtn = GP.FlatButton(panel, "Guide", BW, 22)
+    local guideBtn = GP.FlatButton(panel, L["Guide"], BW, 22)
     guideBtn:SetPoint("LEFT", reset, "RIGHT", GAP, 0)
     guideBtn:SetScript("OnClick", function() GP:ShowGuide(false) end)
-    local fbBtn = GP.FlatButton(panel, "Feedback", BW, 22)
+    local fbBtn = GP.FlatButton(panel, L["Feedback"], BW, 22)
     fbBtn:SetPoint("LEFT", guideBtn, "RIGHT", GAP, 0)
     fbBtn:SetScript("OnClick", function() GP:ShowFeedback() end)
-    local done = GP.FlatButton(panel, "Close", BW, 22)
+    local done = GP.FlatButton(panel, L["Close"], BW, 22)
     done:SetPoint("LEFT", fbBtn, "RIGHT", GAP, 0)
     done:SetScript("OnClick", function() panel:Hide() end)
 

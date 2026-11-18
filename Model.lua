@@ -11,6 +11,7 @@
 --   Thin markets: when you'd farm more per hour than a quarter of what is listed on the AH,
 --   the extra units are valued at the vendor price, since nobody will buy them at AH price.
 local _, GP = ...
+local L = GP.L
 
 local MIN_TIMED = 5          -- kill intervals needed before we trust a measured kills/hour
 local GATHER_LINES = { [393] = true, [186] = true, [182] = true } -- skinning, mining, herbalism
@@ -152,7 +153,7 @@ function GP:Evaluate(npc, m)
     for _, l in ipairs(lines) do if not l.priced and l.vendor == 0 then unpriced = unpriced + 1 end end
 
     return {
-        npc = npc, name = m.name or ("NPC #" .. npc), zone = topZone(m.zones),
+        npc = npc, name = m.name or (L["NPC #"] .. npc), zone = topZone(m.zones),
         minL = m.minL, maxL = m.maxL, kills = m.kills, kph = kph, measured = measured,
         perKill = est / kph, est = est, safe = safe, coinsPerKill = m.money / K,
         lines = lines, unpriced = unpriced,
@@ -225,7 +226,7 @@ function GP:SourcesFor(itemID, max)
     for npc, m in pairs(self:MergedMobs()) do
         local e = m.items[itemID]
         if e and m.kills > 0 then
-            out[#out + 1] = { name = m.name or ("NPC #" .. npc), chance = e.k / m.kills, kills = m.kills,
+            out[#out + 1] = { name = m.name or (L["NPC #"] .. npc), chance = e.k / m.kills, kills = m.kills,
                               lo = (GP.Wilson(e.k, m.kills)) }
         end
     end

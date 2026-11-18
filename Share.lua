@@ -2,6 +2,7 @@
 -- Each player's data is stored under their own id, so importing the same friend twice
 -- replaces their old numbers instead of counting their kills twice.
 local _, GP = ...
+local L = GP.L
 
 local function clean(s)
     return (tostring(s or ""):gsub("[,;:/~|\n\r]", " "))
@@ -62,7 +63,7 @@ end
 
 local function num(s, max)
     local n = tonumber(s)
-    if not n or n < 0 or n ~= n or n > (max or 1e9) then error("bad number") end
+    if not n or n < 0 or n ~= n or n > (max or 1e9) then error(L["bad number"]) end
     return math.floor(n)
 end
 
@@ -70,7 +71,7 @@ local function unpackCounts(s)
     local t = {}
     for part in (s or ""):gmatch("[^/]+") do
         local id, k, q = part:match("^(%d+):(%d+):(%d+)$")
-        if not id then error("bad item") end
+        if not id then error(L["bad item"]) end
         t[num(id)] = { k = num(k), q = num(q) }
     end
     return t
@@ -97,7 +98,7 @@ function GP:ParseExport(str)
     str = (str or ""):gsub("%s+$", ""):gsub("^%s+", "")
     local records = split(str, ";")
     local head = split(records[1], ",")
-    if (head[1] ~= "CF1" and head[1] ~= "CF2") or not head[2] then error("not a Haulwise string") end
+    if (head[1] ~= "CF1" and head[1] ~= "CF2") or not head[2] then error(L["not a Haulwise string"]) end
     local uid, label, when = head[2], head[3], num(head[4], 4e9)
     local mobs, n = {}, 0
     local sources, vendorBuy, recipeItems = {}, {}, {}
@@ -110,17 +111,17 @@ function GP:ParseExport(str)
         local f = split(records[i], ",")
         local kind = f[1]
         if kind == "T" then
-            if #f < 6 then error("record " .. i .. " is cut short") end
+            if #f < 6 then error(L["record "] .. i .. L[" is cut short"]) end
             src(f[2]).trainer[f[3]] = { zone = f[4], cost = num(f[5], 1e9), skill = num(f[6], 1000), prof = f[7] }
         elseif kind == "V" then
-            if #f < 7 then error("record " .. i .. " is cut short") end
+            if #f < 7 then error(L["record "] .. i .. L[" is cut short"]) end
             src(f[2]).vendor[f[3]] = { zone = f[4], price = num(f[5], 1e9), limited = f[6] == "1", item = num(f[7], 1e7) }
         elseif kind == "B" then
             vendorBuy[num(f[2], 1e7)] = num(f[3], 1e9)
         elseif kind == "R" then
             recipeItems[f[2]] = num(f[3], 1e7)
         else
-            if #f < 15 then error("record " .. i .. " is cut short") end
+            if #f < 15 then error(L["record "] .. i .. L[" is cut short"]) end
             local npc = num(f[1], 1e7)
             local m = {
                 name = f[2] ~= "" and f[2] or nil,
@@ -144,21 +145,21 @@ end
 function GP:ImportString(str)
     local ok, result = pcall(function()
         local uid, src = self:ParseExport(str)
-        if uid == self.db.uid then error("that is your own data") end
+        if uid == self.db.uid then error(L["that is your own data"]) end
         if uid == "community" then
             -- A fresher community download than the one bundled with the addon.
             if self.community and (self.community.time or 0) >= (src.time or 0) then
-                error("you already have this or newer community data")
+                error(L["you already have this or newer community data"])
             end
             self.db.shared.community = src
             self.community = nil
-            return string.format("Community data updated: %d mobs from %d players.", src.n, src.contributors or 0)
+            return string.format(L["Community data updated: %d mobs from %d players."], src.n, src.contributors or 0)
         end
         self.db.shared[uid] = src
-        return string.format("Imported %d mobs from %s.", src.n, src.label ~= "" and src.label or "a friend")
+        return string.format(L["Imported %d mobs from %s."], src.n, src.label ~= "" and src.label or L["a friend"])
     end)
     if self.RefreshUI then self:RefreshUI() end
-    return ok, ok and result or ("Import failed: " .. tostring(result):gsub("^.-:%d+: ", ""))
+    return ok, ok and result or (L["Import failed: "] .. tostring(result):gsub("^.-:%d+: ", ""))
 end
 
 -- Community data shipped inside the addon (Data.lua, rebuilt weekly from everyone's uploads).
@@ -240,19 +241,19 @@ function GP:MaybeNudgeShare()
     local own, new = self:OwnKills(), self:UnsharedKills()
     if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
         self.db.shareNudgedAt = own
-        self.Print(string.format("You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings.", new, GP.SITE_URL))
+        self.Print(string.format(L["You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings."], new, GP.SITE_URL))
     end
 end
 
 function GP:ShowExport()
     local b = getBox()
-    b.title:SetText("Share your data: press Ctrl+C, then paste it on the Haulwise website")
+    b.title:SetText(L["Share your data: press Ctrl+C, then paste it on the Haulwise website"])
     self.db.sharedKills = self:OwnKills()
     b.edit:SetText(self:ExportString())
     b.edit:HighlightText()
     b.edit:SetFocus()
-    b.status:SetText("Website: |cffffffff" .. GP.SITE_URL .. "|r   " .. "|cff8f8b80Nothing is sent automatically; only what you paste is shared.|r")
-    b.action:SetText("Close")
+    b.status:SetText(L["Website: |cffffffff"] .. GP.SITE_URL .. "|r   " .. L["|cff8f8b80Nothing is sent automatically; only what you paste is shared.|r"])
+    b.action:SetText(L["Close"])
     b.action:SetScript("OnClick", function() b:Hide() end)
     b:Show()
 end
@@ -263,7 +264,7 @@ function GP:ErrorReport(max)
     if #errs == 0 then return nil end
     local lines = {}
     local build = GetBuildInfo and select(1, GetBuildInfo()) or "?"
-    lines[1] = string.format("Haulwise %s, game %s, %d error%s:", GP.VERSION or "?", build, #errs, #errs == 1 and "" or "s")
+    lines[1] = string.format("Haulwise %s, game %s, %s:", GP.VERSION or "?", build, GP.Plural(#errs, "error"))
     for i = #errs, math.max(1, #errs - (max or 5) + 1), -1 do
         local e = errs[i]
         lines[#lines + 1] = string.format("[%s] %s%s (%s, v%s): %s", date("%d %b %H:%M", e.t or 0), e.where or "?",
@@ -275,28 +276,28 @@ end
 function GP:ShowFeedback()
     local b = getBox()
     local report = self:ErrorReport(5)
-    b.title:SetText(report and "Feedback: Haulwise noted errors. Copy everything below with Ctrl+C"
-        or "Feedback, bugs and ideas: copy a link with Ctrl+C")
-    b.edit:SetText("Report a bug or suggest an idea (GitHub issues):\n" .. GP.ISSUES_URL ..
-        "\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your data and get the newest community data:\n" .. GP.SITE_URL ..
-        "\n\nWhen reporting a bug, tell us what you did and what you expected. Haulwise version: " .. (GP.VERSION or "?") .. "." ..
-        (report and ("\n\n--- Paste this into your report ---\n" .. report) or "\n\nNo Haulwise errors noted so far."))
+    b.title:SetText(report and L["Feedback: Haulwise noted errors. Copy everything below with Ctrl+C"]
+        or L["Feedback, bugs and ideas: copy a link with Ctrl+C"])
+    b.edit:SetText(L["Report a bug or suggest an idea (GitHub issues):\n"] .. GP.ISSUES_URL ..
+        L["\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your data and get the newest community data:\n"] .. GP.SITE_URL ..
+        L["\n\nWhen reporting a bug, tell us what you did and what you expected. Haulwise version: "] .. (GP.VERSION or "?") .. "." ..
+        (report and (L["\n\n--- Paste this into your report ---\n"] .. report) or L["\n\nNo Haulwise errors noted so far."]))
     if report then b.edit:HighlightText() end
     b.edit:SetCursorPosition(0)
     b.edit:SetFocus()
     b.status:SetText("")
-    b.action:SetText("Close")
+    b.action:SetText(L["Close"])
     b.action:SetScript("OnClick", function() b:Hide() end)
     b:Show()
 end
 
 function GP:ShowImport()
     local b = getBox()
-    b.title:SetText("Import: paste a friend's string or the latest community data")
+    b.title:SetText(L["Import: paste a friend's string or the latest community data"])
     b.edit:SetText("")
     b.edit:SetFocus()
     b.status:SetText("")
-    b.action:SetText("Import")
+    b.action:SetText(L["Import"])
     b.action:SetScript("OnClick", function()
         local ok, msg = GP:ImportString(b.edit:GetText())
         b.status:SetText((ok and "|cff55ff55" or "|cffff5555") .. msg .. "|r")

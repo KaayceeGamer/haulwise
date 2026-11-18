@@ -8,6 +8,7 @@
 -- Each scan also adds a day to a 28-day history (stored as a compact string per item), which
 -- feeds deals, trends and weekday patterns. Auctionator fills gaps if installed.
 local _, GP = ...
+local L = GP.L
 
 local AH_CUT = 0.95
 local THROTTLE = 15 * 60
@@ -154,18 +155,18 @@ end
 -- What the scan button's tooltip says while a scan runs: nil when no scan is running.
 function GP:ScanStatus()
     if scanning == true then
-        return "Waiting for the auction house to send every listing. This can take up to a minute; you can keep playing."
+        return L["Waiting for the auction house to send every listing. This can take up to a minute; you can keep playing."]
     elseif scanning then
-        return string.format("Reading the listings: %d%% done. Gear upgrades and deals update when it's finished.", math.floor((self.scanProgress or 0) * 100))
+        return string.format(L["Reading the listings: %d%% done. Gear upgrades and deals update when it's finished."], math.floor((self.scanProgress or 0) * 100))
     end
 end
 
 function GP:CanScan()
-    if not (C_AuctionHouse and C_AuctionHouse.ReplicateItems) then return false, "no AH API" end
-    if not self.ahOpen then return false, "open the auction house first" end
-    if scanning then return false, "scanning..." end
+    if not (C_AuctionHouse and C_AuctionHouse.ReplicateItems) then return false, L["no AH API"] end
+    if not self.ahOpen then return false, L["open the auction house first"] end
+    if scanning then return false, L["scanning..."] end
     local wait = THROTTLE - (time() - (self.db.priceScanTime or 0))
-    if wait > 0 then return false, string.format("next scan in %d min", math.ceil(wait / 60)) end
+    if wait > 0 then return false, string.format(L["next scan in %d min"], math.ceil(wait / 60)) end
     return true
 end
 
@@ -213,7 +214,7 @@ local function finish(lists, names, gear)
     db.scanDays = db.scanDays or {}
     db.scanDays[day] = true
     scanning = false
-    GP.Print(string.format("Prices updated for %d items.", n))
+    GP.Print(string.format(L["Prices updated for %d items."], n))
     if gear and GP.FindAHUpgrades then GP:FindAHUpgrades(gear) end
     if GP.OnScanFinished then GP:OnScanFinished() end
     if GP.RefreshUI then GP:RefreshUI() end
@@ -222,13 +223,13 @@ end
 local function fail(why)
     scanning = false
     GP.scanProgress = nil
-    GP.Print("Scan stopped: " .. tostring(why) .. ". Nothing was saved; try again.")
+    GP.Print(L["Scan stopped: "] .. tostring(why) .. L[". Nothing was saved; try again."])
     if GP.RefreshUI then GP:RefreshUI() end
 end
 
 local function process()
     local total = C_AuctionHouse.GetNumReplicateItems() or 0
-    if total == 0 then return fail("the auction house sent an empty list") end
+    if total == 0 then return fail(L["the auction house sent an empty list"]) end
     local lists, names, i = {}, {}, 0
     local gear, nGear = {}, 0
     local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
@@ -280,18 +281,18 @@ function GP:ScanAH()
     local ok, why = self:CanScan()
     if not ok then
         local status = self:ScanStatus()
-        self.Print(status and ("Already scanning. " .. status) or ("Can't scan: " .. why .. "."))
+        self.Print(status and (L["Already scanning. "] .. status) or (L["Can't scan: "] .. why .. "."))
         return
     end
     scanning = true
     self.scanProgress = 0
-    self.Print("Scanning the auction house...")
+    self.Print(L["Scanning the auction house..."])
     C_AuctionHouse.ReplicateItems()
     -- If the auction house never answers, don't stay stuck: give up after a minute.
     local started = GetTime()
     C_Timer.After(60, function()
         if scanning == true and GetTime() - started >= 59 then
-            fail("no answer from the auction house within a minute (it allows one full scan every 15 minutes)")
+            fail(L["no answer from the auction house within a minute (it allows one full scan every 15 minutes)"])
         end
     end)
     if self.RefreshUI then self:RefreshUI() end
@@ -301,7 +302,7 @@ end
 function GP:SearchAH(id)
     local name = itemInfo(id)
     if not name then return end
-    if not self.ahOpen then self.Print("Open the auction house, then click again: " .. name); return end
+    if not self.ahOpen then self.Print(L["Open the auction house, then click again: "] .. name); return end
     local bar = AuctionHouseFrame and AuctionHouseFrame.SearchBar
     if bar and bar.SearchBox then
         pcall(function()
@@ -320,7 +321,7 @@ end)
 GP:On("AUCTION_HOUSE_SHOW", function() GP.ahOpen = true; if GP.RefreshUI then GP:RefreshUI() end end)
 GP:On("AUCTION_HOUSE_CLOSED", function()
     GP.ahOpen = false
-    if scanning == true then fail("the auction house was closed before it answered") end
+    if scanning == true then fail(L["the auction house was closed before it answered"]) end
     if GP.RefreshUI then GP:RefreshUI() end
 end)
 GP:On("REPLICATE_ITEM_LIST_UPDATE", function()

@@ -1,6 +1,7 @@
 -- Haulwise: bags. Values every item, knows what must never be thrown away, and when your bags are
 -- full offers the cheapest item to swap for better loot (or to delete to make room).
 local _, GP = ...
+local L = GP.L
 
 local TOOLS = {}
 for _, id in ipairs({
@@ -25,7 +26,7 @@ for _, id in ipairs({
 local CLASS_QUEST, CLASS_PROJECTILE, CLASS_QUIVER, CLASS_CONTAINER = 12, 6, 11, 1
 -- Crafting materials are never offered, whatever they're worth: gems (3), reagents (5),
 -- trade goods (7: dust, essences, shards, cloth, leather, ore, herbs...) and recipes (9).
-local CRAFTING = { [3] = "gem", [5] = "reagent", [7] = "crafting material", [9] = "recipe" }
+local CRAFTING = { [3] = L["gem"], [5] = L["reagent"], [7] = L["crafting material"], [9] = L["recipe"] }
 
 local function family(bag)
     if not (C_Container and C_Container.GetContainerNumFreeSlots) then return 0, 0 end
@@ -88,13 +89,13 @@ function GP:ProtectReason(bag, slot, it, info)
     if info.classID == CLASS_CONTAINER then return "bag" end
     if isQuest(bag, slot, info) then return "quest" end
     if CRAFTING[info.classID or -1] then return CRAFTING[info.classID] end
-    if CLASS_REAGENTS[it.itemID] or (info.classID == 15 and info.subclassID == 1) then return "class reagent" end
-    if GP.DE_MATS and GP.DE_MATS[it.itemID] then return "crafting material" end
-    if not isGeneral(bag) then return "special bag" end
+    if CLASS_REAGENTS[it.itemID] or (info.classID == 15 and info.subclassID == 1) then return L["class reagent"] end
+    if GP.DE_MATS and GP.DE_MATS[it.itemID] then return L["crafting material"] end
+    if not isGeneral(bag) then return L["special bag"] end
     if (it.quality or info.quality or 0) >= 4 then return "epic" end
     if s.protectReagents and self:IsKeptReagent(it.itemID) then return "reagent" end
     local up = self.IsUpgradeItem and self:IsUpgradeItem(it.itemID)
-    if up then return "upgrade for " .. up end
+    if up then return L["upgrade for "] .. up end
     return nil
 end
 
@@ -113,7 +114,7 @@ function GP:BagItems()
                     unit = unit, total = unit * count, src = src, d = d, bound = it.isBound, info = info,
                 }
                 row.protect = self:ProtectReason(bag, slot, it, info)
-                if row.total <= 0 and not row.protect then row.protect = it.hasNoValue and "no value" or nil end
+                if row.total <= 0 and not row.protect then row.protect = it.hasNoValue and L["no value"] or nil end
                 vendorTotal = vendorTotal + (d.vendor or 0) * count
                 bestTotal = bestTotal + row.total
                 rows[#rows + 1] = row
@@ -127,12 +128,12 @@ end
 function GP:BagAdvice(r)
     if r.src == "DE" then
         local who = r.d and r.d.deWho or {}
-        for _, n in ipairs(who) do if n == UnitName("player") then return "|cffc48cffdisenchant|r" end end
-        return "|cffc48cffsend to " .. (who[1] or "an enchanter") .. " to disenchant|r"
+        for _, n in ipairs(who) do if n == UnitName("player") then return L["|cffc48cffdisenchant|r"] end end
+        return L["|cffc48cffsend to "] .. (who[1] or L["an enchanter"]) .. L[" to disenchant|r"]
     elseif r.src == "AH" then
-        return "|cffffd040sell on the AH|r"
+        return L["|cffffd040sell on the AH|r"]
     end
-    return "|cffaaaaaasell to a vendor|r"
+    return L["|cffaaaaaasell to a vendor|r"]
 end
 
 -- Items that may go, cheapest first.
@@ -150,13 +151,13 @@ end
 -- Delete one bag item (from a click). Re-checks that the slot still holds the same thing.
 function GP:DeleteBagItem(row)
     local it = GP.SlotInfo(row.bag, row.slot)
-    if not it or it.hyperlink ~= row.link then GP.Print("That item moved. Try again."); return false end
+    if not it or it.hyperlink ~= row.link then GP.Print(L["That item moved. Try again."]); return false end
     if CursorHasItem and CursorHasItem() then ClearCursor() end
     C_Container.PickupContainerItem(row.bag, row.slot)
     if DeleteCursorItem then DeleteCursorItem() end
     if CursorHasItem and CursorHasItem() then
         -- The game wants you to confirm this one yourself: the item stays on your cursor.
-        GP.Print("Confirm the delete in the game's dialog, or right-click to put it back.")
+        GP.Print(L["Confirm the delete in the game's dialog, or right-click to put it back."])
         return false
     end
     return true
@@ -182,7 +183,7 @@ function GP:SellJunk()
             sold, money = sold + 1, money + r.d.vendor * r.count
         end
     end
-    if sold > 0 then GP.Print(string.format("Sold %d grey items for %s.", sold, GP.Coins(money))) end
+    if sold > 0 then GP.Print(string.format(L["Sold %d grey items for %s."], sold, GP.Coins(money))) end
 end
 GP:On("MERCHANT_SHOW", function() GP.atMerchant = true; if GP.RefreshHUD then GP:RefreshHUD() end end)
 GP:On("MERCHANT_CLOSED", function() GP.atMerchant = false; if GP.RefreshHUD then GP:RefreshHUD() end end)
@@ -286,27 +287,27 @@ end
 function GP:AddTotalsTooltip(tt)
     local t = self:Totals()
     local C = GP.Coins
-    tt:AddLine("|cffffd040Haulwise|r: what you're worth")
-    tt:AddDoubleLine("Gold", C(t.gold), 0.8, 0.8, 0.8, 1, 1, 1)
-    tt:AddDoubleLine("Bags at vendor (guaranteed)", C(t.vendor), 0.8, 0.8, 0.8, 1, 1, 1)
-    tt:AddDoubleLine("Bags at best value", C(t.best), 0.8, 0.8, 0.8, 1, 1, 1)
-    tt:AddDoubleLine("    from auction house", C(t.bySrc.AH or 0), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7)
-    if (t.bySrc.DE or 0) > 0 then tt:AddDoubleLine("    from disenchanting", C(t.bySrc.DE), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7) end
-    tt:AddDoubleLine("    from vendor", C(t.bySrc.V or 0), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7)
-    tt:AddDoubleLine("    gain over vendor", "|cff5fd35f+" .. C(t.best - t.vendor) .. "|r", 0.6, 0.6, 0.6)
+    tt:AddLine(L["|cffffd040Haulwise|r: what you're worth"])
+    tt:AddDoubleLine(L["Gold"], C(t.gold), 0.8, 0.8, 0.8, 1, 1, 1)
+    tt:AddDoubleLine(L["Bags at vendor (guaranteed)"], C(t.vendor), 0.8, 0.8, 0.8, 1, 1, 1)
+    tt:AddDoubleLine(L["Bags at best value"], C(t.best), 0.8, 0.8, 0.8, 1, 1, 1)
+    tt:AddDoubleLine(L["    from auction house"], C(t.bySrc.AH or 0), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7)
+    if (t.bySrc.DE or 0) > 0 then tt:AddDoubleLine(L["    from disenchanting"], C(t.bySrc.DE), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7) end
+    tt:AddDoubleLine(L["    from vendor"], C(t.bySrc.V or 0), 0.6, 0.6, 0.6, 0.7, 0.7, 0.7)
+    tt:AddDoubleLine(L["    gain over vendor"], "|cff5fd35f+" .. C(t.best - t.vendor) .. "|r", 0.6, 0.6, 0.6)
     if t.bankSeen then
-        tt:AddDoubleLine("Bank", C(t.bank), 0.8, 0.8, 0.8, 1, 1, 1)
+        tt:AddDoubleLine(L["Bank"], C(t.bank), 0.8, 0.8, 0.8, 1, 1, 1)
     else
-        tt:AddDoubleLine("Bank", "|cff999999open your bank once|r", 0.8, 0.8, 0.8)
+        tt:AddDoubleLine(L["Bank"], L["|cff999999open your bank once|r"], 0.8, 0.8, 0.8)
     end
-    if t.mailGold > 0 then tt:AddDoubleLine("Gold in mail", C(t.mailGold), 0.8, 0.8, 0.8, 1, 1, 1) end
+    if t.mailGold > 0 then tt:AddDoubleLine(L["Gold in mail"], C(t.mailGold), 0.8, 0.8, 0.8, 1, 1, 1) end
     tt:AddLine(" ")
-    tt:AddDoubleLine("Total (this character)", C(t.total), 1, 0.82, 0.25, 1, 0.82, 0.25)
-    tt:AddDoubleLine("Guaranteed (gold + vendor)", C(t.guaranteed), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
-    if t.account and t.account > t.total then tt:AddDoubleLine("All your characters", C(t.account), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8) end
+    tt:AddDoubleLine(L["Total (this character)"], C(t.total), 1, 0.82, 0.25, 1, 0.82, 0.25)
+    tt:AddDoubleLine(L["Guaranteed (gold + vendor)"], C(t.guaranteed), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
+    if t.account and t.account > t.total then tt:AddDoubleLine(L["All your characters"], C(t.account), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8) end
     if #t.top > 0 then
         tt:AddLine(" ")
-        tt:AddLine("Most valuable in your bags", 1, 0.82, 0.25)
+        tt:AddLine(L["Most valuable in your bags"], 1, 0.82, 0.25)
         for _, r in ipairs(t.top) do
             local name, quality = GP.ItemInfo(r.id)
             local col = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]

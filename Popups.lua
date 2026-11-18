@@ -1,9 +1,10 @@
 -- Haulwise: popups. Swap (bags full while looting), Make room, and Upgrade found.
 local _, GP = ...
+local L = GP.L
 
 local KIND_TITLE = {
-    quest = "QUEST ITEM: make room", upgrade = "GEAR UPGRADE: make room", reagent = "REAGENT YOU USE: make room",
-    plain = "BAGS FULL: swap?", bad = "NOT WORTH A SWAP",
+    quest = L["QUEST ITEM: make room"], upgrade = L["GEAR UPGRADE: make room"], reagent = L["REAGENT YOU USE: make room"],
+    plain = L["BAGS FULL: swap?"], bad = L["NOT WORTH A SWAP"],
 }
 
 -- Swap and Make room ---------------------------------------------------------------------------
@@ -48,11 +49,11 @@ local function buildSwap()
     swap.note:SetPoint("TOPLEFT", 14, -96)
     swap.note:SetPoint("RIGHT", swap.verdict, "LEFT", -8, 0)
     swap.note:SetJustifyH("LEFT")
-    swap.go = GP.FlatButton(swap, "Swap", 120, 24)
+    swap.go = GP.FlatButton(swap, L["Swap"], 120, 24)
     swap.go:SetPoint("BOTTOMLEFT", 12, 10)
-    swap.next = GP.FlatButton(swap, "Other item", 100, 24)
+    swap.next = GP.FlatButton(swap, L["Other item"], 100, 24)
     swap.next:SetPoint("LEFT", swap.go, "RIGHT", 6, 0)
-    swap.cancel = GP.FlatButton(swap, "Not now", 90, 24)
+    swap.cancel = GP.FlatButton(swap, L["Not now"], 90, 24)
     swap.cancel:SetPoint("LEFT", swap.next, "RIGHT", 6, 0)
     swap.cancel:SetScript("OnClick", function() swap:Hide() end)
 end
@@ -66,10 +67,10 @@ local function drawSwap()
     local important = loot.prio and loot.prio > 0
     if not bagItem then
         swap:SetKind("bad")
-        swap.title:SetText("Bags full, nothing safe to drop")
+        swap.title:SetText(L["Bags full, nothing safe to drop"])
         swap.drop:Hide(); swap.drop.sign:Hide()
         swap.verdict:SetText("")
-        swap.note:SetText("Everything left is protected: quest items, tools, reagents, upgrades or kept items.")
+        swap.note:SetText(L["Everything left is protected: quest items, tools, reagents, upgrades or kept items."])
         swap.go:Hide(); swap.next:Hide()
         return
     end
@@ -81,9 +82,9 @@ local function drawSwap()
     local kind = worth and (loot.kind or "plain") or "bad"
     swap:SetKind(kind)
     local titles = {
-        plain = "Bags full: swap?", bad = "Leave it: not worth a bag slot", quest = "Quest item: make room",
-        reagent = "Reagent you use: make room",
-        upgrade = loot.gain and string.format("Upgrade +%.0f%%: make room", loot.gain * 100) or "Upgrade: make room",
+        plain = L["Bags full: swap?"], bad = L["Leave it: not worth a bag slot"], quest = L["Quest item: make room"],
+        reagent = L["Reagent you use: make room"],
+        upgrade = loot.gain and string.format(L["Upgrade +%.0f%%: make room"], loot.gain * 100) or L["Upgrade: make room"],
     }
     swap.title:SetText(titles[kind] or titles.plain)
     if diff >= 0 then
@@ -93,12 +94,12 @@ local function drawSwap()
     end
     -- Candidates are cheapest first, so when the first one already loses money every other one
     -- loses more: then leaving the loot is the main button and "Other item" goes away.
-    local why = (not worth) and "Even your cheapest item is worth more." or (important and diff < 0 and "Worth it: you need this." or "Cheapest item in your bags.")
+    local why = (not worth) and L["Even your cheapest item is worth more."] or (important and diff < 0 and L["Worth it: you need this."] or L["Cheapest item in your bags."])
     swap.note:SetText(why .. ((worth and #cands > 1) and string.format("  %d/%d", s.i, #cands) or ""))
     swap.next:SetShown(worth and #cands > 1)
-    swap.go:SetLabel(worth and "Swap" or "Swap anyway")
+    swap.go:SetLabel(worth and L["Swap"] or L["Swap anyway"])
     swap.go:SetPrimary(worth)
-    swap.cancel:SetLabel(worth and "Not now" or "Leave it")
+    swap.cancel:SetLabel(worth and L["Not now"] or L["Leave it"])
     swap.cancel:SetPrimary(not worth)
     swap.cancel:ClearAllPoints()
     if worth then
@@ -123,7 +124,7 @@ function GP:ShowSwapPopup(loot)
         local s = swap.state
         local bagItem = s.cands[s.i]
         if not bagItem then return end
-        if GetLootSlotLink(s.loot.lootSlot) ~= s.loot.link then GP.Print("That loot is gone."); swap:Hide(); return end
+        if GetLootSlotLink(s.loot.lootSlot) ~= s.loot.link then GP.Print(L["That loot is gone."]); swap:Hide(); return end
         if GP:DeleteBagItem(bagItem) then
             LootSlot(s.loot.lootSlot)
             swap:Hide()
@@ -141,7 +142,7 @@ function GP:SwapPopupShown() return swap and swap:IsShown() end
 local ROOM_ROWS = 3
 
 local function buildRoom()
-    room = GP.Panel("HaulwiseMakeRoom", 350, 64 + ROOM_ROWS * 26 + 40, "Make room")
+    room = GP.Panel("HaulwiseMakeRoom", 350, 64 + ROOM_ROWS * 26 + 40, L["Make room"])
     room:SetKind("room")
     room.free = room:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     room.free:SetPoint("TOPRIGHT", -30, -9)
@@ -149,7 +150,7 @@ local function buildRoom()
     for i = 1, ROOM_ROWS do
         local r = GP.ItemRow(room, 250)
         r:SetPoint("TOPLEFT", 12, -36 - (i - 1) * 26)
-        r.del = GP.FlatButton(room, "Delete", 70, 22)
+        r.del = GP.FlatButton(room, L["Delete"], 70, 22)
         r.del:SetPoint("LEFT", r, "RIGHT", 6, 0)
         room.rows[i] = r
     end
@@ -157,8 +158,8 @@ local function buildRoom()
     room.note:SetPoint("TOPLEFT", 12, -42 - ROOM_ROWS * 26)
     room.note:SetPoint("RIGHT", -12, 0)
     room.note:SetJustifyH("LEFT")
-    room.note:SetText("Cheapest first. Quest items, tools, reagents, upgrades and kept items are never offered.")
-    room.done = GP.FlatButton(room, "Done", 80, 22)
+    room.note:SetText(L["Cheapest first. Quest items, tools, reagents, upgrades and kept items are never offered."])
+    room.done = GP.FlatButton(room, L["Done"], 80, 22)
     room.done:SetPoint("BOTTOMRIGHT", -12, 10)
     room.done:SetScript("OnClick", function() room:Hide() end)
 end
@@ -166,7 +167,7 @@ end
 local function drawRoom()
     local cands = GP:DeleteCandidates()
     local free = GP:FreeSlots()
-    room.free:SetText(string.format("%s%d free|r", free == 0 and "|cffff6b5b" or "|cff5fd35f", free))
+    room.free:SetText(string.format(L["%s%d free|r"], free == 0 and "|cffff6b5b" or "|cff5fd35f", free))
     for i, r in ipairs(room.rows) do
         local it = cands[i]
         if it then
@@ -181,7 +182,7 @@ local function drawRoom()
             r:Hide(); r.del:Hide()
         end
     end
-    if #cands == 0 then room.note:SetText("Nothing left that's safe to delete.") end
+    if #cands == 0 then room.note:SetText(L["Nothing left that's safe to delete."]) end
 end
 
 function GP:ShowMakeRoom()
@@ -212,11 +213,11 @@ local function buildUp()
     end
     up.based = up:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
     up.based:SetPoint("BOTTOMLEFT", 12, 42)
-    up.a = GP.FlatButton(up, "Equip", 100, 24)
+    up.a = GP.FlatButton(up, L["Equip"], 100, 24)
     up.a:SetPoint("BOTTOMLEFT", 12, 10)
-    up.b = GP.FlatButton(up, "Later", 80, 24)
+    up.b = GP.FlatButton(up, L["Later"], 80, 24)
     up.b:SetPoint("LEFT", up.a, "RIGHT", 6, 0)
-    up.c = GP.FlatButton(up, "Ignore", 80, 24)
+    up.c = GP.FlatButton(up, L["Ignore"], 80, 24)
     up.c:SetPoint("LEFT", up.b, "RIGHT", 6, 0)
 end
 
@@ -227,12 +228,12 @@ function GP:ShowUpgradePopup(kind, r)
     local forMe = kind == "mine"
     up:SetKind(forMe and "upgrade" or "alt")
     local gain = r.gain and string.format(" +%.0f%%", r.gain * 100) or ""
-    up.title:SetText(forMe and ("UPGRADE FOR YOU" .. gain) or ("UPGRADE FOR " .. string.upper(r.alt or "?") .. gain))
-    up.newRow:SetItem(r.id, r.link, "|cff5fd35fnew|r")
+    up.title:SetText(forMe and (L["UPGRADE FOR YOU"] .. gain) or (L["UPGRADE FOR "] .. string.upper(r.alt or "?") .. gain))
+    up.newRow:SetItem(r.id, r.link, L["|cff5fd35fnew|r"])
     up.newRow.tip = nil
     if r.replaces then
         local oid = tonumber(r.replaces:match("item:(%d+)"))
-        up.oldRow:SetItem(oid, r.replaces, "|cff8a8880worn now|r")
+        up.oldRow:SetItem(oid, r.replaces, L["|cff8a8880worn now|r"])
         up.oldRow:Show()
     else
         up.oldRow:Hide()
@@ -248,13 +249,13 @@ function GP:ShowUpgradePopup(kind, r)
             l:SetText("")
         end
     end
-    local spec = r.label or (forMe and self:CurrentSpec() or "their spec")
-    local lvl = r.atLevel and string.format("  ·  usable at level %d", r.atLevel) or ""
-    up.based:SetText(string.format("Slot: %s  ·  Weights: %s%s", r.slotName or "?", spec, lvl))
+    local spec = r.label or (forMe and L[self:CurrentSpec()] or L["their spec"])
+    local lvl = r.atLevel and string.format(L["  ·  usable at level %d"], r.atLevel) or ""
+    up.based:SetText(string.format(L["Slot: %s  ·  Weights: %s%s"], r.slotName or "?", spec, lvl))
     if forMe then
-        up.a:SetLabel("Equip"); up.a:Show(); up.a:SetPrimary(true)
+        up.a:SetLabel(L["Equip"]); up.a:Show(); up.a:SetPrimary(true)
         up.a:SetScript("OnClick", function() GP:Equip(r); up:Hide(); GP:ShowNextUpgrade() end)
-        up.b:SetLabel("Later")
+        up.b:SetLabel(L["Later"])
     else
         up.a:Hide()
         up.b:SetLabel("OK")

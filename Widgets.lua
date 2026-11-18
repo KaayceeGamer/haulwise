@@ -1,5 +1,6 @@
 -- Haulwise: shared look. Flat dark panels with a gold edge, item rows with icons, flat buttons.
 local _, GP = ...
+local L = GP.L
 
 -- Fonts: Haulwise's own font objects, so the font and size can be changed in Settings.
 GP.FONTS = {
@@ -142,7 +143,7 @@ function GP.ItemRow(parent, width)
         self.icon:SetTexture(GP.ItemIcon(id))
         local name, quality = GP.ItemInfo(id)
         local c = ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality or 1]
-        local label = (c and c.hex or "|cffffffff") .. (name or ("item #" .. id)) .. "|r"
+        local label = (c and c.hex or "|cffffffff") .. (name or (L["item #"] .. id)) .. "|r"
         if count and count > 1 then label = label .. " |cffaaaaaax" .. count .. "|r" end
         self.name:SetText(label)
         self.right:SetText(rightText or "")
@@ -165,22 +166,22 @@ end
 function GP.AddValueLines(t, unit, src, d, count)
     count = count or 1
     t:AddLine(" ")
-    t:AddDoubleLine("|cffffd040Haulwise|r value", GP.Coins(unit * count) .. " " .. GP.SourceTag(src, d))
-    t:AddDoubleLine("  Vendor", GP.Coins((d.vendor or 0) * count), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
+    t:AddDoubleLine(L["|cffffd040Haulwise|r value"], GP.Coins(unit * count) .. " " .. GP.SourceTag(src, d))
+    t:AddDoubleLine(L["  Vendor"], GP.Coins((d.vendor or 0) * count), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     if d.ah then
-        local age = d.ahAge and (d.ahAge < 86400 and "today" or (math.floor(d.ahAge / 86400) .. "d old")) or "?"
-        t:AddDoubleLine("  Auction (after cut)", GP.Coins(d.ah * count) .. " " .. GP.AgeColor(d.ahAge) .. age .. "|r", 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
+        local age = d.ahAge and (d.ahAge < 86400 and L["today"] or (math.floor(d.ahAge / 86400) .. L["d old"])) or "?"
+        t:AddDoubleLine(L["  Auction (after cut)"], GP.Coins(d.ah * count) .. " " .. GP.AgeColor(d.ahAge) .. age .. "|r", 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     end
     if d.deOutcomes then
         if d.de then
-            t:AddDoubleLine("  Disenchant (expected)", GP.Coins(d.de * count), 0.77, 0.55, 1, 0.77, 0.55, 1)
+            t:AddDoubleLine(L["  Disenchant (expected)"], GP.Coins(d.de * count), 0.77, 0.55, 1, 0.77, 0.55, 1)
         end
         for _, o in ipairs(d.deOutcomes) do
             local name = GP.ItemInfo(o[1]) or ("#" .. o[1])
             t:AddDoubleLine(string.format("    %.0f%%  %d-%d %s", o[2] * 100, o[3], o[4], name),
-                o.unit and (GP.Coins(o.unit) .. " each") or "|cff999999no price|r", 0.65, 0.65, 0.65, 0.65, 0.65, 0.65)
+                o.unit and (GP.Coins(o.unit) .. L[" each"]) or L["|cff999999no price|r"], 0.65, 0.65, 0.65, 0.65, 0.65, 0.65)
         end
-        if d.deWho and #d.deWho > 0 then t:AddLine("    Can disenchant: " .. table.concat(d.deWho, ", "), 0.65, 0.65, 0.65) end
+        if d.deWho and #d.deWho > 0 then t:AddLine(L["    Can disenchant: "] .. table.concat(d.deWho, ", "), 0.65, 0.65, 0.65) end
     end
 end
 
@@ -233,7 +234,7 @@ function GP.MakeResizable(frame, key, minW, minH, maxW, maxH, onResize)
     end)
     grip:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Drag to resize")
+        GameTooltip:AddLine(L["Drag to resize"])
         GameTooltip:Show()
     end)
     grip:SetScript("OnLeave", function() GameTooltip:Hide() end)

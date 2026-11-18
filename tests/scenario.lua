@@ -2,10 +2,14 @@
 math.randomseed(7)
 local GP = {}
 for line in io.lines(DIR .. "/Haulwise.toc") do
-    local f = line:match("^(%w+)%.lua$")
+    local f = line:match("^([%w\\]+)%.lua$")
     if f then
-    local chunk = assert(loadfile(DIR .. "/" .. f .. ".lua"))
+    local chunk = assert(loadfile(DIR .. "/" .. f:gsub("\\", "/") .. ".lua"))
     chunk("Haulwise", GP)
+    if f == "Core" and PSEUDO then
+        -- Pseudo-translation: every text comes back wrapped, to catch texts used as keys.
+        setmetatable(GP.LOCALE_STRINGS, { __index = function(_, k) return "<" .. k .. ">" end })
+    end
     end
 end
 fire("ADDON_LOADED", "Haulwise")

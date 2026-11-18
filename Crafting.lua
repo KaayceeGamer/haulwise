@@ -15,6 +15,53 @@ GP.RECIPE_SUBCLASS = {
     ["Jewelcrafting"] = 10, ["Inscription"] = 11,
 }
 
+-- Professions are stored under their English name whatever the game's language, so recipes,
+-- disenchanting and alts line up across clients; L[name] shows them in your language.
+local PROF_BY_LINE = {
+    [171] = "Alchemy", [164] = "Blacksmithing", [185] = "Cooking", [333] = "Enchanting", [202] = "Engineering",
+    [129] = "First Aid", [356] = "Fishing", [182] = "Herbalism", [773] = "Inscription", [755] = "Jewelcrafting",
+    [165] = "Leatherworking", [186] = "Mining", [393] = "Skinning", [197] = "Tailoring",
+}
+local PROF_BY_NAME = {
+    -- German
+    ["Alchemie"] = "Alchemy", ["Schmiedekunst"] = "Blacksmithing", ["Kochkunst"] = "Cooking",
+    ["Verzauberkunst"] = "Enchanting", ["Ingenieurskunst"] = "Engineering", ["Erste Hilfe"] = "First Aid",
+    ["Angeln"] = "Fishing", ["Kräuterkunde"] = "Herbalism", ["Inschriftenkunde"] = "Inscription",
+    ["Juwelierskunst"] = "Jewelcrafting", ["Juwelenschleifen"] = "Jewelcrafting", ["Lederverarbeitung"] = "Leatherworking",
+    ["Bergbau"] = "Mining", ["Kürschnerei"] = "Skinning", ["Schneiderei"] = "Tailoring",
+    -- French
+    ["Alchimie"] = "Alchemy", ["Forge"] = "Blacksmithing", ["Cuisine"] = "Cooking", ["Enchantement"] = "Enchanting",
+    ["Ingénierie"] = "Engineering", ["Secourisme"] = "First Aid", ["Pêche"] = "Fishing", ["Herboristerie"] = "Herbalism",
+    ["Calligraphie"] = "Inscription", ["Joaillerie"] = "Jewelcrafting", ["Travail du cuir"] = "Leatherworking",
+    ["Minage"] = "Mining", ["Dépeçage"] = "Skinning", ["Couture"] = "Tailoring",
+}
+GP.PROF_BY_LINE = PROF_BY_LINE
+
+function GP.ProfKey(name, skillLine)
+    if skillLine and PROF_BY_LINE[skillLine] then return PROF_BY_LINE[skillLine] end
+    if not name then return nil end
+    return PROF_BY_NAME[name] or name
+end
+
+-- Data saved by a German or French client before 0.7.0 used the local names: move it over once.
+function GP:NormalizeProfessions()
+    for _, c in pairs(self.db.chars or {}) do
+        if c.profs then
+            local fixed = {}
+            for name, p in pairs(c.profs) do
+                local k = GP.ProfKey(name)
+                if not fixed[k] or (p.t or 0) > (fixed[k].t or 0) then fixed[k] = p end
+            end
+            c.profs = fixed
+        end
+        for _, rec in pairs(c.recipes or {}) do if rec.prof then rec.prof = GP.ProfKey(rec.prof) end end
+    end
+    for _, e in pairs(self.db.sources or {}) do
+        for _, t in pairs(e.trainer or {}) do if t.prof then t.prof = GP.ProfKey(t.prof) end end
+    end
+end
+GP:On("PLAYER_LOGIN", function() if GP.db then GP:NormalizeProfessions() end end)
+
 function GP:CharKey()
     return (UnitName("player") or "?") .. "-" .. ((GetRealmName and GetRealmName()) or "?")
 end
@@ -49,7 +96,7 @@ local function readModern(char)
     if C_TradeSkillUI.IsTradeSkillLinked and C_TradeSkillUI.IsTradeSkillLinked() then return true end
     if C_TradeSkillUI.IsTradeSkillGuild and C_TradeSkillUI.IsTradeSkillGuild() then return true end
     local base = C_TradeSkillUI.GetBaseProfessionInfo()
-    local prof = base and base.professionName
+    local prof = base and GP.ProfKey(base.professionName, base.parentProfessionID or base.professionID)
     if not prof or prof == "" then return false end
     char.profs[prof] = { rank = base.skillLevel, max = base.maxSkillLevel, t = time() }
     local n = 0
@@ -86,6 +133,7 @@ local function readClassic(char)
     if not (GetNumTradeSkills and GetTradeSkillLine) then return false end
     local prof, rank, max = GetTradeSkillLine()
     if not prof or prof == "UNKNOWN" then return false end
+    prof = GP.ProfKey(prof)
     char.profs[prof] = { rank = rank, max = max, t = time() }
     for i = 1, GetNumTradeSkills() do
         local name, kind = GetTradeSkillInfo(i)
@@ -124,12 +172,13 @@ end
 -- Your professions: from opened windows, plus the profession list in case you never opened one.
 function GP:MyProfessions()
     local out = {}
-    for name, p in pairs(self:Char().profs) do out[name] = p end
+    for name, p in pairs(self:Char().profs) do out[GP.ProfKey(name)] = p end
     if GetProfessions then
         local ok, a, b, _, fish, cook = pcall(GetProfessions)
         if ok then
             for _, idx in ipairs({ a, b, fish, cook }) do
-                local name, _, rank, max = GetProfessionInfo(idx)
+                local name, _, rank, max, _, _, line = GetProfessionInfo(idx)
+                name = GP.ProfKey(name, line)
                 if name and not out[name] then out[name] = { rank = rank, max = max } end
             end
         end

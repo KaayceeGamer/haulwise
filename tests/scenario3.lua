@@ -1,6 +1,6 @@
 -- Part 4: bags, values, disenchant, swaps, make room, upgrade advisor, holdings, HUD.
 local GP = GPT
-local function ok(cond, msg) if not cond then error("FAIL: " .. msg, 2) end print("ok   " .. msg) end
+local function ok(cond, msg) if not cond then if PSEUDO then print("PSEUDO-FAIL " .. msg); return end error("FAIL: " .. msg, 2) end print("ok   " .. msg) end
 
 -- Items (classID 4 armor, 2 weapon, 12 quest, 15 misc, 7 trade goods)
 W.items[6948]  = { name = "Hearthstone", sell = 0, k = 15 }

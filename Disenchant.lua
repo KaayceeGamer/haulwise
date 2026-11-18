@@ -3,6 +3,7 @@
 -- turned into. Kept per item and per kind of item (quality, level band, armour or weapon), so the
 -- tooltip can show both "this exact item" and "items like it".
 local _, GP = ...
+local L = GP.L
 
 local DE_SPELL = 13262
 local pending
@@ -52,9 +53,17 @@ local function remember(bag, slot)
         pending = { id = it.itemID, link = it.hyperlink, info = info, t = GetTime() }
     end
 end
+local function dbg(...)
+    if GP.debug then GP.Print("|cff888888[de]|r", ...) end
+end
 local function castBegins(unit, spellID)
+    if unit == "player" then
+        local sid = GP.Safe(spellID)
+        dbg("cast", tostring(sid), tostring(sid and C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(sid)), "DE?", tostring(isDisenchant(spellID)))
+    end
     if unit ~= "player" or not isDisenchant(spellID) then return end
     casting = GetTime()
+    dbg("button target", GP.deTarget and (GP.deTarget.bag .. "/" .. GP.deTarget.slot) or "none")
     if GP.deTarget then remember(GP.deTarget.bag, GP.deTarget.slot) end
     if not pending or GetTime() - pending.t > 12 then
         local id, link, info = lockedGear()
@@ -107,6 +116,7 @@ end
 
 local function onLoot()
     local p = pending
+    dbg("loot window; waiting for", p and p.link or "nothing", "items", tostring(GetNumLootItems()))
     if not p or GetTime() - p.t > 12 then return end
     local out, names = {}, {}
     for slot = 1, GetNumLootItems() do

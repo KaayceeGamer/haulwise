@@ -10,6 +10,12 @@ GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 -- itself when there is no translation. Locales/*.lua fill GP.LOCALE_STRINGS for their language.
 GP.LOCALE_STRINGS = {}
 GP.L = setmetatable({}, { __index = function(_, k) return GP.LOCALE_STRINGS[k] or k end })
+local L = GP.L
+
+-- "3 kills" / "1 kill", in the game's language: the words are looked up as "kill" and "kills".
+function GP.Plural(n, one, many)
+    return n .. " " .. (n == 1 and L[one] or L[many or (one .. "s")])
+end
 
 local DEFAULTS = {
     version = 1,
@@ -113,9 +119,9 @@ function GP.ReportError(where, err)
     while #db.errors > MAX_ERRORS do table.remove(db.errors, 1) end
     if not GP.errorNoted and GP.Print then
         GP.errorNoted = true -- once per session
-        GP.Print("Something went wrong inside Haulwise. |cffffd040/haul feedback|r shows the error, ready to paste into a bug report.")
+        GP.Print(L["Something went wrong inside Haulwise. |cffffd040/haul feedback|r shows the error, ready to paste into a bug report."])
     end
-    if GP.debug then print("|cffff5555Haulwise error|r", where, msg) end
+    if GP.debug then print(L["|cffff5555Haulwise error|r"], where, msg) end
 end
 
 frame:SetScript("OnEvent", function(_, event, ...)
@@ -218,13 +224,13 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ToggleUI()
     elseif cmd == "kph" and tonumber(arg) then
         s.defaultKph = math.max(1, math.min(600, tonumber(arg)))
-        GP.Print("Default kills/hour set to " .. s.defaultKph)
+        GP.Print(L["Default kills/hour set to "] .. s.defaultKph)
     elseif cmd == "group" then
         s.trackInGroup = (arg == "on")
-        GP.Print("Recording in groups: " .. (s.trackInGroup and "on" or "off"))
+        GP.Print(L["Recording in groups: "] .. (s.trackInGroup and L["on"] or L["off"]))
     elseif cmd == "session" then
         GP.session = { start = time(), value = 0, money = 0, kills = 0 }
-        GP.Print("Session reset.")
+        GP.Print(L["Session reset."])
     elseif cmd == "feedback" or cmd == "bug" then
         GP:ShowFeedback()
     elseif cmd == "guide" or cmd == "help" then
@@ -244,38 +250,38 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ShowUI()
     elseif cmd == "scan" then
         GP:ScanUpgrades()
-        GP.Print(string.format("%d upgrades for you, %d for alts.", #GP.upgrades.mine, #GP.upgrades.alts))
+        GP.Print(string.format(L["%d upgrades for you, %d for alts."], #GP.upgrades.mine, #GP.upgrades.alts))
     elseif (cmd == "scale" or cmd == "hudscale") and tonumber(arg) then
         local key = cmd == "scale" and "winScale" or "hudScale"
         s[key] = math.max(0.6, math.min(1.6, tonumber(arg)))
-        GP.Print(string.format("%s scale %.2f. /reload or reopen it to apply.", cmd == "scale" and "Window" or "HUD", s[key]))
+        GP.Print(string.format(L["%s scale %.2f. /reload or reopen it to apply."], cmd == "scale" and L["Window"] or "HUD", s[key]))
     elseif cmd == "reset" then
         s.winScale, s.hudScale = 1, 1
         GP.db.positions = {}
         GP.db.sizes = {}
-        GP.Print("Window positions reset. /reload to apply.")
+        GP.Print(L["Window positions reset. /reload to apply."])
     elseif cmd == "export" then
         GP:ShowExport()
     elseif cmd == "import" then
         GP:ShowImport()
     elseif cmd == "debug" then
         GP.debug = not GP.debug
-        GP.Print("Debug " .. (GP.debug and "on" or "off"))
+        GP.Print(L["Debug "] .. (GP.debug and L["on"] or L["off"]))
     elseif cmd == "wipe" and arg == "yes" then
         GP.db.mobs = {}
         GP.db.shared = {}
-        GP.Print("All drop data deleted.")
+        GP.Print(L["All drop data deleted."])
     else
-        GP.Print("/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button")
-        GP.Print("/haul room  make room   ·   /haul bags | gear | holdings  open that tab")
-        GP.Print("/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes")
-        GP.Print("/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9")
-        GP.Print("/haul kph <n>  kills/hour to assume for mobs you have not timed")
-        GP.Print("/haul group on|off  also record while grouped")
-        GP.Print("/haul session  reset the session counter")
-        GP.Print("/haul export | import  share data with friends")
-        GP.Print("/haul feedback  report a bug or suggest an idea")
-        GP.Print("/haul wipe yes  delete all drop data")
+        GP.Print(L["/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button"])
+        GP.Print(L["/haul room  make room   ·   /haul bags | gear | holdings  open that tab"])
+        GP.Print(L["/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes"])
+        GP.Print(L["/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9"])
+        GP.Print(L["/haul kph <n>  kills/hour to assume for mobs you have not timed"])
+        GP.Print(L["/haul group on|off  also record while grouped"])
+        GP.Print(L["/haul session  reset the session counter"])
+        GP.Print(L["/haul export | import  share data with friends"])
+        GP.Print(L["/haul feedback  report a bug or suggest an idea"])
+        GP.Print(L["/haul wipe yes  delete all drop data"])
     end
     if GP.RefreshUI then GP:RefreshUI() end
 end

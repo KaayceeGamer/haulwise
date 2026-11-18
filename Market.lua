@@ -1,7 +1,8 @@
 -- Haulwise: deals, trends and weekday patterns from your AH scans.
 local _, GP = ...
+local L = GP.L
 
-local WEEKDAYS = CALENDAR_WEEKDAY_NAMES or { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" }
+local WEEKDAYS = CALENDAR_WEEKDAY_NAMES or { L["Sunday"], L["Monday"], L["Tuesday"], L["Wednesday"], L["Thursday"], L["Friday"], L["Saturday"] }
 local GEAR = { [2] = true, [4] = true } -- weapons, armor: random stats per listing
 
 local function weekday(day)

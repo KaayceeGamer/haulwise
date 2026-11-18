@@ -3,6 +3,7 @@
 -- relative to the spec's main stat (1.0). Ratings that are "1%" lines on classic items are
 -- weighted per percent. Edit freely: these are starting points, not gospel.
 local _, GP = ...
+local L = GP.L
 
 -- Item stat keys (C_Item.GetItemStats) -> short names used below.
 GP.STAT_KEYS = {
@@ -22,10 +23,10 @@ GP.STAT_KEYS = {
 }
 
 GP.STAT_LABEL = {
-    STR = "Strength", AGI = "Agility", STA = "Stamina", INT = "Intellect", SPI = "Spirit", ARMOR = "Armor",
-    DPS = "Weapon DPS", AP = "Attack Power", RAP = "Ranged AP", SP = "Spell Damage", HEAL = "Healing",
-    CRIT = "Crit", HIT = "Hit", SCRIT = "Spell Crit", SHIT = "Spell Hit", MP5 = "Mana/5s", DEF = "Defense",
-    BLOCK = "Block", BLOCKV = "Block Value", DODGE = "Dodge", PARRY = "Parry",
+    STR = L["Strength"], AGI = L["Agility"], STA = L["Stamina"], INT = L["Intellect"], SPI = L["Spirit"], ARMOR = L["Armor"],
+    DPS = L["Weapon DPS"], AP = L["Attack Power"], RAP = L["Ranged AP"], SP = L["Spell Damage"], HEAL = L["Healing"],
+    CRIT = L["Crit"], HIT = L["Hit"], SCRIT = L["Spell Crit"], SHIT = L["Spell Hit"], MP5 = L["Mana/5s"], DEF = L["Defense"],
+    BLOCK = L["Block"], BLOCKV = L["Block Value"], DODGE = L["Dodge"], PARRY = L["Parry"],
 }
 
 local caster = { SP = 1.0, INT = 0.55, SPI = 0.35, STA = 0.4, SCRIT = 10, SHIT = 12, MP5 = 1.5, ARMOR = 0.003, WAND = 1.2 }
