@@ -30,11 +30,11 @@ local function build()
     hud.close:SetScript("OnClick", function() GP.db.settings.hudShown = false; hud:Hide() end)
 
     -- A labelled button, not an icon: this is how most people find the big window.
-    hud.open = GP.FlatButton(hud, L["Open window"], 92, 18)
+    hud.open = GP.FlatButton(hud, L["Open Haulwise"], 100, 18)
     hud.open:SetPoint("LEFT", hud.title, "RIGHT", 10, 0)
     hud.open:SetPrimary(true)
     hud.open:SetScript("OnClick", function() GP:ToggleUI() end)
-    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Open the Haulwise window"]); GameTooltip:Show() end)
+    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Open the Haulwise window"]); GameTooltip:AddLine(L["Farm, Bags, Gear, Craft, Deals, Recipes, Market and Holdings."], 0.8, 0.8, 0.8, true); GameTooltip:Show() end)
     hud.open:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     hud.gear = GP.IconButton(hud, "Interface\\Buttons\\UI-OptionsButton", L["Settings"], 14)
