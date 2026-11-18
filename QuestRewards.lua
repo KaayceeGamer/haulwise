@@ -91,12 +91,34 @@ local function show(tries)
     local b = rewardButton(p.index)
     if b and b.IsShown and b:IsShown() then
         if not mark then
+            -- A thick gold frame, a soft gold wash over the whole reward, a green tick on the
+            -- icon and a slow pulse: it should be the first thing you see in the window.
             mark = CreateFrame("Frame", "HaulwiseQuestPick", UIParent, "BackdropTemplate")
-            mark:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 2 })
-            mark:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+            mark:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 3 })
+            mark:SetBackdropBorderColor(1, 0.85, 0.1, 1)
             mark:EnableMouse(false)
-            mark.label = mark:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
+            mark.wash = mark:CreateTexture(nil, "ARTWORK")
+            mark.wash:SetTexture("Interface\\Buttons\\WHITE8x8")
+            mark.wash:SetPoint("TOPLEFT", 3, -3)
+            mark.wash:SetPoint("BOTTOMRIGHT", -3, 3)
+            mark.wash:SetVertexColor(1, 0.82, 0, 0.22)
+            if mark.wash.SetBlendMode then mark.wash:SetBlendMode("ADD") end
+            mark.tick = mark:CreateTexture(nil, "OVERLAY")
+            mark.tick:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+            mark.tick:SetSize(22, 22)
+            mark.tick:SetPoint("CENTER", mark, "TOPLEFT", 4, -4)
+            mark.label = mark:CreateFontString(nil, "OVERLAY", "HaulwiseFontGold")
             mark.label:SetJustifyH("LEFT")
+            if mark.label.SetWordWrap then mark.label:SetWordWrap(false) end
+            local pulse = mark.CreateAnimationGroup and mark:CreateAnimationGroup()
+            if pulse then
+                local a = pulse:CreateAnimation("Alpha")
+                a:SetFromAlpha(1)
+                a:SetToAlpha(0.55)
+                a:SetDuration(0.7)
+                pulse:SetLooping("BOUNCE")
+                mark.pulse = pulse
+            end
         end
         mark:SetParent(b)
         mark:SetFrameLevel(b:GetFrameLevel() + 5)
@@ -110,12 +132,16 @@ local function show(tries)
         mark.label:SetText(string.format(L["Haulwise pick: %s"], info.name or "?"))
         local choose = QuestInfoRewardsFrame and QuestInfoRewardsFrame.ItemChooseText
         if choose and choose.IsShown and choose:IsShown() and choose.GetStringWidth then
-            local w = (choose.GetUnboundedStringWidth and choose:GetUnboundedStringWidth()) or choose:GetStringWidth()
-            mark.label:SetPoint("LEFT", choose, "LEFT", (GP.Safe(w) or 0) + 8, 0)
+            local w = GP.Safe((choose.GetUnboundedStringWidth and choose:GetUnboundedStringWidth()) or choose:GetStringWidth()) or 0
+            mark.label:SetPoint("LEFT", choose, "LEFT", w + 8, 0)
+            -- Long item names are cut with "..." rather than running off the page.
+            local room = GP.Safe(QuestInfoRewardsFrame.GetWidth and QuestInfoRewardsFrame:GetWidth())
+            if room and room - w - 20 > 60 then mark.label:SetWidth(room - w - 20) end
         else
-            mark.label:SetPoint("BOTTOMLEFT", mark, "TOPLEFT", 2, 2)
+            mark.label:SetPoint("BOTTOMLEFT", mark, "TOPLEFT", 2, 4)
         end
         mark:Show()
+        if mark.pulse and not mark.pulse:IsPlaying() then mark.pulse:Play() end
     end
     -- Also in chat, once per quest: the mark can't be missed there, and it says why.
     local key = (GetTitleText and GetTitleText() or "") .. p.link
