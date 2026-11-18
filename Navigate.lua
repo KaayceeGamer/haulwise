@@ -288,11 +288,14 @@ function GP:FindTrainer(prof)
         if not prof then for name in pairs(self:MyProfessions()) do if GP.RECIPE_SUBCLASS[name] then prof = name; break end end end
     end
     if not prof then GP.Print(L["Learn a profession first."]); return false end
+    -- At your cap (e.g. 150/150) you need the next rank: Expert. Below it (131/225) any trainer
+    -- that teaches up to your cap will do, for the recipes in between.
     local mine = self:MyProfessions()[prof]
-    local max = mine and mine.max or 0
-    local need = (max >= 225 and 300) or (max >= 150 and 225) or 150
+    local rank, max = mine and mine.rank or 0, mine and mine.max or 0
+    local nextRank = (max < 150 and 150) or (max < 225 and 225) or 300
+    local need = (rank >= max) and nextRank or math.max(150, math.min(max, 300))
     local ids = self:TrainersFor(prof)
-    local place = self:NearestPlace(ids, function(p) return p.from == "you" or tierOf(p.sub) >= need end)
+    local place = self:NearestPlace(ids, function(p) return tierOf(p.sub) >= need end)
         or self:NearestPlace(ids, function(p) return tierOf(p.sub) > 0 end)
     if not place then
         GP.Print(string.format(L["No %s trainer known yet. Install Haulwise Data, or open one once and Haulwise remembers it."], L[prof]))

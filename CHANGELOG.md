@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.2
+- **Find trainer** matches your skill: at your cap (150/150) it finds a trainer for the next rank; below it (131/225) one that teaches up to your cap, so not a Journeyman when you're already Expert.
+
 ## 0.8.1
 - **An arrow on screen** for waypoints: WoW Forever's own waypoint is only a pin on the map, so Haulwise draws its own arrow with the distance. It goes away when you arrive; drag it to move it, right-click to clear it. With TomTom installed, TomTom's arrow is used instead.
 

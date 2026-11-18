@@ -305,6 +305,11 @@ C_Map.GetPlayerMapPosition = function() return { GetXY = function() return wp.x,
 HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
 ok(not HaulwiseArrow.shown, "it goes away when you arrive")
 C_Map.GetPlayerMapPosition = function() return { GetXY = function() return 0.6, 0.6 end } end
+GP:Char().profs = { Tailoring = { rank = 131, max = 225 } }
+GP:FindTrainer("Tailoring")
+local below = GP:NearestPlace(GP:TrainersFor("Tailoring"), function(p) return GP.TrainerTier(p.sub) >= 225 end)
+ok(below and GP.TrainerTier(below.sub) >= 225, "at 131/225 an Expert (or better) trainer, not a Journeyman")
+GP:Char().profs = { Tailoring = { rank = 150, max = 150 } }
 local tier = GP.TrainerTier(GP:NearestPlace(GP:TrainersFor("Tailoring"), function(p) return GP.TrainerTier(p.sub) >= 225 end).sub)
 ok(tier >= 225, "at 150/150 it looks for an Expert or Artisan")
 UnitGUID = function() return "Creature-0-1-2-3-99999-0000" end
