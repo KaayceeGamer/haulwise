@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.3
+- **Community data line** at the bottom of the window: when the pooled data is from, how many players shared, and how many of your kills aren't shared yet. Click it to import the newest data.
+- **Bug reports made easy**: Haulwise keeps its last errors, and `/haul feedback` shows them ready to paste into a report.
+- **Recipes** show the skill they need (from trainers, the recipe's tooltip, or a ~guess from the gear's level) and hide recipes 30+ points above your skill. Tick "Show recipes far above my skill" to see them all.
+- The scan button says what it's doing: waiting for the auction house, or reading the listings.
+
 ## 0.6.2
 - **Share data** (was "Share kills"): the export also holds the trainer and vendor recipes and reagent prices you've seen, so the button now says so.
 - Uploads no longer fail with "bad text in recipe": records with an empty or odd name are left out instead of breaking the whole upload.

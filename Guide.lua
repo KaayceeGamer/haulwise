@@ -70,6 +70,9 @@ local GUIDE = {
 }
 
 local NEWS = {
+    "The bottom line shows how fresh the community data is. Click it to import the newest.",
+    "Recipes show the skill they need, and hide ones far above yours.",
+    "/haul feedback now includes Haulwise's last errors, ready to paste into a bug report.",
     "Gear tooltips: best move, what it disenchants into, and what your own disenchants gave.",
     "Gear → On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold.",
     "Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession.",
