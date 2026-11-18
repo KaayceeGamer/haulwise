@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.1
+- **Shopping list**: the profit now counts the reagents you already have too, so it matches the Craft tab (before, it only subtracted what you still had to buy).
+
 ## 0.7.0
 - **Minimap button**: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap (round or square). Hide it in Settings or with `/haul minimap`. With Titan Panel, ElvUI or another data broker display, Haulwise shows up there too.
 - **German and French**: every text in Haulwise is translated. It follows your game's language; pick another in Settings → Language (or `/haul lang deDE`) and `/reload`.

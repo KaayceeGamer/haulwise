@@ -46,20 +46,23 @@ function GP:ShoppingTotals()
         end
     end
     table.sort(crafts, function(a, b) return (a.rec.n or "") < (b.rec.n or "") end)
-    local reagents, total, unpriced = {}, 0, 0
+    -- total: what you still have to buy. used: what all the reagents are worth, also the ones you
+    -- already have (you could sell those instead), so the profit matches the Craft tab.
+    local reagents, total, unpriced, used = {}, 0, 0, 0
     for id, n in pairs(need) do
         local have = countHere(id)
         local buy = math.max(0, math.ceil(n - have))
         local unit, where = self:BuyCost(id)
         local cost = unit and unit * buy or nil
         if cost then total = total + cost elseif buy > 0 then unpriced = unpriced + 1 end
+        if unit then used = used + unit * n end
         reagents[#reagents + 1] = { id = id, need = n, have = have, alts = countOnAlts(id), buy = buy, unit = unit, where = where, cost = cost }
     end
     table.sort(reagents, function(a, b)
         if (a.buy > 0) ~= (b.buy > 0) then return a.buy > 0 end
         return (a.cost or 0) > (b.cost or 0)
     end)
-    return crafts, reagents, total, sell, unpriced
+    return crafts, reagents, total, sell, unpriced, used
 end
 
 local function smallButton(parent, text, w)
@@ -86,7 +89,7 @@ end
 
 function GP:RefreshShopping()
     if not panel or not panel:IsShown() then return end
-    local crafts, reagents, total, sell, unpriced = self:ShoppingTotals()
+    local crafts, reagents, total, sell, unpriced, used = self:ShoppingTotals()
     for _, r in ipairs(recipeRows) do r:Hide() end
     for _, r in ipairs(reagentRows) do r:Hide() end
     local y = -52
@@ -164,7 +167,7 @@ function GP:RefreshShopping()
         row:Show()
         y = y - 22
     end
-    local profit = sell - total
+    local profit = sell - (used or total)
     local text = string.format(L["To buy: |cffffffff%s|r   ·   Results sell for %s   ·   %s"], GP.Coins(total, true), GP.Coins(sell, true),
         (profit >= 0 and L["|cff5fd35fprofit "] or L["|cffff6b5bloss "]) .. GP.Coins(math.abs(profit), true) .. "|r")
     if unpriced > 0 then text = text .. string.format(L["   |cffff9944(%d without price)|r"], unpriced) end

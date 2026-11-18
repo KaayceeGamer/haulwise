@@ -79,10 +79,11 @@ C_Item.GetItemCount = function(id)
 end
 GP:Char().shopping = {}
 GP:AddToShopping("sk1", 3)
-local crafts, reagents, total = GP:ShoppingTotals()
+local crafts, reagents, total, _, _, used = GP:ShoppingTotals()
 ok(#crafts == 1 and crafts[1].qty == 3, "3 bolts on the list")
 ok(reagents[1].id == 4306 and reagents[1].need == 12 and reagents[1].have == 5 and reagents[1].buy == 7, "need 12 silk, have 5, buy 7")
 ok(total == 7 * 120, "cost of what's left to buy")
+ok(used == 12 * 120, "profit counts the silk you already have too, like the Craft tab")
 GP:AddToShopping("sk1", -3)
 ok(next(GP:Char().shopping) == nil, "minus to zero removes the craft")
 GP:ToggleShopping()
