@@ -8,7 +8,7 @@
 ## X-Website: https://kaayceegamer.github.io/haulwise/
 ## SavedVariables: HaulwiseDB
 ## OptionalDeps: Pawn, Auctionator
-## IconTexture: Interface\Icons\INV_Misc_Coin_01
+## IconTexture: Interface\AddOns\Haulwise\Media\icon
 ## AddonCompartmentFunc: Haulwise_OnCompartmentClick
 
 Data.lua
@@ -36,3 +36,4 @@ HUD.lua
 Settings.lua
 Guide.lua
 Tooltip.lua
+Minimap.lua

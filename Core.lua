@@ -59,6 +59,7 @@ local DEFAULTS = {
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
+        minimap = true,         -- the minimap button
         hudLocked = false,
         winShown = false,
         winScale = 1,
@@ -232,6 +233,10 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ToggleSettings()
     elseif cmd == "hud" then
         GP:ToggleHUD()
+    elseif cmd == "minimap" then
+        s.minimap = not (s.minimap ~= false)
+        GP:UpdateMinimapButton()
+        GP.Print(s.minimap and GP.L["Minimap button shown."] or GP.L["Minimap button hidden. /haul minimap brings it back."])
     elseif cmd == "room" then
         GP:ShowMakeRoom()
     elseif cmd == "bags" or cmd == "gear" or cmd == "holdings" then
@@ -261,7 +266,7 @@ SlashCmdList.HAULWISE = function(msg)
         GP.db.shared = {}
         GP.Print("All drop data deleted.")
     else
-        GP.Print("/haul  open window   ·   /haul hud  show/hide the HUD")
+        GP.Print("/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button")
         GP.Print("/haul room  make room   ·   /haul bags | gear | holdings  open that tab")
         GP.Print("/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes")
         GP.Print("/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9")

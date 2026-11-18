@@ -249,4 +249,24 @@ PawnIsReady = function() return false end
 ok(not GP.PawnLoaded(), "not used while Pawn is still loading")
 PawnIsReady = nil
 PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx = oldInit, oldItem, oldSingle, oldAll
+-- Minimap button ---------------------------------------------------------------------------------
+Minimap = CreateFrame("Frame", "Minimap")
+GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
+Minimap.GetCenter = function() return 500, 400 end
+Minimap.GetEffectiveScale = function() return 1 end
+GetCursorPosition = function() return 500, 480 end
+fire("PLAYER_LOGIN")
+local mb = HaulwiseMinimapButton
+ok(mb and mb.shown, "minimap button is shown")
+local tl = {}
+local tt = { AddLine = function(_, t) tl[#tl + 1] = t end, AddDoubleLine = function(_, l, r) tl[#tl + 1] = l .. " " .. r end }
+GP:MinimapTooltip(tt)
+ok(#tl >= 5 and table.concat(tl, "|"):find("Right%-click"), "minimap tooltip shows gold, bags and what clicks do")
+mb.scripts.OnUpdate = nil
+mb.scripts.OnDragStart(mb); mb.scripts.OnUpdate(mb); mb.scripts.OnDragStop(mb)
+ok(math.abs(GP.db.settings.minimapAngle - 90) < 0.01, "dragging the button saves where it sits")
+SlashCmdList.HAULWISE("minimap")
+ok(not mb.shown and GP.db.settings.minimap == false, "/haul minimap hides it")
+SlashCmdList.HAULWISE("minimap")
+ok(mb.shown, "and brings it back")
 print("NEW FEATURES PASSED")

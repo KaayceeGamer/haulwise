@@ -127,6 +127,9 @@ local function build()
     add(check(panel, "Show the HUD", 18, y, "hudShown", "The small box that stays on screen.",
         function() if s.hudShown then GP:ShowHUD() elseif HaulwiseHUD then HaulwiseHUD:Hide() end end))
     add(check(panel, "Lock HUD position", 200, y, "hudLocked", "Stop the HUD from being dragged by accident."))
+    y = y - 22
+    add(check(panel, "Minimap button", 18, y, "minimap", "Click: open Haulwise. Right-click: settings. Shift-click: the HUD. Drag it around the minimap.",
+        function() GP:UpdateMinimapButton() end))
 
     y = y - 34
     heading(panel, "Bags and loot", y)
