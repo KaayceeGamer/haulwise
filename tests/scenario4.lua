@@ -325,10 +325,13 @@ GP:ShowArrow({ map = 1453, x = 60, y = 20 }, "North")
 GetPlayerFacing = function() return 0 end
 HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
 ok(math.abs(rot) < 0.01, "a target to the north points straight ahead when you face north")
-GP:ShowArrow({ map = 1453, x = 53.1, y = 81.3 }, "Trainer")
+GP:ShowArrow({ map = 1453, x = 53.1, y = 81.3, id = 1346, name = "Georgio Bolero" }, "Trainer")
 C_Map.GetPlayerMapPosition = function() return { GetXY = function() return wp.x, wp.y end } end
 HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
-ok(not HaulwiseArrow.shown, "it goes away when you arrive")
+ok(HaulwiseArrow.shown and HaulwiseArrow.dist.text:find("there"), "close by it stays and says you're there")
+UnitGUID = function() return "Creature-0-1-2-3-1346-0000" end
+fire("GOSSIP_SHOW")
+ok(not HaulwiseArrow.shown, "it goes away when you talk to them")
 C_Map.GetPlayerMapPosition = function() return { GetXY = function() return 0.6, 0.6 end } end
 GP:Char().profs = { Tailoring = { rank = 131, max = 225 } }
 GP:FindTrainer("Tailoring")

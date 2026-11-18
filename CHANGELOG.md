@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.3
+- **The arrow stays until you get there**: it no longer disappears 8 yards out (positions can be a few yards off). Close by it says "you're there, look around"; it goes away when you talk to the trainer or vendor, or when you right-click it.
+- Under the arrow: the direction (north-east...), and the target's and your own coordinates. Its tooltip explains that it points in a straight line through walls and floors. Click it to open the world map.
+
 ## 0.8.2
 - **Deals** count on reselling at most 200 of anything, so 13,000 cheap arrows no longer top the list.
 - **Price help when selling** follows the live market: 1 copper under the cheapest listing when plenty is listed there, and under the main market when only a few cheap ones sit far below it. Before, a deep market just under an old "usual price" got the usual price, which wouldn't sell.

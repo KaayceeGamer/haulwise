@@ -9,6 +9,8 @@
 local _, GP = ...
 local L = GP.L
 
+local arrow, target -- the on-screen arrow and where it points (see "The arrow" below)
+
 local function npcIDFromGUID(guid)
     guid = GP.Safe(guid)
     return guid and tonumber(guid:match("^Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)"))
@@ -54,8 +56,21 @@ local function trainerProfession()
     return best
 end
 
-GP:On("TRAINER_SHOW", function() C_Timer.After(0.2, function() remember("T", trainerProfession()) end) end)
-GP:On("MERCHANT_SHOW", function() remember("V") end)
+-- Talking to the NPC the arrow points at: you've arrived.
+local function reached()
+    if not target then return end
+    local id = npcIDFromGUID(UnitGUID and UnitGUID("npc"))
+    local name = GP.Safe(UnitName("npc"))
+    if (target.npc and id == target.npc) or (name and name == target.name) then
+        GP.Print(string.format(L["You've arrived: %s."], target.title))
+        target = nil
+        if arrow then arrow:Hide() end
+    end
+end
+
+GP:On("TRAINER_SHOW", function() reached(); C_Timer.After(0.2, function() remember("T", trainerProfession()) end) end)
+GP:On("MERCHANT_SHOW", function() reached(); remember("V") end)
+GP:On("GOSSIP_SHOW", reached)
 
 -- Where an NPC stands --------------------------------------------------------------------------
 
@@ -136,8 +151,7 @@ end
 -- WoW Forever's own waypoint is only a pin on the map (the turning arrow is a retail feature), so
 -- Haulwise draws its own: it points at the target, says how far, and hides when you get there.
 -- Drag it to move it; right-click clears it.
-local arrow, target
-local ARRIVED = 8 -- yards
+local NEAR = 12 -- yards: "you're there", but the arrow stays until you talk to them
 
 -- World position: x grows to the north, y to the west (the game's world axes).
 local function worldPos(map, x, y)
@@ -185,11 +199,8 @@ local function update(self, elapsed)
             north = -(dx * sX + dy * sY) / sL
         end
     end
-    if yards <= ARRIVED then
-        GP.Print(string.format(L["You've arrived: %s."], target.title))
-        clearArrow()
-        return
-    end
+    -- Positions can be a few yards off, so close by the arrow keeps pointing and says so.
+    -- It goes away when you talk to them (or right-click it).
     local facing = GetPlayerFacing and GetPlayerFacing()
     if facing then
         local atan2 = math.atan2 or atan2
@@ -198,7 +209,17 @@ local function update(self, elapsed)
     else
         self.icon:Hide()
     end
-    self.dist:SetText(string.format(L["%d yd"], yards))
+    local atan2 = math.atan2 or atan2
+    -- Compass direction, clockwise from north.
+    local deg = (-math.deg(atan2(west, north))) % 360
+    local DIRS = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" }
+    local dir = DIRS[math.floor((deg + 22.5) / 45) % 8 + 1]
+    if yards <= NEAR then
+        self.dist:SetText("|cff5fd35f" .. string.format(L["%d yd: you're there, look around"], yards) .. "|r")
+    else
+        self.dist:SetText(string.format(L["%d yd"], yards) .. "  ·  " .. L[dir])
+    end
+    self.where:SetText(string.format(L["%s %.1f, %.1f  (you %.1f, %.1f)"], target.zone, target.x, target.y, px, py))
 end
 
 local function buildArrow()
@@ -208,18 +229,33 @@ local function buildArrow()
     arrow:SetMovable(true)
     arrow:SetClampedToScreen(true)
     arrow:RegisterForDrag("LeftButton")
-    arrow:RegisterForClicks("RightButtonUp")
+    arrow:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     arrow:SetScript("OnDragStart", function(self) self:StartMoving() end)
     arrow:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local p, _, rp, x, y = self:GetPoint()
         GP.db.positions.HaulwiseArrow = { p, rp, x, y }
     end)
-    arrow:SetScript("OnClick", clearArrow)
+    arrow:SetScript("OnClick", function(_, btn)
+        if btn == "RightButton" then clearArrow(); return end
+        -- Left-click: the world map, where the game's pin marks the spot.
+        if target and target.map then
+            if OpenWorldMap then pcall(OpenWorldMap, target.map)
+            elseif ToggleWorldMap then pcall(ToggleWorldMap) end
+        end
+    end)
     arrow:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        if target then GameTooltip:AddLine(target.title, 1, 0.82, 0.25) end
-        GameTooltip:AddLine(L["Drag to move. Right-click to clear."], 0.8, 0.8, 0.8)
+        if target then
+            GameTooltip:AddLine(target.title, 1, 0.82, 0.25)
+            GameTooltip:AddLine(string.format("%s  %.1f, %.1f", target.zone, target.x, target.y), 1, 1, 1)
+            if target.why then GameTooltip:AddLine(target.why, 0.8, 0.8, 0.8, true) end
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine(L["The arrow points in a straight line, through walls and floors. Indoors, look for a door or stairs; the coordinates show when you're right below or above."], 0.8, 0.8, 0.8, true)
+        end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine(L["Click: show on the world map"], 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(L["Drag to move. Right-click to clear."], 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end)
     arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -232,17 +268,21 @@ local function buildArrow()
     arrow.name:SetWidth(220)
     arrow.dist = arrow:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     arrow.dist:SetPoint("TOP", arrow.name, "BOTTOM", 0, -2)
+    arrow.where = arrow:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
+    arrow.where:SetPoint("TOP", arrow.dist, "BOTTOM", 0, -2)
     arrow:SetScript("OnUpdate", update)
     local pos = GP.db.positions.HaulwiseArrow
     arrow:ClearAllPoints()
     if pos then arrow:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4]) else arrow:SetPoint("TOP", UIParent, "TOP", 0, -140) end
 end
 
-function GP:ShowArrow(place, title)
+function GP:ShowArrow(place, title, why)
     local cont, wx, wy = worldPos(place.map, place.x, place.y)
     if not cont then return false end
     if not arrow then buildArrow() end
-    target = { cont = cont, wx = wx, wy = wy, title = title }
+    target = { cont = cont, wx = wx, wy = wy, title = title, why = why, map = place.map, x = place.x, y = place.y,
+               npc = place.id, name = place.name,
+               zone = GP.MapName(place.map) }
     arrow.name:SetText(title)
     arrow:Show()
     return true
@@ -261,7 +301,7 @@ function GP:Waypoint(place, why)
             local ok = pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(place.map, place.x / 100, place.y / 100))
             if ok and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true) end
         end
-        self:ShowArrow(place, title)
+        self:ShowArrow(place, title, why)
     end
     GP.Print(string.format(L["Waypoint: %s, %s (%.1f, %.1f)%s"], title, GP.MapName(place.map), place.x, place.y, why and ("  " .. why) or ""))
     return true
