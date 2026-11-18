@@ -96,7 +96,6 @@ local function show(tries)
             mark:SetBackdropBorderColor(1, 0.82, 0.25, 1)
             mark:EnableMouse(false)
             mark.label = mark:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
-            mark.label:SetPoint("BOTTOMLEFT", mark, "TOPLEFT", 2, 2)
             mark.label:SetJustifyH("LEFT")
         end
         mark:SetParent(b)
@@ -104,7 +103,18 @@ local function show(tries)
         mark:ClearAllPoints()
         mark:SetPoint("TOPLEFT", b, "TOPLEFT", -3, 3)
         mark:SetPoint("BOTTOMRIGHT", b, "BOTTOMRIGHT", 3, -3)
-        mark.label:SetText(L["Haulwise pick"])
+        -- The label goes after "Choose your reward:", where there is always room, so it never
+        -- covers the game's text. Without that line it sits above the reward as before.
+        mark.label:ClearAllPoints()
+        local info = GP.LinkInfo(p.link)
+        mark.label:SetText(string.format(L["Haulwise pick: %s"], info.name or "?"))
+        local choose = QuestInfoRewardsFrame and QuestInfoRewardsFrame.ItemChooseText
+        if choose and choose.IsShown and choose:IsShown() and choose.GetStringWidth then
+            local w = (choose.GetUnboundedStringWidth and choose:GetUnboundedStringWidth()) or choose:GetStringWidth()
+            mark.label:SetPoint("LEFT", choose, "LEFT", (GP.Safe(w) or 0) + 8, 0)
+        else
+            mark.label:SetPoint("BOTTOMLEFT", mark, "TOPLEFT", 2, 2)
+        end
         mark:Show()
     end
     -- Also in chat, once per quest: the mark can't be missed there, and it says why.
