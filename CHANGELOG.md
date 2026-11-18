@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.8.2
+- **The arrow points the right way**: it was mirrored, pointing a little right when the target was a little left. It now measures which way east and south lie on your map instead of assuming it.
 - **Find trainer** matches your skill: at your cap (150/150) it finds a trainer for the next rank; below it (131/225) one that teaches up to your cap, so not a Journeyman when you're already Expert.
 
 ## 0.8.1

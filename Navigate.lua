@@ -169,8 +169,22 @@ local function update(self, elapsed)
         self.dist:SetText(pmap and L["another continent"] or "")
         return
     end
-    local north, west = target.wx - x1, target.wy - y1
-    local yards = math.sqrt(north * north + west * west)
+    -- Which way is east and south in world units? Measured on your own map (its right edge is
+    -- east, its bottom edge south), so the arrow doesn't depend on how the game orders its axes.
+    local _, ex, ey = worldPos(pmap, 100, 0)
+    local _, sx, sy = worldPos(pmap, 0, 100)
+    local _, ox, oy = worldPos(pmap, 0, 0)
+    local dx, dy = target.wx - x1, target.wy - y1
+    local yards = math.sqrt(dx * dx + dy * dy)
+    local north, west = dx, dy
+    if ex and sx and ox then
+        local eX, eY, sX, sY = ex - ox, ey - oy, sx - ox, sy - oy
+        local eL, sL = math.sqrt(eX * eX + eY * eY), math.sqrt(sX * sX + sY * sY)
+        if eL > 0 and sL > 0 then
+            west = -(dx * eX + dy * eY) / eL
+            north = -(dx * sX + dy * sY) / sL
+        end
+    end
     if yards <= ARRIVED then
         GP.Print(string.format(L["You've arrived: %s."], target.title))
         clearArrow()

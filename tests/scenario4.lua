@@ -301,6 +301,20 @@ ok(HaulwiseArrow and HaulwiseArrow.shown, "Haulwise's own arrow shows (the game 
 HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
 print("     arrow: " .. tostring(HaulwiseArrow.dist.text))
 ok(HaulwiseArrow.dist.text:find("%d+ yd"), "and says how far it is")
+-- Direction: a target due west of you, facing north, points left (+90 degrees).
+local rot
+HaulwiseArrow.icon.SetRotation = function(_, r) rot = r end
+GP:ShowArrow({ map = 1453, x = 20, y = 60 }, "West")
+HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
+ok(rot and math.abs(rot - math.pi / 2) < 0.01, "a target to the west points left when you face north")
+GetPlayerFacing = function() return math.pi / 2 end
+HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
+ok(math.abs(rot) < 0.01, "and straight ahead when you face west")
+GP:ShowArrow({ map = 1453, x = 60, y = 20 }, "North")
+GetPlayerFacing = function() return 0 end
+HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
+ok(math.abs(rot) < 0.01, "a target to the north points straight ahead when you face north")
+GP:ShowArrow({ map = 1453, x = 53.1, y = 81.3 }, "Trainer")
 C_Map.GetPlayerMapPosition = function() return { GetXY = function() return wp.x, wp.y end } end
 HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
 ok(not HaulwiseArrow.shown, "it goes away when you arrive")
