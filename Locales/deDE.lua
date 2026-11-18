@@ -580,6 +580,7 @@ GP.LOCALES.deDE = {
     [" more"] = " mehr",
     ["not seen yet: visit trainers and vendors"] = "noch nicht gesehen: besuche Lehrer und Händler",
     ["open profession"] = "Beruf öffnen",
+    ["unknown"] = "unbekannt",
     ["Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%s|r"] = "Lohnt sich zu lernen:  |cffffffff%s|r   bezahlt sich nach |cff5fd35f%s|r",
     ["%s you don't know yet.  %s"] = "%s, die du noch nicht kennst.  %s",
     ["Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."] = "Besuche Lehrer und Händler, um zu sehen, wo du sie bekommst, und scanne das AH, um zu sehen, was sie einbringen.",

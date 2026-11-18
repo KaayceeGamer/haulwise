@@ -391,15 +391,18 @@ TAB.recipes = {
             prof = grey(r.prof and L[r.prof] or ""),
             skill = r.skill and ((not r.myRank and "|cffffffff") or (r.skill <= r.myRank and "|cff5fd35f")
                 or (r.skill <= r.myRank + 30 and "|cffffd040") or "|cffff6b5b") .. (r.skillExact and "" or "~") .. r.skill .. "|r" or grey("?"),
-            profit = (r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true) or grey("unknown"),
+            profit = (r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true) or grey(L["unknown"]),
             get = get, pay = pay or grey("–"),
         }
     end,
     hero = function(rows)
+        -- The quickest payback, whatever the sort; one that takes hundreds of crafts isn't a tip.
+        local best
         for _, r in ipairs(rows) do
-            if r.payback then
-                return string.format(L["Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%s|r"], r.name, plural(r.payback, "craft"))
-            end
+            if r.payback and r.payback <= 100 and (not best or r.payback < best.payback) then best = r end
+        end
+        if best then
+            return string.format(L["Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%s|r"], best.name, plural(best.payback, "craft"))
         end
         if #rows == 0 then return nil end
         return string.format(L["%s you don't know yet.  %s"], plural(#rows, "recipe"),

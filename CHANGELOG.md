@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.3
+- **Deals** are more careful before there are 3 days of scans: the resale price is the next listing above the cheap ones, not one scan's middle price, and anything over 300% profit is left out. No more "3140%" wine.
+- **Recipes**: "Worth learning" names the recipe that pays for itself fastest, and only if that's within 100 crafts.
+
 ## 0.7.2
 - **Quest reward pick**: when a quest lets you choose, Haulwise marks the best reward with a gold frame and says why in chat: your biggest gear upgrade, or else the one worth the most (vendor, auction house or disenchanting). Off in Settings → Gear.
 - **Easier to find the big window**: the small box has an **Open Haulwise** button instead of a tiny icon, and a first-time tip says where everything is.

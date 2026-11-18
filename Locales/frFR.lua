@@ -580,6 +580,7 @@ GP.LOCALES.frFR = {
     [" more"] = " de plus",
     ["not seen yet: visit trainers and vendors"] = "pas encore vu : allez voir les maîtres et marchands",
     ["open profession"] = "ouvrir le métier",
+    ["unknown"] = "inconnu",
     ["Worth learning:  |cffffffff%s|r   pays for itself after |cff5fd35f%s|r"] = "À apprendre :  |cffffffff%s|r   rentabilisée après |cff5fd35f%s|r",
     ["%s you don't know yet.  %s"] = "%s que vous ne connaissez pas encore.  %s",
     ["Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."] = "Allez voir les maîtres et marchands pour savoir où les obtenir, et scannez l'HV pour voir ce qu'elles rapportent.",

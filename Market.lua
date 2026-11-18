@@ -52,22 +52,32 @@ function GP:Deals()
             -- Gear is never trusted on one scan: the same item comes with different "of the ..."
             -- stats at very different prices.
             local trusted = (days or 0) >= 3 or ((p.q or 0) >= 20 and not GEAR[p.k or 0])
-            local uUnits, uCost, uProfit = 0, 0, 0
-            if market and market > 0 and trusted then
+            -- Before 3 days of scans the "usual price" is one scan's middle listing, and a few
+            -- greedy listings can push that far up. Then count on reselling only just under the
+            -- next listing above the cheap ones, and leave out anything that looks too good.
+            local target = market
+            if market and (days or 0) < 3 then
                 for _, l in ipairs(cheap) do
-                    if l.u <= market * 0.70 and uUnits < maxUnits then
+                    if l.u > market * 0.70 then target = math.min(market, l.u); break end
+                end
+            end
+            local uUnits, uCost, uProfit = 0, 0, 0
+            if target and target > 0 and trusted then
+                for _, l in ipairs(cheap) do
+                    if l.u <= target * 0.70 and uUnits < maxUnits then
                         local take = math.min(l.c, maxUnits - uUnits)
                         uUnits, uCost = uUnits + take, uCost + l.u * take
-                        uProfit = uProfit + (market * 0.95 - l.u) * take
+                        uProfit = uProfit + (target * 0.95 - l.u) * take
                     end
                 end
+                if (days or 0) < 3 and uCost > 0 and uProfit / uCost > 3 then uUnits, uCost, uProfit = 0, 0, 0 end
             end
 
             local row
             if fProfit >= uProfit and fProfit > 0 then
                 row = { id = id, kind = "flip", units = fUnits, cost = fCost, profit = fProfit, target = vendor }
             elseif uProfit > 0 then
-                row = { id = id, kind = "under", units = uUnits, cost = uCost, profit = uProfit, target = market, days = days,
+                row = { id = id, kind = "under", units = uUnits, cost = uCost, profit = uProfit, target = target, days = days,
                         vendorSafe = fProfit > 0 } -- even if it doesn't resell, a vendor pays more than you paid
             end
             if row and row.profit >= (s.minProfit or 0) then
