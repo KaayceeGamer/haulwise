@@ -35,7 +35,9 @@ function GP:Deals()
             local cheap = self:Cheapest(id)
             local vendor = p.s or 0
             local market, days = self:MarketValue(id)
-            local maxUnits = math.max(1, math.floor((p.q or 1) * 0.25))
+            -- At most a quarter of what's listed, and never more than 200: nobody resells 13,000
+            -- arrows at a markup, however cheap they are.
+            local maxUnits = math.max(1, math.min(200, math.floor((p.q or 1) * 0.25)))
 
             -- Vendor flips: listed below what a vendor pays. Zero risk.
             local fUnits, fCost, fProfit = 0, 0, 0
