@@ -198,6 +198,32 @@ local exp = GP:ExportString()
 ok(not exp:find(";R,,") and exp:find("R,stormrider's leather pants,252796", 1, true), "export skips empty recipe names, keeps the rest")
 GP.db.recipeItems[""] = nil
 
+-- Errors are kept for bug reports ---------------------------------------------------------------
+GP.db.errors = {}
+fire("BAG_UPDATE_DELAYED")
+GP:On("HAULWISE_TEST_EVENT", function() error("boom in a handler") end)
+fire("HAULWISE_TEST_EVENT"); fire("HAULWISE_TEST_EVENT")
+ok(#GP.db.errors == 1 and GP.db.errors[1].n == 2 and GP.db.errors[1].msg:find("boom"), "a failing handler is noted once, counted twice")
+local report = GP:ErrorReport()
+ok(report and report:find("Haulwise " .. GP.VERSION, 1, true) and report:find("boom"), "error report has the version and the error")
+GP:ShowFeedback()
+ok(HaulwiseShareFrame.edit:GetText():find("Paste this into your report", 1, true), "/haul feedback shows the report ready to copy")
+for i = 1, 15 do GP.ReportError("x", "err " .. i) end
+ok(#GP.db.errors == 10, "only the last 10 errors are kept")
+
+-- Recipes far above your skill are hidden ----------------------------------------------------------
+GP:Char().profs = { Tailoring = { rank = 131, max = 150 } }
+GP:Char().recipes.hi = { n = "Belt of the Archmage", prof = "Tailoring", out = 7010, oq = 1, r = "2589:2", learned = false }
+GP.db.sources["belt of the archmage"] = { trainer = { ["Trainer Bob"] = { zone = "Stormwind", cost = 50000, skill = 300, prof = "Tailoring" } } }
+GP.db.settings.recipesShowAll = false
+local found = false
+for _, r in ipairs(GP:RecipeRows()) do if r.name == "Belt of the Archmage" then found = true end end
+ok(not found, "a 300-skill recipe is hidden for 131 Tailoring")
+GP.db.settings.recipesShowAll = true
+for _, r in ipairs(GP:RecipeRows()) do if r.name == "Belt of the Archmage" then found = r end end
+ok(found and found.skill == 300 and found.skillExact, "shown with its skill when you ask for all")
+GP.db.settings.recipesShowAll = false
+
 -- Pawn 2.14: PawnIsInitialized is local, PawnIsReady() says whether it's ready.
 local oldInit, oldItem, oldSingle, oldAll = PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx
 PawnIsInitialized = nil

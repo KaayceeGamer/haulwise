@@ -365,10 +365,11 @@ TAB.deals = {
 
 TAB.recipes = {
     cols = {
-        { key = "name", title = "Recipe", w = 250, icon = true },
-        { key = "prof", title = "Profession", w = 112 },
+        { key = "name", title = "Recipe", w = 240, icon = true },
+        { key = "prof", title = "Profession", w = 100 },
+        { key = "skill", title = "Skill", w = 60, align = "RIGHT" },
         { key = "profit", title = "Profit per craft", w = 120, align = "RIGHT", bar = true },
-        { key = "get", title = "How to get it", w = 330 },
+        { key = "get", title = "How to get it", w = 290 },
         { key = "pay", title = "Pays back", w = 110, align = "RIGHT" },
     },
     rows = function() return GP:RecipeRows() end,
@@ -387,6 +388,8 @@ TAB.recipes = {
         return {
             name = r.name or "?", icon = r.out and GP.ItemIcon(r.out) or (r.itemID and GP.ItemIcon(r.itemID)) or 134939,
             prof = grey(r.prof or ""),
+            skill = r.skill and ((not r.myRank and "|cffffffff") or (r.skill <= r.myRank and "|cff5fd35f")
+                or (r.skill <= r.myRank + 30 and "|cffffd040") or "|cffff6b5b") .. (r.skillExact and "" or "~") .. r.skill .. "|r" or grey("?"),
             profit = (r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true) or grey("unknown"),
             get = get, pay = pay or grey("–"),
         }
@@ -402,6 +405,9 @@ TAB.recipes = {
             grey("Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."))
     end,
     empty = "No recipes to suggest yet.\n\nOpen your profession windows once and scan the AH. Recipes you don't know yet are ranked by profit per craft and how fast they pay for themselves.",
+    toggles = {
+        { "Show recipes far above my skill", "recipesShowAll", "Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs." },
+    },
     click = function(r) if r.itemID then GP:SearchAH(r.itemID) end end,
     tooltip = function(t, r)
         if r.out then t:SetItemByID(r.out) else t:AddLine(r.name or "?", 1, 1, 1) end
@@ -889,6 +895,7 @@ TAB.deals.sort = {
 }
 TAB.recipes.sort = {
     name = function(r) return (r.name or ""):lower() end, prof = function(r) return r.prof end,
+    skill = function(r) return r.skill end,
     profit = function(r) return priced(r) and r.profit or nil end, get = function(r) return r.learnCost end,
     pay = function(r) return r.payback end,
 }
@@ -1218,10 +1225,37 @@ local function build()
     footLine:SetPoint("BOTTOMRIGHT", foot, "TOPRIGHT")
     footLine:SetHeight(1)
     f.footer = f:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
-    f.footer:SetPoint("BOTTOMLEFT", 14, 14)
+    f.footer:SetPoint("BOTTOMLEFT", 14, 22)
     f.footer:SetPoint("RIGHT", -330, 0)
     f.footer:SetJustifyH("LEFT")
+    f.footer:SetWordWrap(false)
     f.footer:SetTextColor(0.65, 0.63, 0.58)
+    -- Second line: how fresh the community data is, and what you haven't shared. Click to import.
+    f.comm = CreateFrame("Button", nil, f)
+    f.comm:SetPoint("BOTTOMLEFT", 14, 6)
+    f.comm:SetPoint("RIGHT", f, "RIGHT", -330, 0)
+    f.comm:SetHeight(14)
+    f.comm.text = f.comm:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+    f.comm.text:SetAllPoints()
+    f.comm.text:SetJustifyH("LEFT")
+    f.comm.text:SetWordWrap(false)
+    f.comm:SetScript("OnClick", function() GP:ShowImport() end)
+    f.comm:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Community data", 1, 0.82, 0.25)
+        local com = GP:CommunityInfo()
+        if com then
+            GameTooltip:AddLine(string.format("Drop rates, recipe sources and vendor prices pooled from %s, as of %s.",
+                plural(com.contributors or 0, "player"), date("%d %b %Y", com.time or 0)), 1, 1, 1, true)
+        else
+            GameTooltip:AddLine("None loaded yet.", 1, 1, 1, true)
+        end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("The pool is rebuilt every night. To get it now: press \"Copy community data\" on " .. GP.SITE_URL .. ", then click here and paste it (Ctrl+V).", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("New versions of Haulwise bring it too, every week.", 0.6, 0.6, 0.6, true)
+        GameTooltip:Show()
+    end)
+    f.comm:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     f.scan = flatButton(f, "Scan AH", 110)
     f.scan:SetPoint("BOTTOMRIGHT", -12, 9)
@@ -1479,13 +1513,23 @@ function GP:RefreshUI()
     local ownKills, nFriends = 0, 0
     for _, m in pairs(self.db.mobs) do ownKills = ownKills + (m.kills or 0) end
     for uid in pairs(self.db.shared) do if uid ~= "community" then nFriends = nFriends + 1 end end
-    local com = self:CommunityInfo()
     local extra = ""
-    if com and S().useShared then extra = string.format(" + community (%d players)", com.contributors or 0) end
-    if nFriends > 0 and S().useShared then extra = extra .. string.format(" + %d friends", nFriends) end
+    if nFriends > 0 and S().useShared then extra = string.format(" + %d friends", nFriends) end
+    f.footer:SetText(string.format("%s  ·  %s of history  ·  %d of your kills%s", priceText, plural(days, "day"), ownKills, extra))
+    local com = self:CommunityInfo()
+    local line
+    if com and com.time and com.time > 0 then
+        local age = (time() - com.time) / 86400
+        line = string.format("%sCommunity data from %s|r  ·  %s", age > 14 and "|cffff9944" or "|cff88ccff",
+            date("%d %b", com.time), plural(com.contributors or 0, "player"))
+        if age > 14 then line = line .. "  ·  |cffff9944old: click to get the newest|r" end
+    else
+        line = "|cffff9944No community data yet: click to import it|r"
+    end
+    if not S().useShared then line = line .. grey("  (turned off on the Farm tab)") end
     local unshared = self:UnsharedKills()
-    if unshared > 0 then extra = extra .. string.format("  ·  |cffffd040%d not shared yet|r", unshared) end
-    f.footer:SetText(string.format("%s  ·  %d days of history  ·  %d of your kills%s", priceText, days, ownKills, extra))
+    if unshared > 0 then line = line .. string.format("  ·  |cffffd040%d of your kills not shared yet|r", unshared) end
+    f.comm.text:SetText(line)
 
     self:RefreshScanButton()
 

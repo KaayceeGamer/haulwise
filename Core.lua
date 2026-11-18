@@ -21,7 +21,9 @@ local DEFAULTS = {
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
     shared = {},        -- [sourceId] = { label, time, mobs }
-    names = {},         -- [itemID] = name from AH scans, for items the game hasn't loaded yet
+    names = {},
+    recipeSkill = {},   -- [recipe itemID] = skill it needs, read from its tooltip once
+    errors = {},        -- the last few Haulwise errors, for /haul feedback         -- [itemID] = name from AH scans, for items the game hasn't loaded yet
     sharedKills = 0,    -- your kill total the last time you opened Share
     shareNudgedAt = 0,  -- kill total at the last share reminder
     settings = {
@@ -47,7 +49,8 @@ local DEFAULTS = {
         shareReminder = true,
         ahUpgradeMax = 0,
         sellHelper = true,
-        tooltipDisenchant = true, -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
+        tooltipDisenchant = true,
+        recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
         hudShown = true,
@@ -86,14 +89,53 @@ function GP:On(event, fn)
     table.insert(handlers[event], fn)
 end
 
+-- Errors ------------------------------------------------------------------------
+-- The last few Haulwise errors are kept (with the version and when), so /haul feedback can show
+-- them ready to copy into a bug report. Nothing leaves your PC unless you paste it somewhere.
+local MAX_ERRORS = 10
+function GP.ReportError(where, err)
+    local db = GP.db
+    if not db then return end
+    db.errors = db.errors or {}
+    local msg = tostring(err or "?"):gsub("|", "||"):sub(1, 600)
+    local last = db.errors[#db.errors]
+    if last and last.msg == msg then
+        last.n, last.t = (last.n or 1) + 1, time()
+        return
+    end
+    db.errors[#db.errors + 1] = { t = time(), v = GP.VERSION, where = where, msg = msg, n = 1 }
+    while #db.errors > MAX_ERRORS do table.remove(db.errors, 1) end
+    if not GP.errorNoted and GP.Print then
+        GP.errorNoted = true -- once per session
+        GP.Print("Something went wrong inside Haulwise. |cffffd040/haul feedback|r shows the error, ready to paste into a bug report.")
+    end
+    if GP.debug then print("|cffff5555Haulwise error|r", where, msg) end
+end
+
 frame:SetScript("OnEvent", function(_, event, ...)
     local list = handlers[event]
     if not list then return end
     for i = 1, #list do
         local ok, err = pcall(list[i], ...)
-        if not ok and GP.debug then print("|cffff5555Haulwise error|r", event, err) end
+        if not ok then GP.ReportError(event, err) end
     end
 end)
+
+-- Errors outside event handlers (timers, clicks) reach the game's error handler. Note the ones
+-- from Haulwise's own files, then pass every error on unchanged (BugSack and the like still work).
+do
+    local get, set = geterrorhandler, seterrorhandler
+    if get and set then
+        local previous = get()
+        pcall(set, function(msg, ...)
+            local text = tostring(msg)
+            if text:find("AddOns[/\\]Haulwise[/\\]") or text:find("Interface/AddOns/Haulwise/") then
+                pcall(GP.ReportError, "lua", text)
+            end
+            if previous then return previous(msg, ...) end
+        end)
+    end
+end
 
 -- Helpers --------------------------------------------------------------------
 

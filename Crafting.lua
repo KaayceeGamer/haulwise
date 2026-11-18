@@ -258,6 +258,17 @@ function GP:RecipeRows()
             r.learnCost = r.buyPrice
         end
         if r.learnCost and r.profit and r.profit > 0 and #(r.missing or {}) == 0 then r.payback = math.ceil(r.learnCost / r.profit) end
+        r.skill, r.skillExact = self:RecipeSkill(r)
+        local p = self:MyProfessions()[r.prof or ""]
+        r.myRank = p and p.rank
+    end
+    -- Recipes far above your skill (more than 30 points) are hidden unless you ask for them.
+    if not self.db.settings.recipesShowAll then
+        local keep = {}
+        for _, r in ipairs(rows) do
+            if not (r.skill and r.myRank and r.skill > r.myRank + 30) then keep[#keep + 1] = r end
+        end
+        rows = keep
     end
     table.sort(rows, function(a, b)
         local ap = (#(a.missing or {}) == 0 and a.profit) or -math.huge
@@ -266,6 +277,43 @@ function GP:RecipeRows()
         return (a.name or "") < (b.name or "")
     end)
     return rows
+end
+
+-- The skill a recipe needs: from a trainer you (or anyone sharing) saw, from the recipe item's
+-- tooltip ("Requires Tailoring (250)"), or, as a rough guess, from the level the crafted gear
+-- needs. Returns skill, exact (false for the guess).
+local skillPattern
+local function tooltipSkill(itemID)
+    if not (itemID and C_TooltipInfo and C_TooltipInfo.GetItemByID) then return nil end
+    local cache = GP.db.recipeSkill
+    if cache[itemID] then return cache[itemID] end
+    if not skillPattern then
+        local fmt = ITEM_MIN_SKILL or "Requires %s (%d)"
+        local escaped = fmt:gsub("([%(%)%.%-%+%[%]])", "%%%1")
+        skillPattern = "^" .. escaped:gsub("%%s", ".-"):gsub("%%d", "(%%d+)") .. "$"
+    end
+    local ok, data = pcall(C_TooltipInfo.GetItemByID, itemID)
+    if not ok or not data or not data.lines then return nil end
+    for _, line in ipairs(data.lines) do
+        local n = line.leftText and line.leftText:match(skillPattern)
+        if n then cache[itemID] = tonumber(n); return cache[itemID] end
+    end
+end
+
+function GP:RecipeSkill(r)
+    local best
+    for _, s in ipairs(r.sources or {}) do
+        if s.skill and s.skill > 0 and (not best or s.skill < best) then best = s.skill end
+    end
+    if best then return best, true end
+    local t = tooltipSkill(r.itemID)
+    if t then return t, true end
+    if r.out then
+        local info = GP.LinkInfo(select(2, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(r.out)) or ("item:" .. r.out))
+        if info.minLevel and info.minLevel > 1 and (info.classID == 2 or info.classID == 4) then
+            return math.min(300, math.max(1, info.minLevel * 5)), false
+        end
+    end
 end
 
 -- Best value per unit of a reagent if you craft it instead of selling it raw (for the Farm tab).

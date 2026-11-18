@@ -257,13 +257,31 @@ function GP:ShowExport()
     b:Show()
 end
 
+-- A ready-to-paste bug report: version, game build, and the last errors Haulwise noted.
+function GP:ErrorReport(max)
+    local errs = self.db.errors or {}
+    if #errs == 0 then return nil end
+    local lines = {}
+    local build = GetBuildInfo and select(1, GetBuildInfo()) or "?"
+    lines[1] = string.format("Haulwise %s, game %s, %d error%s:", GP.VERSION or "?", build, #errs, #errs == 1 and "" or "s")
+    for i = #errs, math.max(1, #errs - (max or 5) + 1), -1 do
+        local e = errs[i]
+        lines[#lines + 1] = string.format("[%s] %s%s (%s, v%s): %s", date("%d %b %H:%M", e.t or 0), e.where or "?",
+            (e.n or 1) > 1 and (" x" .. e.n) or "", e.where == "lua" and "game" or "event", e.v or "?", (e.msg or ""):gsub("||", "|"))
+    end
+    return table.concat(lines, "\n")
+end
+
 function GP:ShowFeedback()
     local b = getBox()
-    b.title:SetText("Feedback, bugs and ideas: copy a link with Ctrl+C")
+    local report = self:ErrorReport(5)
+    b.title:SetText(report and "Feedback: Haulwise noted errors. Copy everything below with Ctrl+C"
+        or "Feedback, bugs and ideas: copy a link with Ctrl+C")
     b.edit:SetText("Report a bug or suggest an idea (GitHub issues):\n" .. GP.ISSUES_URL ..
         "\n\nOr leave a comment on the Haulwise page on CurseForge.\n\nShare your data and get the newest community data:\n" .. GP.SITE_URL ..
-        "\n\nWhen reporting a bug, tell us what you did, what you expected, and paste any error message. Haulwise version: " ..
-        (GP.VERSION or "?") .. ".")
+        "\n\nWhen reporting a bug, tell us what you did and what you expected. Haulwise version: " .. (GP.VERSION or "?") .. "." ..
+        (report and ("\n\n--- Paste this into your report ---\n" .. report) or "\n\nNo Haulwise errors noted so far."))
+    if report then b.edit:HighlightText() end
     b.edit:SetCursorPosition(0)
     b.edit:SetFocus()
     b.status:SetText("")
