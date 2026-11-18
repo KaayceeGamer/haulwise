@@ -1,6 +1,8 @@
 # Every day: pull the pooled community data into Data.lua and commit it. When a CurseForge
 # API key is set (secret CF_API_KEY), also release it as a new file so everyone gets the bigger
-# data pool through the CurseForge app.
+# data pool through the CurseForge app. To keep CurseForge's review queue short (at most 1-2
+# files a day), the data release is skipped when any release went out in the last 20 hours;
+# the new Data.lua is still committed and ships with the next release.
 name: Community data
 on:
   schedule:
@@ -35,15 +37,31 @@ jobs:
           git add Data.lua
           git commit -m "Community data $(date -u +%Y-%m-%d)"
           git push origin HEAD:main
-      # The version comes from Core.lua (GP.VERSION), so this works before any tag exists.
       - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true'
+        id: gate
+        name: Skip if a release went out recently
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          last=$(gh api "repos/${{ github.repository }}/releases?per_page=1" --jq '.[0].created_at // empty' || true)
+          release=true
+          if [ -n "$last" ]; then
+            age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
+            if [ "$age" -lt 72000 ]; then
+              release=false
+              echo "::notice::Last release was $((age / 3600))h ago. Data.lua is committed and ships with the next release."
+            fi
+          fi
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+      # The version comes from Core.lua (GP.VERSION), so this works before any tag exists.
+      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true' && steps.gate.outputs.release == 'true'
         name: Tag the data release
         run: |
           version=$(grep -o 'GP.VERSION = "[^"]*"' Core.lua | cut -d'"' -f2)
           tag="v${version}-data$(date -u +%Y%m%d)"
           git tag "$tag"
           git push origin "$tag"
-      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true'
+      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true' && steps.gate.outputs.release == 'true'
         uses: BigWigsMods/packager@v2
         with:
           args: -p 1812709 -n "Haulwise {project-version}:{package-name}-{project-version}"
