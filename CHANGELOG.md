@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.7.1
+- **Smaller saved data**: auction prices are saved as one short line per item, and old price history and unused item names are cleared out. The saved file shrinks by about a third, so logging in and `/reload` are quicker.
 - **Shopping list**: the profit now counts the reagents you already have too, so it matches the Craft tab (before, it only subtracted what you still had to buy).
 
 ## 0.7.0
