@@ -1,10 +1,14 @@
 **Haulwise shows what everything you own is worth, what you can safely throw away, which gear is an upgrade, and where to make gold. It works it out from your own play and from what every Haulwise player shares.**
 
-Free and open source. No ads, no accounts, no donations.
+Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
+
+**New in 0.7:** a minimap button, German and French, a pick for every quest reward, *Disenchant for mats* for leveling Enchanting, and your own disenchant results in item tooltips.
 
 ---
 
 ## What you get
+
+Open Haulwise with the **chest button on your minimap**, the **Open Haulwise** button on the HUD, or `/haul`.
 
 ### 💰 The HUD — always on screen until you close it
 - Gold per hour this session
@@ -20,6 +24,10 @@ Every item is valued at the highest of:
 - expected **disenchant** value, if you or one of your characters can disenchant it
 
 The tooltip shows the whole calculation, and **Best move** says what gets the most for each item: sell on the AH, sell to a vendor, disenchant it, or send it to an alt who can. When disenchanting wins, a **Disenchant** button does the best one for you.
+
+**Leveling Enchanting?** Tick **Disenchant for mats** and gear you can disenchant yourself is marked to disenchant even when selling pays a bit more. Haulwise shows what that costs you, picks the cheapest one first, and leaves alone anything that sells for more than three times its mats.
+
+**Gear tooltips** show the best move, what the item disenchants into at your auction house prices, and what **your own disenchants** of it (or items like it) actually gave.
 
 **When your bags are full while looting**, Haulwise compares the loot with your cheapest item and offers a one-click swap. If the swap would lose you money, the popup turns red and says how much.
 
@@ -37,6 +45,7 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
 - Bind-on-Equip gear is checked for **all your characters**. At a mailbox, *Send to alts* lists it and attaches it with one click.
 - **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price and click to find it.
+- **Quest reward pick**: when a quest lets you choose, Haulwise frames the best reward in gold and says why in chat: your biggest upgrade, or else the one worth the most.
 
 ### 🐺 Farm: the best gold per hour for *your* character
 Haulwise measures:
@@ -48,7 +57,7 @@ Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hou
 
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin and 7-day trend.
-- **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, and where the rest is cheapest.
+- **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, where the rest is cheapest, and what the whole batch earns.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself.
 
@@ -90,7 +99,7 @@ Shared data is anonymous, each player's weight is capped, and outliers are filte
 4. **Log in on each character** once.
 5. Open your **bank** and **mailbox** once.
 
-Then just play. The in-game guide (`/haul guide`) explains everything.
+Then just play. The in-game guide (the **i** button, or `/haul guide`) explains everything.
 
 ## Commands
 | Command | What it does |
@@ -120,7 +129,7 @@ Then just play. The in-game guide (`/haul guide`) explains everything.
 ---
 
 ### Feedback
-Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (link below). `/haul feedback` in game shows the links.
+Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (link below). `/haul feedback` in game shows the links, and the last errors Haulwise noted, ready to paste into your report.
 
 ### Links
 - Upload page and community data: https://kaayceegamer.github.io/haulwise/
