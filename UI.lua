@@ -1226,7 +1226,22 @@ local function build()
     f.scan = flatButton(f, "Scan AH", 110)
     f.scan:SetPoint("BOTTOMRIGHT", -12, 9)
     f.scan:SetScript("OnClick", function() GP:ScanAH() end)
-    tip(f.scan, function(t) local ok, why = GP:CanScan(); t:AddLine(ok and "Scan every auction (takes a few seconds)." or ("Can't scan: " .. why), 1, 1, 1, true) end)
+    tip(f.scan, function(t)
+        local status = GP:ScanStatus()
+        if status then
+            t:AddLine("Scanning the auction house", 1, 0.82, 0.25)
+            t:AddLine(status, 1, 1, 1, true)
+            return
+        end
+        local ok, why = GP:CanScan()
+        if ok then
+            t:AddLine("Scan every auction", 1, 0.82, 0.25)
+            t:AddLine("Reads all listings at once (the game allows one full scan every 15 minutes).", 1, 1, 1, true)
+        else
+            t:AddLine("Can't scan right now", 1, 0.82, 0.25)
+            t:AddLine((why:gsub("^%l", string.upper)) .. ".", 1, 1, 1, true)
+        end
+    end)
     f.import = flatButton(f, "Import", 84)
     f.import:SetPoint("RIGHT", f.scan, "LEFT", -6, 0)
     f.import:SetScript("OnClick", function() GP:ShowImport() end)
@@ -1482,7 +1497,8 @@ function GP:RefreshScanButton()
     if not (f and f.scan) then return end
     local canScan = self:CanScan()
     f.scan.label:SetTextColor(canScan and GOLD[1] or 0.5, canScan and GOLD[2] or 0.5, canScan and GOLD[3] or 0.5)
-    f.scan:SetLabel(self.scanProgress and string.format("Scanning %d%%", math.floor(self.scanProgress * 100)) or "Scan AH")
+    local p = self.scanProgress
+    f.scan:SetLabel(not p and "Scan AH" or (p == 0 and "Waiting for AH..." or string.format("Scanning %d%%", math.floor(p * 100))))
 end
 
 local function place()

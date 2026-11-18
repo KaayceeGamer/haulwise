@@ -151,6 +151,15 @@ end
 
 -- Full scan ------------------------------------------------------------------------
 
+-- What the scan button's tooltip says while a scan runs: nil when no scan is running.
+function GP:ScanStatus()
+    if scanning == true then
+        return "Waiting for the auction house to send every listing. This can take up to a minute; you can keep playing."
+    elseif scanning then
+        return string.format("Reading the listings: %d%% done. Gear upgrades and deals update when it's finished.", math.floor((self.scanProgress or 0) * 100))
+    end
+end
+
 function GP:CanScan()
     if not (C_AuctionHouse and C_AuctionHouse.ReplicateItems) then return false, "no AH API" end
     if not self.ahOpen then return false, "open the auction house first" end
@@ -269,7 +278,11 @@ end
 
 function GP:ScanAH()
     local ok, why = self:CanScan()
-    if not ok then self.Print("Can't scan: " .. why); return end
+    if not ok then
+        local status = self:ScanStatus()
+        self.Print(status and ("Already scanning. " .. status) or ("Can't scan: " .. why .. "."))
+        return
+    end
     scanning = true
     self.scanProgress = 0
     self.Print("Scanning the auction house...")
