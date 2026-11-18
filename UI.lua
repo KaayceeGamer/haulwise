@@ -1398,12 +1398,18 @@ local function disenchantName() return GP.DisenchantSpellName() end
 function GP:DisenchantCandidate()
     local name = disenchantName()
     if not name then return nil end
-    local best
+    -- Where disenchanting pays most: the biggest gain first. "For mats": the one that costs the
+    -- least gold compared with selling, so the Gold you'd lose stays small.
+    local best, bestScore
     for _, r in ipairs(self:BagItems()) do
-        if (r.src == "DE" or GP:MatsDisenchant(r)) and not r.protect and r.d and r.d.deWho then
-            local mine = false
-            for _, who in ipairs(r.d.deWho) do if who == UnitName("player") then mine = true end end
-            if mine and (not best or r.total > best.total) then best = r end
+        if not r.protect and GP.CanDisenchantMyself(r.d) then
+            local score
+            if r.src == "DE" then
+                score = 1e12 + r.total
+            elseif GP:MatsDisenchant(r) then
+                score = -(r.total - (r.d.de or 0) * (r.count or 1))
+            end
+            if score and (not bestScore or score > bestScore) then best, bestScore = r, score end
         end
     end
     return best, name
@@ -1443,6 +1449,9 @@ updateDisenchant = function(show)
     deButton.label:SetText(L["|cffc48cffDisenchant|r "] .. itemName(cand.id))
     deButton:ClearAllPoints()
     deButton:SetPoint("RIGHT", f.extra, "LEFT", -6, 0)
+    -- Above the window, or the window takes the clicks.
+    deButton:SetFrameStrata(f:GetFrameStrata())
+    deButton:SetFrameLevel(f:GetFrameLevel() + 50)
     deButton:Show()
 end
 
