@@ -132,6 +132,108 @@ function GP:NearestPlace(ids, accept)
     return best
 end
 
+-- The arrow ---------------------------------------------------------------------------------------
+-- WoW Forever's own waypoint is only a pin on the map (the turning arrow is a retail feature), so
+-- Haulwise draws its own: it points at the target, says how far, and hides when you get there.
+-- Drag it to move it; right-click clears it.
+local arrow, target
+local ARRIVED = 8 -- yards
+
+-- World position: x grows to the north, y to the west (the game's world axes).
+local function worldPos(map, x, y)
+    if not (C_Map and C_Map.GetWorldPosFromMapPos and CreateVector2D) then return nil end
+    local ok, cont, w = pcall(C_Map.GetWorldPosFromMapPos, map, CreateVector2D(x / 100, y / 100))
+    if not ok or not w then return nil end
+    local wx, wy
+    if w.GetXY then wx, wy = w:GetXY() else wx, wy = w.x, w.y end
+    return cont, wx, wy
+end
+
+local function clearArrow()
+    target = nil
+    if arrow then arrow:Hide() end
+end
+GP.ClearArrow = clearArrow
+
+local since = 0
+local function update(self, elapsed)
+    since = since + elapsed
+    if since < 0.05 then return end
+    since = 0
+    if not target then self:Hide(); return end
+    local pmap, px, py = playerPos()
+    local c1, x1, y1
+    if pmap then c1, x1, y1 = worldPos(pmap, px, py) end
+    if not (c1 and target.cont and c1 == target.cont) then
+        self.icon:Hide()
+        self.dist:SetText(pmap and L["another continent"] or "")
+        return
+    end
+    local north, west = target.wx - x1, target.wy - y1
+    local yards = math.sqrt(north * north + west * west)
+    if yards <= ARRIVED then
+        GP.Print(string.format(L["You've arrived: %s."], target.title))
+        clearArrow()
+        return
+    end
+    local facing = GetPlayerFacing and GetPlayerFacing()
+    if facing then
+        local atan2 = math.atan2 or atan2
+        self.icon:SetRotation(atan2(west, north) - facing)
+        self.icon:Show()
+    else
+        self.icon:Hide()
+    end
+    self.dist:SetText(string.format(L["%d yd"], yards))
+end
+
+local function buildArrow()
+    arrow = CreateFrame("Button", "HaulwiseArrow", UIParent)
+    arrow:SetSize(120, 92)
+    arrow:SetFrameStrata("MEDIUM")
+    arrow:SetMovable(true)
+    arrow:SetClampedToScreen(true)
+    arrow:RegisterForDrag("LeftButton")
+    arrow:RegisterForClicks("RightButtonUp")
+    arrow:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    arrow:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        local p, _, rp, x, y = self:GetPoint()
+        GP.db.positions.HaulwiseArrow = { p, rp, x, y }
+    end)
+    arrow:SetScript("OnClick", clearArrow)
+    arrow:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        if target then GameTooltip:AddLine(target.title, 1, 0.82, 0.25) end
+        GameTooltip:AddLine(L["Drag to move. Right-click to clear."], 0.8, 0.8, 0.8)
+        GameTooltip:Show()
+    end)
+    arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    arrow.icon = arrow:CreateTexture(nil, "ARTWORK")
+    arrow.icon:SetSize(52, 52)
+    arrow.icon:SetPoint("TOP", 0, 0)
+    arrow.icon:SetTexture("Interface\\Minimap\\MinimapArrow")
+    arrow.name = arrow:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
+    arrow.name:SetPoint("TOP", arrow.icon, "BOTTOM", 0, 2)
+    arrow.name:SetWidth(220)
+    arrow.dist = arrow:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+    arrow.dist:SetPoint("TOP", arrow.name, "BOTTOM", 0, -2)
+    arrow:SetScript("OnUpdate", update)
+    local pos = GP.db.positions.HaulwiseArrow
+    arrow:ClearAllPoints()
+    if pos then arrow:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4]) else arrow:SetPoint("TOP", UIParent, "TOP", 0, -140) end
+end
+
+function GP:ShowArrow(place, title)
+    local cont, wx, wy = worldPos(place.map, place.x, place.y)
+    if not cont then return false end
+    if not arrow then buildArrow() end
+    target = { cont = cont, wx = wx, wy = wy, title = title }
+    arrow.name:SetText(title)
+    arrow:Show()
+    return true
+end
+
 -- Waypoints --------------------------------------------------------------------------------------
 
 function GP:Waypoint(place, why)
@@ -139,9 +241,13 @@ function GP:Waypoint(place, why)
     local tomtom = _G.TomTom
     if tomtom and tomtom.AddWaypoint then
         pcall(tomtom.AddWaypoint, tomtom, place.map, place.x / 100, place.y / 100, { title = title, from = "Haulwise" })
-    elseif C_Map and C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates then
-        local ok = pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(place.map, place.x / 100, place.y / 100))
-        if ok and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true) end
+    else
+        -- The game's pin on the map, plus Haulwise's own arrow on screen.
+        if C_Map and C_Map.SetUserWaypoint and UiMapPoint and UiMapPoint.CreateFromCoordinates then
+            local ok = pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(place.map, place.x / 100, place.y / 100))
+            if ok and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true) end
+        end
+        self:ShowArrow(place, title)
     end
     GP.Print(string.format(L["Waypoint: %s, %s (%.1f, %.1f)%s"], title, GP.MapName(place.map), place.x, place.y, why and ("  " .. why) or ""))
     return true

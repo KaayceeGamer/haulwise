@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.1
+- **An arrow on screen** for waypoints: WoW Forever's own waypoint is only a pin on the map, so Haulwise draws its own arrow with the distance. It goes away when you arrive; drag it to move it, right-click to clear it. With TomTom installed, TomTom's arrow is used instead.
+
 ## 0.8.0
 - **Waypoints to trainers and recipe vendors.** *Find trainer* in the Craft tab (or `/haul trainer tailoring`) points you to the nearest trainer of your faction that teaches your next rank: Journeyman, Expert or Artisan. In Recipes, click a recipe to go to the vendor that sells it; Shift-click searches the AH. Uses TomTom when it's installed, otherwise the game's own map pin and arrow.
 - **Haulwise Data**: a new data-only addon that comes in the same download. It knows where 450+ profession trainers and recipe vendors stand in WoW Forever, from QuestieDB's Forever data (GPLv3; thanks to the Questie team). With QuestieDB installed, Haulwise reads it too.

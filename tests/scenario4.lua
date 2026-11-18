@@ -290,12 +290,21 @@ C_SuperTrack = { SetSuperTrackedUserWaypoint = function() end }
 C_Map = {
   GetBestMapForUnit = function() return 1453 end,
   GetPlayerMapPosition = function() return { GetXY = function() return 0.6, 0.6 end } end,
-  GetWorldPosFromMapPos = function(m, v) return 0, { x = m * 10 + v.x, y = v.y } end,
+  GetWorldPosFromMapPos = function(m, v) return 0, { x = m * 10000 + v.x * 1000, y = v.y * 1000 } end,
   GetMapInfo = function(m) return { name = "Map " .. m } end,
   SetUserWaypoint = function(p) wp = p end,
 }
 GP:Char().profs = { Tailoring = { rank = 150, max = 150 } }
 ok(GP:FindTrainer("Tailoring") and wp and wp.m == 1453, "waypoint to the nearest Alliance tailoring trainer (Stormwind)")
+GetPlayerFacing = function() return 0 end
+ok(HaulwiseArrow and HaulwiseArrow.shown, "Haulwise's own arrow shows (the game has no turning arrow)")
+HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
+print("     arrow: " .. tostring(HaulwiseArrow.dist.text))
+ok(HaulwiseArrow.dist.text:find("%d+ yd"), "and says how far it is")
+C_Map.GetPlayerMapPosition = function() return { GetXY = function() return wp.x, wp.y end } end
+HaulwiseArrow.scripts.OnUpdate(HaulwiseArrow, 1)
+ok(not HaulwiseArrow.shown, "it goes away when you arrive")
+C_Map.GetPlayerMapPosition = function() return { GetXY = function() return 0.6, 0.6 end } end
 local tier = GP.TrainerTier(GP:NearestPlace(GP:TrainersFor("Tailoring"), function(p) return GP.TrainerTier(p.sub) >= 225 end).sub)
 ok(tier >= 225, "at 150/150 it looks for an Expert or Artisan")
 UnitGUID = function() return "Creature-0-1-2-3-99999-0000" end
