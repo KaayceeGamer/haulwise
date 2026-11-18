@@ -250,6 +250,27 @@ PawnIsReady = function() return false end
 ok(not GP.PawnLoaded(), "not used while Pawn is still loading")
 PawnIsReady = nil
 PawnIsInitialized, PawnGetItemData, PawnGetSingleValueFromItem, PawnGetAllScalesEx = oldInit, oldItem, oldSingle, oldAll
+-- Saved data is packed on logout and unpacked on login ------------------------------------------
+GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
+ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")
+GP.db.names[999002] = ""
+GP.db.names[999003] = "Nobody knows me"
+GP.db.history[999004] = "1:100:1"
+local before = {}
+for id, r in pairs(GP.db.prices) do local c = {} for k, v in pairs(r) do c[k] = v end before[id] = c end
+fire("PLAYER_LOGOUT")
+ok(next(GP.db.prices) == nil and type(GP.db.pricesPacked[999001]) == "string", "prices are saved as short lines on logout")
+GP:UnpackSaved()
+local same = true
+for id, r in pairs(before) do
+  for k, v in pairs(r) do if GP.db.prices[id][k] ~= v then same = false; print("   differs", id, k, v, GP.db.prices[id][k]) end end
+  for k in pairs(GP.db.prices[id]) do if r[k] == nil then same = false end end
+end
+ok(same and GP.db.pricesPacked == nil, "and come back exactly the same on login")
+ok(GP.db.names[999002] == nil and GP.db.names[999003] == nil, "empty names and names nothing uses are dropped")
+ok(GP.db.history[999004] == nil, "history older than 28 days is dropped")
+GP.db.prices[999001] = nil
+
 -- Minimap button ---------------------------------------------------------------------------------
 Minimap = CreateFrame("Frame", "Minimap")
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")

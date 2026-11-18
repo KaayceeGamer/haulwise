@@ -217,6 +217,7 @@ GP:On("ADDON_LOADED", function(name)
         HaulwiseDB.uid = table.concat(parts)
     end
     GP.db = HaulwiseDB
+    if GP.UnpackSaved then GP:UnpackSaved() end
     local lang = GP.db.settings.language
     if not lang or lang == "auto" then lang = GetLocale and GetLocale() or "enUS" end
     GP.LANG = lang

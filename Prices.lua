@@ -67,6 +67,67 @@ local function addHistory(db, id, day, p, q)
     db.history[id] = table.concat(parts, ",")
 end
 
+-- Saved data --------------------------------------------------------------------------------
+-- Prices are saved as one short line per item ("p;q;m;t;k;sk;s;c;name") instead of a table,
+-- which keeps the saved file about a third of the size, so logging in and /reload stay quick.
+-- In the game they are ordinary tables again; packing happens only on logout and /reload.
+local PACK = { "p", "q", "m", "t", "k", "sk", "s", "c" }
+
+function GP.PackPrice(r)
+    local out = {}
+    for i, f in ipairs(PACK) do out[i] = r[f] ~= nil and tostring(r[f]) or "" end
+    out[8] = (out[8]:gsub("%.00:", ":"):gsub("(%.%d)0:", "%1:")) -- "2000.00:1" -> "2000:1"
+    out[#out + 1] = r.n or ""
+    return table.concat(out, ";")
+end
+
+function GP.UnpackPrice(s)
+    local parts = {}
+    for v in (s .. ";"):gmatch("([^;]*);") do parts[#parts + 1] = v end
+    local r = {}
+    for i, f in ipairs(PACK) do
+        local v = parts[i]
+        if v and v ~= "" then r[f] = (f == "c") and v or tonumber(v) end
+    end
+    local n = table.concat(parts, ";", #PACK + 1)
+    if n ~= "" then r.n = n end
+    return r
+end
+
+function GP:UnpackSaved()
+    local db = self.db
+    if type(db.pricesPacked) == "table" then
+        for id, s in pairs(db.pricesPacked) do
+            if type(s) == "string" then db.prices[id] = GP.UnpackPrice(s) end
+        end
+    end
+    db.pricesPacked = nil
+    -- Tidy up: history older than we keep, empty entries, and names nothing refers to.
+    local oldest = GP.Day() - HISTORY_DAYS
+    for id, h in pairs(db.history) do
+        local parts = {}
+        for d, pp, qq in h:gmatch("(%d+):(%d+):(%d+)") do
+            if tonumber(d) > oldest then parts[#parts + 1] = d .. ":" .. pp .. ":" .. qq end
+        end
+        db.history[id] = #parts > 0 and table.concat(parts, ",") or nil
+    end
+    for id, n in pairs(db.names) do
+        if n == "" or not (db.prices[id] or db.history[id]) then db.names[id] = nil end
+    end
+end
+
+function GP:PackSaved()
+    local db = self.db
+    if not db or not db.prices then return end
+    local ok, packed = pcall(function()
+        local out = {}
+        for id, r in pairs(db.prices) do out[id] = GP.PackPrice(r) end
+        return out
+    end)
+    if ok then db.pricesPacked, db.prices = packed, {} end
+end
+GP:On("PLAYER_LOGOUT", function() GP:PackSaved() end)
+
 local function median(t)
     if #t == 0 then return nil end
     table.sort(t)
@@ -193,7 +254,9 @@ local function finish(lists, names, gear)
         end
         local cheap = {}
         for i = 1, math.min(5, #list) do
-            cheap[#cheap + 1] = string.format("%.2f:%d", list[i][1], list[i][2])
+            local u = list[i][1]
+            u = (u == math.floor(u)) and string.format("%d", u) or (string.format("%.2f", u):gsub("0+$", ""))
+            cheap[#cheap + 1] = u .. ":" .. list[i][2]
         end
         local rec = { p = math.floor(at(0.10) + 0.5), m = math.floor(at(0.50) + 0.5), q = total, t = t,
                       c = table.concat(cheap, "/") }
@@ -243,7 +306,7 @@ local function process()
                 local l = lists[itemID]
                 if not l then l = {}; lists[itemID] = l end
                 l[#l + 1] = { buyout / count, count }
-                if name then names[itemID] = name end
+                if name and name ~= "" then names[itemID] = name end
                 if count == 1 and nGear < MAX_GEAR and getLink and instant then
                     local _, _, _, equipLoc, _, classID = instant(itemID)
                     if GEAR_CLASS[classID] and equipLoc and equipLoc ~= "" then
