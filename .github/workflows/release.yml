@@ -1,8 +1,13 @@
-# Push a tag like v0.3.0 and this packages the addon and uploads it to CurseForge.
+# Release to CurseForge. Either push a tag like v0.6.3, or run this workflow by hand
+# (Actions → Release → Run workflow): it then tags the version from Core.lua itself.
 name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -11,6 +16,19 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - if: github.event_name == 'workflow_dispatch'
+        name: Tag the version in Core.lua
+        run: |
+          version=$(grep -o 'GP.VERSION = "[^"]*"' Core.lua | cut -d'"' -f2)
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::error::$tag already exists. Bump GP.VERSION in Core.lua first."
+            exit 1
+          fi
+          git config user.name "haulwise-bot"
+          git config user.email "haulwise-bot@users.noreply.github.com"
+          git tag "$tag"
+          git push origin "$tag"
       - uses: BigWigsMods/packager@v2
         with:
           args: -p 1812709
