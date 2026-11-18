@@ -678,6 +678,7 @@ GP.LOCALES.frFR = {
     ["Best mob"] = "Meilleur monstre",
     ["  (you're here)"] = "  (vous êtes ici)",
     ["   ·   here in %s: %s/h"] = "   ·   ici dans %s : %s/h",
+    ["Best zone:  |cffffffff%s|r   %s/h safe on %s%s"] = "Meilleure zone :  |cffffffff%s|r   %s/h (prudent) sur %s%s",
     ["Best zone:  |cffffffff%s|r   %s/h on %s%s"] = "Meilleure zone :  |cffffffff%s|r   %s/h sur %s%s",
     ["No kills recorded yet.\n\nGo farm and loot what you kill. Zones are ranked by the best gold per hour you can make there."] = "Aucun kill enregistré pour l'instant.\n\nAllez farmer et fouillez ce que vous tuez. Les zones sont classées selon le meilleur or par heure qu'on peut y faire.",
     ["Click: show only this zone's mobs."] = "Clic : n'afficher que les monstres de cette zone.",

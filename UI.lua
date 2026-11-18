@@ -820,8 +820,11 @@ TAB.farm_zones = {
         if not b then return nil end
         local here
         for _, r in ipairs(rows) do if r.here then here = r end end
-        local tail = (here and here ~= b) and grey(string.format(L["   ·   here in %s: %s/h"], here.zone, Coins(here.est, true))) or ""
-        return string.format(L["Best zone:  |cffffffff%s|r   %s/h on %s%s"], b.zone, Coins(b.est, true), b.bestName, tail)
+        -- Same figure the zones are ranked by (Rank button), so the best zone is the top row.
+        local key = S().sortBy == "est" and "est" or "safe"
+        local tail = (here and here ~= b) and grey(string.format(L["   ·   here in %s: %s/h"], here.zone, Coins(here[key], true))) or ""
+        local fmt = key == "safe" and L["Best zone:  |cffffffff%s|r   %s/h safe on %s%s"] or L["Best zone:  |cffffffff%s|r   %s/h on %s%s"]
+        return string.format(fmt, b.zone, Coins(b[key], true), b.bestName, tail)
     end,
     empty = L["No kills recorded yet.\n\nGo farm and loot what you kill. Zones are ranked by the best gold per hour you can make there."],
     click = function(r)
@@ -1333,8 +1336,12 @@ function GP:DrawRows()
         if r then
             local cells = t.cells(r)
             for c, col in ipairs(t.cols) do row.cells[c]:SetText(cells[col.key] or "") end
-            row.icon:SetTexture(cells.icon or 134400)
-            row.icon:Show()
+            if t.cols[1].icon then
+                row.icon:SetTexture(cells.icon or 134400)
+                row.icon:Show()
+            else
+                row.icon:Hide()
+            end
             local bc = row.barCol
             local v = t.bar and t.bar(r) or 0
             if bc and maxBar > 0 and v ~= 0 then
@@ -1475,7 +1482,7 @@ function GP:RefreshUI()
     end
 
     buildToggles(t)
-    if key == "farm" then
+    if key == "farm" or key == "farm_zones" then
         f.extra:SetLabel(S().sortBy == "safe" and L["Rank: Safe"] or L["Rank: Expected"])
         f.extra:SetScript("OnClick", function() S().sortBy = S().sortBy == "safe" and "est" or "safe"; GP:RefreshUI() end)
         tip(f.extra, function(tt)

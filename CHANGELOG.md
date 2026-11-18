@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.2
+- **Farm → By zone**: no more question-mark icons over the zone names, the Rank button (Safe/Expected) is there too, and the best zone line shows the same figure the zones are ranked by.
+
 ## 0.7.1
 - **Disenchant button** works again: it sat behind the Haulwise window, which took the clicks.
 - **Disenchant for mats** (Bags tab): leveling Enchanting? Tick it, and gear you can disenchant yourself is marked to disenchant, with the Disenchant button, even when selling pays more. It shows what that costs you compared with selling, picks the item that costs least, and skips gear that sells for more than 3 times its mats. The swap and Make room popup switches now live only in Settings.

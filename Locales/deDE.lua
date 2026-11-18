@@ -678,6 +678,7 @@ GP.LOCALES.deDE = {
     ["Best mob"] = "Bester Mob",
     ["  (you're here)"] = "  (du bist hier)",
     ["   ·   here in %s: %s/h"] = "   ·   hier in %s: %s/h",
+    ["Best zone:  |cffffffff%s|r   %s/h safe on %s%s"] = "Beste Zone:  |cffffffff%s|r   %s/h sicher mit %s%s",
     ["Best zone:  |cffffffff%s|r   %s/h on %s%s"] = "Beste Zone:  |cffffffff%s|r   %s/h mit %s%s",
     ["No kills recorded yet.\n\nGo farm and loot what you kill. Zones are ranked by the best gold per hour you can make there."] = "Noch keine Kills aufgezeichnet.\n\nGeh farmen und plündere, was du tötest. Zonen werden nach dem besten Gold pro Stunde sortiert, das du dort machen kannst.",
     ["Click: show only this zone's mobs."] = "Klick: nur die Mobs dieser Zone zeigen.",
