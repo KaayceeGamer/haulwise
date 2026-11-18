@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.7.4
+## 0.8.0
+- **Waypoints to trainers and recipe vendors.** *Find trainer* in the Craft tab (or `/haul trainer tailoring`) points you to the nearest trainer of your faction that teaches your next rank: Journeyman, Expert or Artisan. In Recipes, click a recipe to go to the vendor that sells it; Shift-click searches the AH. Uses TomTom when it's installed, otherwise the game's own map pin and arrow.
+- **Haulwise Data**: a new data-only addon that comes in the same download. It knows where 450+ profession trainers and recipe vendors stand in WoW Forever, from QuestieDB's Forever data (GPLv3; thanks to the Questie team). With QuestieDB installed, Haulwise reads it too.
+- Haulwise remembers where every trainer and vendor you open stands, and those spots win over the data, so NPCs that moved in WoW Forever are right once you've been there.
 - **Pick a profession** in Craft, Skill up and Recipes: the *Profession* button switches between All and each of your professions (remembered per character).
 
 ## 0.7.3

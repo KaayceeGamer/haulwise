@@ -174,6 +174,15 @@ local function profToggle()
         tip = function() return L["Show one profession, or all of them. Click to switch."] end }
 end
 
+local function trainerButton()
+    return { kind = "cycle",
+        label = function() return L["Find trainer"] end,
+        click = function() GP:FindTrainer(profFilter()) end,
+        tip = function()
+            return L["Set a waypoint to the nearest trainer for your profession (the one picked with Profession, or the one that needs training). It looks for a trainer that teaches your next rank."]
+        end }
+end
+
 local function pawnToggle()
     return { L["Use Pawn"], nil, L["Compare gear with your Pawn scales instead of Haulwise's own stat weights."],
         function() return GP.PawnLoaded() end,
@@ -307,6 +316,7 @@ TAB.craft = {
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
+        trainerButton(),
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)
@@ -442,7 +452,13 @@ TAB.recipes = {
         profToggle(),
         { L["Show recipes far above my skill"], "recipesShowAll", L["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."] },
     },
-    click = function(r) if r.itemID then GP:SearchAH(r.itemID) end end,
+    click = function(r)
+        if IsShiftKeyDown and IsShiftKeyDown() then
+            if r.itemID then GP:SearchAH(r.itemID) end
+        elseif not GP:GoToRecipe(r) and r.itemID then
+            GP:SearchAH(r.itemID)
+        end
+    end,
     tooltip = function(t, r)
         if r.out then t:SetItemByID(r.out) else t:AddLine(r.name or "?", 1, 1, 1) end
         t:AddLine(" ")
@@ -460,6 +476,14 @@ TAB.recipes = {
         if r.profit then t:AddDoubleLine(L["Profit per craft"], Coins(r.profit)) end
         if r.buyPrice then t:AddDoubleLine(L["Recipe on AH"], Coins(r.buyPrice)) end
         if r.kind == "ahonly" then t:AddLine(L["Open this profession's window so Haulwise can price what the recipe makes."], 1, 0.6, 0.3, true) end
+        t:AddLine(" ")
+        local dest = GP:RecipeDestination(r)
+        if dest then
+            t:AddLine(string.format(L["Click: waypoint to %s (%s)"], dest.name, GP.MapName(dest.map)), 0.6, 0.6, 0.6, true)
+        elseif r.prof then
+            t:AddLine(string.format(L["Click: waypoint to the nearest %s trainer"], L[r.prof]), 0.6, 0.6, 0.6, true)
+        end
+        t:AddLine(L["Shift-click: search the AH"], 0.6, 0.6, 0.6)
     end,
 }
 
@@ -820,6 +844,7 @@ TAB.craft_skill = {
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
+        trainerButton(),
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)

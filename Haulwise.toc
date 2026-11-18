@@ -7,7 +7,7 @@
 ## X-Curse-Project-ID: 1812709
 ## X-Website: https://kaayceegamer.github.io/haulwise/
 ## SavedVariables: HaulwiseDB
-## OptionalDeps: Pawn, Auctionator
+## OptionalDeps: Pawn, Auctionator, HaulwiseData, QuestieDB, TomTom
 ## IconTexture: Interface\AddOns\Haulwise\Media\icon
 ## AddonCompartmentFunc: Haulwise_OnCompartmentClick
 
@@ -26,6 +26,7 @@ Model.lua
 Crafting.lua
 Market.lua
 Sources.lua
+Navigate.lua
 Holdings.lua
 Gear.lua
 Bags.lua

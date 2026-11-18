@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.7:** a minimap button, German and French, a pick for every quest reward, *Disenchant for mats* for leveling Enchanting, and your own disenchant results in item tooltips.
+**New in 0.8:** waypoints to the nearest trainer and to the vendor that sells a recipe. **New in 0.7:** a minimap button, German and French, a pick for every quest reward, *Disenchant for mats* for leveling Enchanting, and your own disenchant results in item tooltips.
 
 ---
 
@@ -59,7 +59,9 @@ Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hou
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin and 7-day trend.
 - **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, where the rest is cheapest, and what the whole batch earns.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
-- **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself.
+- **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself. **Click one for a waypoint** to the vendor that sells it.
+- **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
+- Show **one profession at a time** with the Profession button.
 
 ### 📈 Deals and Market
 - **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays).
@@ -108,6 +110,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 | `/haul hud` | show or hide the HUD |
 | `/haul minimap` | show or hide the minimap button |
 | `/haul lang deDE` | language: `auto`, `enUS`, `deDE` or `frFR` (then `/reload`) |
+| `/haul trainer [profession]` | waypoint to the nearest trainer |
 | `/haul room` | make room in your bags |
 | `/haul settings` | settings |
 | `/haul guide` | the guide |
@@ -118,6 +121,8 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 ## Works with
 - **Pawn**: Haulwise uses your Pawn scales.
 - **Auctionator**: Haulwise uses its prices until you scan yourself.
+- **TomTom**: waypoints use TomTom's arrow when it's installed; otherwise the game's own map pin.
+- **QuestieDB**: when it's installed, Haulwise also reads trainer and vendor positions from it.
 
 ## Good to know
 - Deleting items can't be undone. If the game wants you to confirm a delete, the item stays on your cursor until you do.
@@ -134,5 +139,8 @@ Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (l
 ### Links
 - Upload page and community data: https://kaayceegamer.github.io/haulwise/
 - Source code and issues: https://github.com/KaayceeGamer/haulwise
+
+### Credits
+Trainer and recipe vendor positions in **Haulwise Data** (included in the download as its own addon folder) come from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), licensed under GPLv3. Thanks to the Questie team and everyone who contributed. Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie team.
 
 *Haulwise is a fan project and isn't affiliated with Blizzard Entertainment.*

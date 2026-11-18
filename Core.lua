@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.7.4"
+GP.VERSION = "0.8.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -271,6 +271,12 @@ SlashCmdList.HAULWISE = function(msg)
         else
             GP.Print("/haul lang auto | enUS | deDE | frFR")
         end
+    elseif cmd == "trainer" then
+        local prof
+        if arg ~= "" then
+            for name in pairs(GP:MyProfessions()) do if name:lower():find(arg, 1, true) or L[name]:lower():find(arg, 1, true) then prof = name end end
+        end
+        GP:FindTrainer(prof)
     elseif cmd == "minimap" then
         s.minimap = not (s.minimap ~= false)
         GP:UpdateMinimapButton()
@@ -306,6 +312,7 @@ SlashCmdList.HAULWISE = function(msg)
     else
         GP.Print(L["/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button"])
         GP.Print(L["/haul room  make room   ·   /haul bags | gear | holdings  open that tab"])
+        GP.Print(L["/haul trainer [profession]  waypoint to the nearest trainer"])
         GP.Print(L["/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes"])
         GP.Print(L["/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9"])
         GP.Print(L["/haul kph <n>  kills/hour to assume for mobs you have not timed"])

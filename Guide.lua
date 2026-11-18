@@ -71,6 +71,9 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Find trainer (Craft tab) or /haul trainer: a waypoint to the nearest trainer that teaches your next rank. Uses TomTom when you have it."],
+    L["Recipes: click one for a waypoint to the vendor that sells it. Shift-click searches the AH."],
+    L["Profession button in Craft, Skill up and Recipes: show one profession at a time."],
     L["Minimap button: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap; hide it in Settings or with /haul minimap."],
     L["Haulwise speaks German and French. It follows your game's language; pick another in Settings → Language."],
     L["Disenchanting is noted reliably now, also with auto loot, and a chat line confirms what you got."],

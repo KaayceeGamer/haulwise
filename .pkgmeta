@@ -7,6 +7,10 @@ ignore:
   - tests
   - SETUP.md
 
+# Haulwise Data (GPLv3, data only) ships in the same download as its own addon folder.
+move-folders:
+  Haulwise/HaulwiseData: HaulwiseData
+
 manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown

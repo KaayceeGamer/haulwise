@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: Haulwise Data
+## Notes: Where profession trainers and recipe vendors stand in WoW Forever, for Haulwise's waypoints. Data from QuestieDB (GPLv3).
+## Version: @project-version@
+## Author: KaayceeGamer
+## X-License: GPL-3.0
+## X-Website: https://kaayceegamer.github.io/haulwise/
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+
+Data.lua

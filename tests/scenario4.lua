@@ -280,6 +280,37 @@ GP:Char().profFilter = nil; GP.db.settings.views.craft = nil
 local n = 0 for _ in pairs(GP.db.errors) do n = n + 1 end
 ok(true, "profession filter draws Craft, Skill up and Recipes")
 
+-- Trainers and recipe vendors: nearest one, waypoint ---------------------------------------------
+assert(loadfile(DIR .. "/HaulwiseData/Data.lua"))()
+local wp
+UnitFactionGroup = function() return "Alliance" end
+CreateVector2D = function(x, y) return { x = x, y = y } end
+UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m = m, x = x, y = y } end }
+C_SuperTrack = { SetSuperTrackedUserWaypoint = function() end }
+C_Map = {
+  GetBestMapForUnit = function() return 1453 end,
+  GetPlayerMapPosition = function() return { GetXY = function() return 0.6, 0.6 end } end,
+  GetWorldPosFromMapPos = function(m, v) return 0, { x = m * 10 + v.x, y = v.y } end,
+  GetMapInfo = function(m) return { name = "Map " .. m } end,
+  SetUserWaypoint = function(p) wp = p end,
+}
+GP:Char().profs = { Tailoring = { rank = 150, max = 150 } }
+ok(GP:FindTrainer("Tailoring") and wp and wp.m == 1453, "waypoint to the nearest Alliance tailoring trainer (Stormwind)")
+local tier = GP.TrainerTier(GP:NearestPlace(GP:TrainersFor("Tailoring"), function(p) return GP.TrainerTier(p.sub) >= 225 end).sub)
+ok(tier >= 225, "at 150/150 it looks for an Expert or Artisan")
+UnitGUID = function() return "Creature-0-1-2-3-99999-0000" end
+UnitName = function(u) return u == "npc" and "Test Vendor" or "Alkhara" end
+fire("MERCHANT_SHOW")
+ok(GP:NpcPlace(99999) and GP:NpcPlace(99999).from == "you", "a vendor you open is remembered where you stand")
+local vid
+for id in pairs(HaulwiseData.recipeVendors) do vid = id; break end
+local srcs = GP:RecipeSources("Some Recipe", vid)
+local hasV = false
+for _, s in ipairs(srcs) do if s.kind == "Vendor" and s.npcID then hasV = true end end
+print("     recipe " .. vid .. " vendor from data: " .. tostring(hasV))
+UnitName = function() return "Alkhara" end
+C_Map = nil
+
 -- Quest reward pick --------------------------------------------------------------------------------
 W.quest = { 4865, 7010 }
 GetNumQuestChoices = function() return #W.quest end

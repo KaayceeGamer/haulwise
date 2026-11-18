@@ -165,6 +165,19 @@ function GP:RecipeSources(recipeName, itemID)
             if srcData.recipeItems and srcData.recipeItems[key] then itemID = srcData.recipeItems[key]; break end
         end
     end
+    -- Vendors from Haulwise Data / QuestieDB that you haven't seen yet (no price known).
+    if itemID and GP.RecipeVendorIDs then
+        local me = (UnitFactionGroup and UnitFactionGroup("player") == "Horde") and "H" or "A"
+        local n = 0
+        for _, id in ipairs(GP:RecipeVendorIDs(itemID)) do
+            local p = GP:NpcPlace(id)
+            if p and not seenV[p.name] and (not p.faction or p.faction == "" or p.faction:find(me)) and n < 3 then
+                seenV[p.name] = true
+                n = n + 1
+                out[#out + 1] = { kind = "Vendor", who = p.name, zone = GP.MapName(p.map), npcID = id }
+            end
+        end
+    end
     if itemID then
         for _, s in ipairs(self:SourcesFor(itemID, 3)) do
             out[#out + 1] = { kind = "Drop", who = s.name, chance = s.chance, kills = s.kills }
@@ -184,7 +197,7 @@ function GP.SourceShort(s)
     if s.kind == "Trainer" then
         return string.format(L["|cffffd040Trainer|r %s%s"], GP.Coins(s.cost or 0, true), s.skill and (L["|cff8a8880 · skill "] .. s.skill .. "|r") or "")
     elseif s.kind == "Vendor" then
-        return string.format(L["|cff5fd35fVendor|r %s |cff8a8880%s%s|r"], GP.Coins(s.cost or 0, true), s.who or "?", s.limited and L[" (limited)"] or "")
+        return string.format(L["|cff5fd35fVendor|r %s |cff8a8880%s%s|r"], s.cost and GP.Coins(s.cost, true) or "", s.who or "?", s.limited and L[" (limited)"] or "")
     elseif s.kind == "Drop" then
         return string.format(L["|cffc48cffDrop|r %s |cff8a8880%.1f%%|r"], s.who or "?", (s.chance or 0) * 100)
     elseif s.kind == "AH" then
@@ -198,7 +211,7 @@ function GP.SourceLong(s)
         return string.format(L["Trainer: %s, %s"], s.who or "?", s.zone or "?"),
             GP.Coins(s.cost or 0) .. (s.skill and (L["  (skill "] .. s.skill .. ")") or "")
     elseif s.kind == "Vendor" then
-        return string.format(L["Vendor: %s, %s%s"], s.who or "?", s.zone or "?", s.limited and L["  (limited stock)"] or ""), GP.Coins(s.cost or 0)
+        return string.format(L["Vendor: %s, %s%s"], s.who or "?", s.zone or "?", s.limited and L["  (limited stock)"] or ""), s.cost and GP.Coins(s.cost) or ""
     elseif s.kind == "Drop" then
         return string.format(L["Drop: %s"], s.who or "?"), string.format(L["%.1f%% of %d kills"], (s.chance or 0) * 100, s.kills or 0)
     elseif s.kind == "AH" then
