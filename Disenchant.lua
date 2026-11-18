@@ -41,14 +41,48 @@ local function lockedGear()
     end
 end
 
-GP:On("UNIT_SPELLCAST_START", function(unit, _, spellID)
+-- The item can lock a moment after the cast starts, so we listen for the cast (sent/start),
+-- for the bag slot that locks while it runs, and look once more when the cast finishes.
+local casting
+local function remember(bag, slot)
+    local it = GP.SlotInfo(bag, slot)
+    if not (it and it.hyperlink) then return end
+    local info = GP.LinkInfo(it.hyperlink)
+    if info.classID == 2 or info.classID == 4 then
+        pending = { id = it.itemID, link = it.hyperlink, info = info, t = GetTime() }
+    end
+end
+local function castBegins(unit, spellID)
     if unit ~= "player" or not isDisenchant(spellID) then return end
-    local id, link, info = lockedGear()
-    if id then pending = { id = id, link = link, info = info, t = GetTime() } end
+    casting = GetTime()
+    if GP.deTarget then remember(GP.deTarget.bag, GP.deTarget.slot) end
+    if not pending or GetTime() - pending.t > 12 then
+        local id, link, info = lockedGear()
+        if id then pending = { id = id, link = link, info = info, t = GetTime() } end
+    end
+end
+GP:On("UNIT_SPELLCAST_SENT", function(unit, _, _, spellID) castBegins(unit, spellID) end)
+GP:On("UNIT_SPELLCAST_START", function(unit, _, spellID) castBegins(unit, spellID) end)
+GP:On("ITEM_LOCK_CHANGED", function(bag, slot)
+    if casting and GetTime() - casting < 6 and slot then
+        local it = GP.SlotInfo(bag, slot)
+        if it and it.isLocked then remember(bag, slot) end
+    end
 end)
-GP:On("UNIT_SPELLCAST_INTERRUPTED", function(unit)
-    if unit == "player" then pending = nil end
+GP:On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
+    if unit ~= "player" or not isDisenchant(spellID) then return end
+    if not pending then
+        local id, link, info = lockedGear()
+        if id then pending = { id = id, link = link, info = info, t = GetTime() } end
+    end
+    if pending then pending.t = GetTime() end
+    casting = nil
 end)
+local function stop(unit)
+    if unit == "player" and casting then casting = nil; pending = nil end
+end
+GP:On("UNIT_SPELLCAST_INTERRUPTED", stop)
+GP:On("UNIT_SPELLCAST_FAILED", stop)
 
 local function add(entry, out)
     entry.n = (entry.n or 0) + 1
@@ -71,21 +105,29 @@ function GP:RecordDisenchant(itemID, info, out)
     end
 end
 
-GP:On("LOOT_OPENED", function()
+local function onLoot()
     local p = pending
     if not p or GetTime() - p.t > 12 then return end
-    pending = nil
-    local out = {}
+    local out, names = {}, {}
     for slot = 1, GetNumLootItems() do
         local link = GetLootSlotLink(slot)
         local id = link and tonumber(link:match("item:(%d+)"))
         if id then
-            local _, _, qty = GetLootSlotInfo(slot)
-            out[id] = (out[id] or 0) + (GP.Safe(qty) or 1)
+            local _, name, qty = GetLootSlotInfo(slot)
+            qty = GP.Safe(qty) or 1
+            out[id] = (out[id] or 0) + qty
+            names[#names + 1] = qty .. "x " .. (GP.Safe(name) or link)
         end
     end
+    if not next(out) then return end
+    pending = nil
     GP:RecordDisenchant(p.id, p.info, out)
-end)
+    if GP.db.settings.tooltipDisenchant ~= false then
+        GP.Print(string.format(GP.L["Disenchanted %s: %s (saved for the tooltip)"], p.link, table.concat(names, ", ")))
+    end
+end
+GP:On("LOOT_READY", onLoot)
+GP:On("LOOT_OPENED", onLoot)
 
 -- For the tooltip: what this item gave, and what items like it gave. Each is
 -- { n = times, list = { { id, total }, ... } sorted by total } or nil.

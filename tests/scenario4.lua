@@ -167,6 +167,19 @@ local mine, similar = GP:DisenchantHistory(7010, GP.LinkInfo(LINK(7010)))
 ok(mine and mine.n == 1 and mine.list[1][1] == 11176 and mine.list[1][2] == 3, "a disenchant you did is remembered: 3 Dream Dust")
 ok(similar and similar.n == 1, "and counted for items like it")
 W.loot = {}
+-- The item locks a moment after the cast starts; auto loot fires LOOT_READY then LOOT_OPENED.
+W.bags = { [0] = { size = 4, slots = { { id = 7010 }, { id = 2589, count = 5 } } } }
+fire("UNIT_SPELLCAST_SENT", "player", "", "cast-2", 13262)
+fire("UNIT_SPELLCAST_START", "player", "cast-2", 13262)
+W.bags[0].slots[1].locked = true
+fire("ITEM_LOCK_CHANGED", 0, 1)
+fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-2", 13262)
+W.bags[0].slots[1] = nil
+W.loot = { { id = 11176, q = 2, text = "Dream Dust", src = { "Item-1-2-4", 2 } } }
+fire("LOOT_READY"); fire("LOOT_OPENED")
+mine = GP:DisenchantHistory(7010, GP.LinkInfo(LINK(7010)))
+ok(mine and mine.n == 2 and mine.list[1][2] == 5, "late item lock still recorded, once (auto loot)")
+W.loot = {}
 
 -- Item tooltip: best move and disenchant line ----------------------------------------------------
 local calls = {}
@@ -189,7 +202,7 @@ end
 print("     " .. tostring(best)); print("     " .. tostring(de))
 ok(best and de, "tooltip shows the best move and what disenchanting gives")
 local gotLine
-for _, l in ipairs(lines) do if l:find("You got from 1") then gotLine = l end end
+for _, l in ipairs(lines) do if l:find("You got from 2") then gotLine = l end end
 ok(gotLine, "tooltip shows what your own disenchant gave")
 -- An empty recipe name (seen in a real export) must not reach the server.
 GP.db.recipeItems[""] = 13939

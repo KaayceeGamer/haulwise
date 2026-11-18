@@ -1426,6 +1426,7 @@ updateDisenchant = function(show)
         deButton.label:SetPoint("RIGHT", -8, 0)
         deButton.label:SetWordWrap(false)
         deButton:SetAttribute("type", "macro")
+        deButton:SetScript("PreClick", function(self) GP.deTarget = self.target end)
         deButton:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             if self.link then GameTooltip:SetHyperlink(self.link) end
@@ -1437,6 +1438,7 @@ updateDisenchant = function(show)
     end
     deButton:SetAttribute("macrotext", string.format("/cast %s\n/use %d %d", spell, cand.bag, cand.slot))
     deButton.link = cand.link
+    deButton.target = { bag = cand.bag, slot = cand.slot }
     deButton.label:SetText("|cffc48cffDisenchant|r " .. itemName(cand.id))
     deButton:ClearAllPoints()
     deButton:SetPoint("RIGHT", f.extra, "LEFT", -6, 0)

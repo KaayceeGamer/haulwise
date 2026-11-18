@@ -6,6 +6,11 @@ GP.VERSION = "0.6.3"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
+-- Translations: GP.L["English text"] gives the text in the game's language, or the English text
+-- itself when there is no translation. Locales/*.lua fill GP.LOCALE_STRINGS for their language.
+GP.LOCALE_STRINGS = {}
+GP.L = setmetatable({}, { __index = function(_, k) return GP.LOCALE_STRINGS[k] or k end })
+
 local DEFAULTS = {
     version = 1,
     mobs = {},          -- [npcID] = mob record (see Tracker.lua)
