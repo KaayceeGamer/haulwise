@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+- **Share data** (was "Share kills"): the export also holds the trainer and vendor recipes and reagent prices you've seen, so the button now says so.
+- Uploads no longer fail with "bad text in recipe": records with an empty or odd name are left out instead of breaking the whole upload.
+- **Community data** updated: drop rates for 463 mobs.
+
 ## 0.6.1
 
 ### Fixes from the first days of play
