@@ -114,6 +114,10 @@
   ol.start li { margin: 6px 0; }
   .msg { margin-top: 14px; font-size: 16px; min-height: 1.5em; }
   .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+  .thanks { margin-top: 16px; padding: 16px 18px; border-radius: 8px; border: 1px solid #3f7a52; background: #17382a; }
+  .thanks[hidden] { display: none; }
+  .thanks h3 { margin: 0 0 6px; font: 700 22px/1.3 var(--serif); color: var(--ok); }
+  .thanks p { margin: 0 0 12px; }
 
   /* what it does */
   dl.does { display: grid; grid-template-columns: 7.5em 1fr; gap: 12px 20px; margin: 0; }
@@ -163,14 +167,20 @@
       <p>Addons can't reach the internet, so Haulwise never sends anything by itself. Sharing takes about ten seconds:</p>
       <ol class="steps">
         <li>In game, press <b>Share data</b> in the Haulwise window, or type <code>/haul export</code>.</li>
-        <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy, then paste it below.</li>
-        <li>Tick the box and press <b>Share my data</b>.</li>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy.</li>
+        <li>Paste it below. With the box ticked it's shared straight away, and this page remembers the tick for next time.</li>
       </ol>
       <textarea id="data" placeholder="Paste your export here. It starts with CF2," spellcheck="false" aria-label="Your Haulwise export"></textarea>
       <label class="consent"><input type="checkbox" id="consent">
         <span>Share my kills, loot, the recipes and vendor prices I've seen, and where the trainers and vendors I opened stand, anonymously. They're pooled with everyone else's and published as community data.</span></label>
       <button id="send">Share my data</button>
       <div class="msg" id="msg" role="status"></div>
+      <div class="thanks" id="thanks" hidden>
+        <h3>Thank you, it's in.</h3>
+        <p id="thanks-text"></p>
+        <button class="quiet" id="thanks-copy">Copy the newest community data</button>
+        <div class="msg" id="thanks-copymsg" role="status"></div>
+      </div>
       <p class="muted">Share again whenever you like. Your new upload replaces your old one, so nothing is counted twice.</p>
     </section>
 
@@ -268,32 +278,63 @@
 
   function say(el, text, ok) { el.textContent = text; el.className = "msg " + (ok ? "ok" : "bad"); }
 
-  $("send").addEventListener("click", async () => {
+  // The consent tick is remembered in this browser, so next time pasting is all it takes.
+  try { if (localStorage.getItem("haulwise-consent") === "1") $("consent").checked = true; } catch {}
+  $("consent").addEventListener("change", () => {
+    try { localStorage.setItem("haulwise-consent", $("consent").checked ? "1" : "0"); } catch {}
+  });
+
+  let sending = false;
+  async function share() {
     const data = $("data").value.trim();
     if (!/^CF[12],/.test(data)) return say($("msg"), "Paste the text from /haul export first. It starts with CF2.", false);
     if (!$("consent").checked) return say($("msg"), "Tick the box to agree to sharing first.", false);
+    if (sending) return;
+    sending = true;
     $("send").disabled = true;
+    $("thanks").hidden = true;
     say($("msg"), "Sharing…", true);
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/${SUBMIT_FUNCTION}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: data });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) say($("msg"), `Shared: ${n(j.kills)} kills on ${n(j.mobs)} mobs, ${n(j.trainers)} trainer and ${n(j.vendors)} vendor recipes. They'll be in the community data within the hour.`, true);
-      else say($("msg"), j.error || "The server didn't accept it. Try again in a few minutes.", false);
+      if (r.ok && j.ok) {
+        $("msg").textContent = "";
+        let text = `You shared ${plural(j.kills, "kill", "kills")} on ${plural(j.mobs, "mob", "mobs")}`;
+        const recipes = (j.trainers || 0) + (j.vendors || 0);
+        text += recipes ? ` and ${plural(recipes, "recipe source", "recipe sources")}.` : ".";
+        text += " They join everyone else's in the community data within the hour, and every player's drop rates get surer.";
+        try {
+          const s = await rpc("community_stats");
+          if (s && s.contributors) text += ` You're one of ${plural(s.contributors, "player", "players")} sharing.`;
+        } catch {}
+        $("thanks-text").innerHTML = text;
+        $("thanks").hidden = false;
+        loadStats();
+      } else say($("msg"), j.error || "The server didn't accept it. Try again in a few minutes.", false);
     } catch {
       say($("msg"), "Couldn't reach the server. Check your connection and try again.", false);
     }
+    sending = false;
     $("send").disabled = false;
-  });
+  }
+  $("send").addEventListener("click", share);
+  // Pasting an export with the box ticked shares it right away.
+  $("data").addEventListener("paste", () => setTimeout(() => {
+    if ($("consent").checked && /^CF[12],/.test($("data").value.trim())) share();
+  }, 0));
 
-  $("copy").addEventListener("click", async () => {
+  async function copyCommunity(msgEl) {
     try {
       const s = await rpc("community_export");
       await navigator.clipboard.writeText(s);
-      say($("copymsg"), "Copied. In game, type /haul import and paste it.", true);
+      say(msgEl, "Copied. In game, type /haul import and paste it.", true);
     } catch {
-      say($("copymsg"), "Couldn't load the community data. Try again in a few minutes.", false);
+      say(msgEl, "Couldn't load the community data. Try again in a few minutes.", false);
     }
-  });
+  }
+  $("thanks-copy").addEventListener("click", () => copyCommunity($("thanks-copymsg")));
+
+  $("copy").addEventListener("click", () => copyCommunity($("copymsg")));
 
   ["data", "consent"].forEach((id) => $(id).addEventListener("input", () => $("msg").textContent = ""));
   loadStats();

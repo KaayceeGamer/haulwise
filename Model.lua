@@ -42,25 +42,76 @@ local function merge(into, m)
     addCount(into.ppItems, m.ppItems)
 end
 
+-- One mob's numbers minus another's (never below zero): the pool without your own upload.
+local function minus(m, mine)
+    local out = {}
+    for k, v in pairs(m) do out[k] = v end
+    for _, k in ipairs({ "kills", "money", "gathered", "pp", "ppMoney", "tIntervals", "tSeconds" }) do
+        out[k] = math.max(0, (m[k] or 0) - (mine[k] or 0))
+    end
+    out.zones = {}
+    for z, n in pairs(m.zones or {}) do
+        local left = n - ((mine.zones or {})[z] or 0)
+        if left > 0 then out.zones[z] = left end
+    end
+    for _, bucket in ipairs({ "items", "gather", "ppItems" }) do
+        out[bucket] = {}
+        for id, e in pairs(m[bucket] or {}) do
+            local my = (mine[bucket] or {})[id] or {}
+            local k, q = (e.k or 0) - (my.k or 0), (e.q or 0) - (my.q or 0)
+            if k > 0 then out[bucket][id] = { k = k, q = math.max(k, q) } end
+        end
+    end
+    return out
+end
+
+-- The community pool without what you shared yourself, so your kills aren't counted twice.
+-- A mob is only adjusted when the pool has at least as many kills as you shared (otherwise
+-- your upload can't be in it yet).
+function GP:CommunityMobs(src)
+    if not src then return {} end
+    local cache = self.mineInPool
+    if cache and cache.src == src then return cache.mobs end
+    local mine = self.MySharedMobs and self:MySharedMobs(src.time) or nil
+    local mobs = src.mobs or {}
+    if mine then
+        local adjusted = {}
+        for npc, m in pairs(mobs) do
+            local my = mine[npc]
+            if my and (m.kills or 0) >= (my.kills or 0) then
+                local left = minus(m, my)
+                if left.kills > 0 then adjusted[npc] = left end
+            else
+                adjusted[npc] = m
+            end
+        end
+        mobs = adjusted
+    end
+    self.mineInPool = { src = src, mobs = mobs }
+    return mobs
+end
+
 -- Own data plus anything imported from friends.
 function GP:MergedMobs()
     local out = {}
-    local function add(npc, m)
+    local function add(npc, m, own)
         local o = out[npc]
         if not o then
             o = { kills = 0, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
-                  zones = {}, items = {}, gather = {}, ppItems = {} }
+                  zones = {}, items = {}, gather = {}, ppItems = {}, own = 0 }
             out[npc] = o
         end
         merge(o, m)
+        if own then o.own = o.own + (m.kills or 0) end
     end
-    for npc, m in pairs(self.db.mobs) do add(npc, m) end
+    for npc, m in pairs(self.db.mobs) do add(npc, m, true) end
     if self.db.settings.useShared then
-        for _, src in pairs(self.db.shared) do
-            for npc, m in pairs(src.mobs or {}) do add(npc, m) end
+        for uid, src in pairs(self.db.shared) do
+            local mobs = uid == "community" and self:CommunityMobs(src) or src.mobs or {}
+            for npc, m in pairs(mobs) do add(npc, m) end
         end
-        if self.community then
-            for npc, m in pairs(self.community.mobs or {}) do add(npc, m) end
+        if self.community and not self.db.shared.community then
+            for npc, m in pairs(self:CommunityMobs(self.community)) do add(npc, m) end
         end
     end
     return out
@@ -154,10 +205,40 @@ function GP:Evaluate(npc, m)
 
     return {
         npc = npc, name = m.name or (L["NPC #"] .. npc), zone = topZone(m.zones),
-        minL = m.minL, maxL = m.maxL, kills = m.kills, kph = kph, measured = measured,
+        minL = m.minL, maxL = m.maxL, kills = m.kills, own = m.own or m.kills, kph = kph, measured = measured,
         perKill = est / kph, est = est, safe = safe, coinsPerKill = m.money / K,
         lines = lines, unpriced = unpriced,
     }
+end
+
+-- How far to trust a number built on this many kills: a word and its colour.
+function GP.Confidence(kills)
+    kills = kills or 0
+    if kills < 10 then return L["rough guess"], "|cffff6b5b" end
+    if kills < 30 then return L["getting there"], "|cffff9944" end
+    if kills < 100 then return L["good"], "|cffffffff" end
+    return L["solid"], "|cff5fd35f"
+end
+
+-- What other players have shared about one zone: mobs and kills (yours not counted).
+function GP:CommunityInZone(zone)
+    local mobs, kills = 0, 0
+    if not zone then return 0, 0 end
+    local seen = {}
+    local function count(src)
+        for npc, m in pairs(src and src.mobs or {}) do
+            local n = m.zones and m.zones[zone]
+            if n and n > 0 then
+                if not seen[npc] then seen[npc] = true; mobs = mobs + 1 end
+                kills = kills + n
+            end
+        end
+    end
+    for uid, src in pairs(self.db.shared or {}) do
+        count(uid == "community" and { mobs = self:CommunityMobs(src) } or src)
+    end
+    if self.community and not (self.db.shared and self.db.shared.community) then count({ mobs = self:CommunityMobs(self.community) }) end
+    return mobs, kills
 end
 
 function GP:CurrentZone()

@@ -259,6 +259,10 @@ SlashCmdList.HAULWISE = function(msg)
         GP.Print(L["Session reset."])
     elseif cmd == "feedback" or cmd == "bug" then
         GP:ShowFeedback()
+    elseif cmd == "start" then
+        GP.db.startDone = false
+        GP:ShowUI()
+        if GP.startCard then GP.startCard:Show() end
     elseif cmd == "guide" or cmd == "help" then
         GP:ToggleGuide()
     elseif cmd == "settings" or cmd == "options" or cmd == "config" then

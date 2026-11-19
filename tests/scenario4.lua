@@ -563,6 +563,39 @@ GP.db.speed = {}
 GP:Char().shopping = {}
 GP.db.prices[4306] = saved4306
 
+-- Community pool without your own upload: your kills aren't counted twice ------------------------
+do
+  local savedMobs, savedShared, savedCommunity, savedSnaps = GP.db.mobs, GP.db.shared, GP.community, GP.db.exportSnaps
+  local useShared = GP.db.settings.useShared
+  GP.db.settings.useShared = true
+  GP.db.mobs = { [5001] = { name = "Test Boar", kills = 100, money = 1000, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+                            zones = { ["Elwynn Forest"] = 100 }, items = { [769] = { k = 40, q = 40 } }, gather = {}, ppItems = {} } }
+  GP.db.shared, GP.db.exportSnaps = {}, nil
+  GP:SnapshotExport(GP:ExportString())
+  GP.db.exportSnaps[1].t = W.clock - 3600
+  -- The pool, built after you shared: your 100 kills plus 50 from someone else.
+  GP.community = { time = W.clock, contributors = 2, mobs = {
+    [5001] = { name = "Test Boar", kills = 150, money = 1500, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+               zones = { ["Elwynn Forest"] = 150 }, items = { [769] = { k = 60, q = 60 } }, gather = {}, ppItems = {} },
+    [5002] = { name = "Other Wolf", kills = 20, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+               zones = { ["Elwynn Forest"] = 20 }, items = {}, gather = {}, ppItems = {} } } }
+  GP.mineInPool = nil
+  local merged = GP:MergedMobs()
+  ok(merged[5001].kills == 150 and merged[5001].own == 100 and merged[5001].items[769].k == 60,
+     "your shared kills aren't counted twice (" .. tostring(merged[5001].kills) .. " kills)")
+  local zm, zk = GP:CommunityInZone("Elwynn Forest")
+  ok(zm == 2 and zk == 70, "zone line: 2 mobs, 70 kills from others (" .. zm .. ", " .. zk .. ")")
+  -- A pool built before you shared still has none of yours.
+  GP.db.exportSnaps[1].t = W.clock + 3600
+  GP.mineInPool = nil
+  ok(GP:MergedMobs()[5001].kills == 250, "a pool from before you shared is added in full")
+  local word = GP.Confidence(5)
+  ok(word == "rough guess" and GP.Confidence(150) == "solid", "confidence words")
+  GP.db.mobs, GP.db.shared, GP.community, GP.db.exportSnaps = savedMobs, savedShared, savedCommunity, savedSnaps
+  GP.db.settings.useShared = useShared
+  GP.mineInPool = nil
+end
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

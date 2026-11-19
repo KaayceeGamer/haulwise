@@ -198,7 +198,7 @@ local box
 local function getBox()
     if box then return box end
     box = CreateFrame("Frame", "HaulwiseShareFrame", UIParent, "BackdropTemplate")
-    box:SetSize(520, 260)
+    box:SetSize(520, 280)
     box:SetPoint("CENTER")
     box:SetFrameStrata("DIALOG")
     box:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
@@ -218,7 +218,7 @@ local function getBox()
 
     local scroll = CreateFrame("ScrollFrame", nil, box, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 12, -32)
-    scroll:SetPoint("BOTTOMRIGHT", -32, 44)
+    scroll:SetPoint("BOTTOMRIGHT", -32, 66)
     local edit = CreateFrame("EditBox", nil, scroll)
     edit:SetMultiLine(true)
     edit:SetFontObject(ChatFontNormal)
@@ -233,7 +233,7 @@ local function getBox()
     box.action:SetPoint("BOTTOMRIGHT", -12, 12)
 
     box.status = box:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
-    box.status:SetPoint("BOTTOMLEFT", 12, 18)
+    box.status:SetPoint("BOTTOMLEFT", 12, 12)
     box.status:SetPoint("RIGHT", box.action, "LEFT", -8, 0)
     box.status:SetJustifyH("LEFT")
     return box
@@ -260,14 +260,50 @@ function GP:MaybeNudgeShare()
     end
 end
 
+-- What you shared, kept so the community data (which includes your upload once it's pooled)
+-- doesn't count your own kills twice. Only the mob records; the last two exports.
+function GP:SnapshotExport(str)
+    local keep = {}
+    for rec in (str .. ";"):gmatch("([^;]*);") do
+        if not rec:match("^%u,") then keep[#keep + 1] = rec end
+    end
+    local snaps = self.db.exportSnaps or {}
+    table.insert(snaps, 1, { t = time(), s = table.concat(keep, ";") })
+    while #snaps > 2 do table.remove(snaps) end
+    self.db.exportSnaps = snaps
+    self.mineInPool = nil
+end
+
+-- Your share of a community pool, so it can be taken out again: the newest export made before
+-- the pool was built, as parsed mobs. Nil if you hadn't shared by then.
+function GP:MySharedMobs(poolTime)
+    for _, snap in ipairs(self.db.exportSnaps or {}) do
+        if snap.t <= (poolTime or 0) then
+            local ok, _, src = pcall(self.ParseExport, self, snap.s)
+            return ok and src and src.mobs or nil
+        end
+    end
+end
+
 function GP:ShowExport()
     local b = getBox()
     b.title:SetText(L["Share your data: press Ctrl+C, then paste it on the Haulwise website"])
     self.db.sharedKills = self:OwnKills()
-    b.edit:SetText(self:ExportString())
+    local export = self:ExportString()
+    pcall(self.SnapshotExport, self, export)
+    b.edit:SetText(export)
     b.edit:HighlightText()
     b.edit:SetFocus()
-    b.status:SetText(L["Website: |cffffffff"] .. GP.SITE_URL .. "|r   " .. L["|cff8f8b80Nothing is sent automatically; only what you paste is shared.|r"])
+    -- What sharing adds: your kills next to what the pool already has from everyone else.
+    local mobs, kills = 0, 0
+    for _, m in pairs(self.db.mobs) do if (m.kills or 0) > 0 then mobs, kills = mobs + 1, kills + m.kills end end
+    local pool, poolKills = self:CommunityInfo(), 0
+    for _, m in pairs(pool and self:CommunityMobs(pool) or {}) do poolKills = poolKills + (m.kills or 0) end
+    local gain = string.format(L["You bring |cffffffff%s|r on %s."], GP.Plural(kills, "kill"), GP.Plural(mobs, "mob"))
+    if pool and poolKills > 0 then
+        gain = gain .. " " .. string.format(L["The pool has %s from other players: together everyone's numbers get surer."], GP.Plural(poolKills, "kill"))
+    end
+    b.status:SetText(gain .. "\n" .. string.format(L["1. Ctrl+C   2. Open |cffffffff%s|r   3. Paste it there. |cff8f8b80Nothing is sent by itself.|r"], GP.SITE_URL))
     b.action:SetText(L["Close"])
     b.action:SetScript("OnClick", function() b:Hide() end)
     b:Show()

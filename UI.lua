@@ -11,15 +11,16 @@ local C = {
     line = { 1, 1, 1, 0.05 }, zebra = { 1, 1, 1, 0.025 }, hover = { 1, 0.82, 0.25, 0.09 },
     bar = { 1, 0.78, 0.2, 0.16 }, barNeg = { 1, 0.3, 0.25, 0.16 },
 }
+-- tip: the question each tab answers, shown when you point at it.
 local TABS = {
-    { key = "farm",    label = L["Farm"],    icon = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01" },
-    { key = "bags",    label = L["Bags"],    icon = "Interface\\Icons\\INV_Misc_Bag_08" },
-    { key = "gear",    label = L["Gear"],    icon = "Interface\\Icons\\INV_Chest_Chain" },
-    { key = "craft",   label = L["Craft"],   icon = "Interface\\Icons\\Trade_BlackSmithing" },
-    { key = "deals",   label = L["Deals"],   icon = "Interface\\Icons\\INV_Misc_Coin_02" },
-    { key = "recipes", label = L["Recipes"], icon = "Interface\\Icons\\INV_Scroll_03" },
-    { key = "market",  label = L["Market"],  icon = "Interface\\Icons\\INV_Misc_Note_01" },
-    { key = "holdings", label = L["Holdings"], icon = "Interface\\Icons\\INV_Misc_Book_09" },
+    { key = "farm",    label = L["Farm"],    icon = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01", tip = L["Where do I make the most gold per hour? Mobs and zones ranked from real drops."] },
+    { key = "bags",    label = L["Bags"],    icon = "Interface\\Icons\\INV_Misc_Bag_08", tip = L["What is everything in my bags worth, and should I sell, auction or disenchant it?"] },
+    { key = "gear",    label = L["Gear"],    icon = "Interface\\Icons\\INV_Chest_Chain", tip = L["Which gear is an upgrade for me or my alts, also for sale on the auction house?"] },
+    { key = "craft",   label = L["Craft"],   icon = "Interface\\Icons\\Trade_BlackSmithing", tip = L["What's profitable to craft, and what's the cheapest way to skill up?"] },
+    { key = "deals",   label = L["Deals"],   icon = "Interface\\Icons\\INV_Misc_Coin_02", tip = L["What's cheap on the auction house right now, worth buying to resell or vendor?"] },
+    { key = "recipes", label = L["Recipes"], icon = "Interface\\Icons\\INV_Scroll_03", tip = L["Which recipes are worth learning, and where do I get them?"] },
+    { key = "market",  label = L["Market"],  icon = "Interface\\Icons\\INV_Misc_Note_01", tip = L["How are prices moving, and what have I sold?"] },
+    { key = "holdings", label = L["Holdings"], icon = "Interface\\Icons\\INV_Misc_Book_09", tip = L["What do my characters own, in bags, bank, mail and on the auction house?"] },
 }
 
 -- Formatting ------------------------------------------------------------------------------
@@ -233,15 +234,21 @@ TAB.farm = {
             name = r.name, icon = top and GP.ItemIcon(top.id) or 133784, zone = grey(r.zone), lvl = lv,
             kills = confColor(r.kills) .. r.kills .. "|r",
             kph = r.measured and tostring(math.floor(r.kph + 0.5)) or grey("~" .. math.floor(r.kph + 0.5)),
-            perKill = Coins(r.perKill), est = Coins(r.est, true), safe = grey(Coins(r.safe, true)), top = earner,
+            perKill = Coins(r.perKill), est = (r.kills < 10 and grey("~") or "") .. Coins(r.est, true),
+            safe = grey(Coins(r.safe, true)), top = earner,
         }
     end,
     hero = function(rows)
         local b = rows[1]
         local zone = GP:FarmZoneFilter()
         if not b then return zone and (L["No mobs recorded in "] .. zone .. L[" yet."]) or nil end
-        return string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],
+        local text = string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],
             b.name, b.zone, Coins(b.est, true), grey(L["(safe "] .. Coins(b.safe, true) .. "/h)"))
+        if b.kills < 30 then
+            local word, color = GP.Confidence(b.kills)
+            text = text .. "  " .. color .. string.format(L["%s, %s"], word, plural(b.kills, "kill")) .. "|r"
+        end
+        return text
     end,
     empty = L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."],
     toggles = {
@@ -258,7 +265,12 @@ TAB.farm = {
     tooltip = function(t, r)
         t:AddLine(r.name, GOLD[1], GOLD[2], GOLD[3])
         t:AddDoubleLine(L["Where"], r.zone, 0.7, 0.7, 0.7, 1, 1, 1)
-        t:AddDoubleLine(L["Kills recorded"], confColor(r.kills) .. r.kills .. "|r", 0.7, 0.7, 0.7)
+        local word, color = GP.Confidence(r.kills)
+        local others = math.max(0, r.kills - (r.own or r.kills))
+        local basis = others > 0 and string.format(L["%d kills (%d yours, %d from other players)"], r.kills, r.own or 0, others)
+            or string.format(L["%d kills, all yours"], r.kills)
+        t:AddDoubleLine(L["Based on"], basis, 0.7, 0.7, 0.7, 1, 1, 1)
+        t:AddDoubleLine(L["How sure"], color .. word .. "|r", 0.7, 0.7, 0.7)
         t:AddDoubleLine(L["Kills per hour"], r.measured and string.format(L["%d (timed)"], r.kph) or string.format(L["~%d (not timed yet)"], r.kph), 0.7, 0.7, 0.7, 1, 1, 1)
         t:AddDoubleLine(L["Coins per kill"], Coins(r.coinsPerKill), 0.7, 0.7, 0.7, 1, 1, 1)
         t:AddLine(" ")
@@ -275,7 +287,10 @@ TAB.farm = {
                 t:AddLine(string.format(L["      |cff88ccffCraft into %s: %s per unit instead of %s|r"], l.craftName or "?", Coins(l.craft), Coins(l.unit)))
             end
         end
-        if r.kills < 30 then t:AddLine(" "); t:AddLine(L["Few kills so far: drop chances can still move a lot."], 1, 0.45, 0.4, true) end
+        if r.kills < 30 then
+            t:AddLine(" ")
+            t:AddLine(L["Few kills so far: drop chances can still move a lot. Every kill anyone shares makes this surer."], 1, 0.45, 0.4, true)
+        end
     end,
 }
 
@@ -1271,6 +1286,13 @@ local function build()
         local hl = tex(b, "HIGHLIGHT", { 1, 0.82, 0.25, 0.08 })
         hl:SetAllPoints()
         b:SetScript("OnClick", function() S().tab = t.key; offset = 0; GP:RefreshUI() end)
+        b:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:AddLine(L[t.label], GOLD[1], GOLD[2], GOLD[3])
+            GameTooltip:AddLine(L[t.tip], 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b.key = t.key
         tabButtons[#tabButtons + 1] = b
         x = x + 114
@@ -1342,6 +1364,47 @@ local function build()
     f.empty:SetWidth(560)
     f.empty:SetTextColor(0.65, 0.63, 0.58)
     f.empty:SetSpacing(3)
+
+    -- Start here: three steps for a new player, over the list until they press Got it.
+    f.start = CreateFrame("Frame", nil, f, "BackdropTemplate")
+    f.start:SetPoint("TOP", 0, -190)
+    f.start:SetSize(620, 250)
+    f.start:SetBackdrop(FLAT)
+    f.start:SetBackdropColor(0.07, 0.075, 0.09, 0.98)
+    f.start:SetBackdropBorderColor(0.5, 0.4, 0.18, 1)
+    f.start:SetFrameLevel(f:GetFrameLevel() + 20)
+    f.start:EnableMouse(true)
+    local st = f.start:CreateFontString(nil, "OVERLAY", "HaulwiseFontLarge")
+    st:SetPoint("TOPLEFT", 20, -18)
+    st:SetText(L["Start here: three steps and Haulwise knows your gold"])
+    local steps = {
+        { L["1.  Scan the auction house"], L["Open the AH and press Scan AH (bottom right). Now every item has a price."] },
+        { L["2.  Look in Bags"], L["See what everything you carry is worth, and the best move for each item: sell, auction, disenchant or keep."] },
+        { L["3.  Go farm"], L["Kill and loot as usual. Farm ranks mobs by real gold per hour, and Share data makes everyone's numbers better."] },
+    }
+    local y = -52
+    for _, step in ipairs(steps) do
+        local h = f.start:CreateFontString(nil, "OVERLAY", "HaulwiseFontGold")
+        h:SetPoint("TOPLEFT", 20, y)
+        h:SetText(step[1])
+        local d = f.start:CreateFontString(nil, "OVERLAY", "HaulwiseFont")
+        d:SetPoint("TOPLEFT", 40, y - 18)
+        d:SetWidth(560)
+        d:SetJustifyH("LEFT")
+        d:SetText(step[2])
+        y = y - 54
+    end
+    local ok = flatButton(f.start, L["Got it"], 110)
+    ok:SetPoint("BOTTOMRIGHT", -16, 14)
+    ok:SetPrimary(true)
+    ok:SetScript("OnClick", function() GP.db.startDone = true; f.start:Hide(); GP:RefreshUI() end)
+    local more = flatButton(f.start, L["Open the guide"], 120)
+    more:SetPoint("RIGHT", ok, "LEFT", -8, 0)
+    more:SetScript("OnClick", function() if GP.ToggleGuide then GP:ToggleGuide() end end)
+    GP.startCard = f.start
+    -- Someone who already scanned and farmed a bit doesn't need it (/haul start brings it back).
+    if not GP.db.startDone and (GP.db.priceScanTime or 0) > 0 and GP:OwnKills() >= 50 then GP.db.startDone = true end
+    f.start:SetShown(not GP.db.startDone)
 
     f:EnableMouseWheel(true)
     f:SetScript("OnMouseWheel", function(_, delta)
@@ -1688,6 +1751,11 @@ function GP:RefreshUI()
         line = L["|cffff9944No community data yet: click to import it|r"]
     end
     if not S().useShared then line = line .. grey(L["  (turned off on the Farm tab)"]) end
+    local here = self:CurrentZone()
+    if here and S().useShared then
+        local zm, zk = self:CommunityInZone(here)
+        if zm > 0 then line = line .. string.format(L["  ·  in %s: |cffffffff%s|r from others"], here, string.format(L["%s, %s"], plural(zm, "mob"), plural(zk, "kill"))) end
+    end
     local unshared = self:UnsharedKills()
     if unshared > 0 then line = line .. string.format(L["  ·  |cffffd040%d of your kills not shared yet|r"], unshared) end
     f.comm.text:SetText(line)
