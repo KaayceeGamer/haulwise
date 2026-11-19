@@ -15,7 +15,14 @@ and factions with the items they need, and the vendors and mobs items come from 
 QuestieDB's data was imported from **Questie** (https://github.com/Questie/Questie). Thanks to the
 Questie team and everyone who contributed to Questie and QuestieDB.
 
-Haulwise and Haulwise Data are not affiliated with or endorsed by the Questie team.
+`Drops.lua` holds estimated drop rates and coins per kill, extracted from the **CMaNGOS Classic DB**
+(https://github.com/cmangos/classic-db, GPLv3) at commit `e4825cf48176edff313d78de66b0beb14371c8eb`, with
+`tools/build-drop-rates.py`. Only normal (non-elite) mobs that exist in QuestieDB's Forever dataset
+are kept, with Forever's names, levels and zones; drops under 0.5% are left out. Thanks to the
+CMaNGOS team and everyone who contributed to the Classic DB. World of Warcraft content is a
+trademark and copyright of Blizzard Entertainment.
+
+Haulwise and Haulwise Data are not affiliated with or endorsed by the Questie or CMaNGOS teams.
 
 ## Licence
 

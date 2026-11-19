@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.12.0"
+GP.VERSION = "0.13.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -52,6 +52,7 @@ local DEFAULTS = {
         defaultKph = 40,        -- kills/hour when we have not timed a mob yet
         trackInGroup = false,   -- group loot skews drop rates, so solo only by default
         useShared = true,       -- community data + friends' imports
+        useEstimates = true,    -- Farm: estimated drop rates for mobs nobody has shared yet
         levelWindow = true,     -- only show mobs you can farm efficiently
         sortBy = "safe",        -- "safe" | "est"
         includeGather = true,   -- skinning / mining / herbalism off corpses

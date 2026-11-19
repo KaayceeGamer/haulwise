@@ -396,7 +396,7 @@ function GP:CraftValue(itemID)
     local best, bestName
     for _, key in ipairs(index[itemID] or {}) do
         local rec = self:Char().recipes[key]
-        local _, ah = self:ItemValue(rec.out)
+        local ah = rec and select(2, self:ItemValue(rec.out))
         if rec and ah then
             local others, need, ok = 0, 1, true
             for _, r in ipairs(GP.UnpackReagents(rec.r)) do

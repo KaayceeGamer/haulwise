@@ -42,6 +42,49 @@ local function merge(into, m)
     addCount(into.ppItems, m.ppItems)
 end
 
+-- Estimated drop rates and coins per kill for mobs nobody has shared yet (Haulwise Data, from
+-- the CMaNGOS Classic DB). They count as PRIOR_KILLS kills' worth of evidence: enough to rank
+-- a mob before anyone farms it, and soon outweighed by real kills.
+local PRIOR_KILLS = 15
+local estimates
+local function parseDrops(s)
+    local out = {}
+    for id, p, c in (s or ""):gmatch("(%d+):([%d%.]+):([%d%.]+)") do
+        out[tonumber(id)] = { p = tonumber(p) / 100, c = tonumber(c) }
+    end
+    return out
+end
+function GP:Estimates()
+    if estimates then return estimates end
+    estimates = {}
+    local raw = type(HaulwiseData) == "table" and HaulwiseData.estimates
+    for npc, e in pairs(raw or {}) do
+        estimates[npc] = { name = e[1], minL = e[2] ~= 0 and e[2] or nil, maxL = e[3] ~= 0 and e[3] or nil,
+                           zone = (e[4] or 0) > 0 and ("#" .. e[4]) or nil, coins = e[5] or 0, raw = e }
+    end
+    return estimates
+end
+function GP.ForgetEstimates() estimates = nil end
+
+-- The parsed drops of one estimate (parsed when first needed: most are never looked at).
+local function estimateDrops(est)
+    if not est.items then est.items, est.skin = parseDrops(est.raw[6]), parseDrops(est.raw[7]) end
+    return est.items, est.skin
+end
+
+-- A bucket of real counts with an estimate blended in as `prior` extra tries.
+local function blend(bucket, n, prior, est)
+    local out = {}
+    for id, e in pairs(bucket or {}) do out[id] = { k = e.k, q = e.q } end
+    for id, e in pairs(est or {}) do
+        local o = out[id] or { k = 0, q = 0 }
+        o.k = o.k + prior * e.p
+        o.q = o.q + prior * e.p * (e.c or 1)
+        out[id] = o
+    end
+    return out, n + prior
+end
+
 -- One mob's numbers minus another's (never below zero): the pool without your own upload.
 local function minus(m, mine)
     local out = {}
@@ -112,6 +155,20 @@ function GP:MergedMobs()
         end
         if self.community and not self.db.shared.community then
             for npc, m in pairs(self:CommunityMobs(self.community)) do add(npc, m) end
+        end
+    end
+    if self.db.settings.useEstimates then
+        for npc, est in pairs(self:Estimates()) do
+            local o = out[npc]
+            if not o then
+                o = { kills = 0, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+                      zones = {}, items = {}, gather = {}, ppItems = {}, own = 0 }
+                out[npc] = o
+            end
+            o.est = est
+            o.name = o.name or est.name
+            o.minL, o.maxL = o.minL or est.minL, o.maxL or est.maxL
+            if est.zone and not next(o.zones) then o.zones[est.zone] = 0 end
         end
     end
     return out
@@ -185,12 +242,20 @@ function GP:Evaluate(npc, m)
     local kph = measured and (3600 * m.tIntervals / m.tSeconds) or s.defaultKph
 
     local lines = {}
-    local est, safe = valueBucket(self, m.items, K, kph, lines, "drop")
-    local coins = (m.money / K) * kph
+    local items, tries, money = m.items, K, m.money
+    local gather, gathered = m.gather, m.gathered
+    if m.est then
+        local estItems, estSkin = estimateDrops(m.est)
+        items, tries = blend(m.items, m.kills, PRIOR_KILLS, estItems)
+        money = m.money + PRIOR_KILLS * (m.est.coins or 0)
+        if next(estSkin) then gather, gathered = blend(m.gather, m.gathered, PRIOR_KILLS, estSkin) end
+    end
+    local est, safe = valueBucket(self, items, tries, kph, lines, "drop")
+    local coins = (money / tries) * kph
     est, safe = est + coins, safe + coins
 
-    if s.includeGather and m.gathered > 0 and self:PlayerHasGathering() then
-        local e2, s2 = valueBucket(self, m.gather, m.gathered, kph, lines, "gather")
+    if s.includeGather and gathered > 0 and self:PlayerHasGathering() then
+        local e2, s2 = valueBucket(self, gather, gathered, kph, lines, "gather")
         est, safe = est + e2, safe + s2
     end
     if s.includePickpocket and m.pp > 0 and self:PlayerIsRogue() then
@@ -206,7 +271,8 @@ function GP:Evaluate(npc, m)
     return {
         npc = npc, name = m.name or (L["NPC #"] .. npc), zone = topZone(m.zones),
         minL = m.minL, maxL = m.maxL, kills = m.kills, own = m.own or m.kills, kph = kph, measured = measured,
-        perKill = est / kph, est = est, safe = safe, coinsPerKill = m.money / K,
+        perKill = est / kph, est = est, safe = safe, coinsPerKill = money / tries,
+        estimated = m.est ~= nil, estOnly = m.est ~= nil and m.kills == 0,
         lines = lines, unpriced = unpriced,
     }
 end
@@ -259,7 +325,7 @@ function GP:Rank(zone)
     local level = UnitLevel("player") or 60
     local rows = {}
     for npc, m in pairs(self:MergedMobs()) do
-        if m.kills > 0 and (not zone or (m.zones and m.zones[zone])) then
+        if (m.kills > 0 or m.est) and (not zone or (m.zones and m.zones[zone])) then
             local tooHigh = s.levelWindow and m.minL and m.minL > level + 2
             if not tooHigh then rows[#rows + 1] = self:Evaluate(npc, m) end
         end

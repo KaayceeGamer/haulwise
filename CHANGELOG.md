@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.0
+- **Estimates for every mob**: Farm now also ranks mobs nobody has farmed yet, from Classic's loot tables (the open-source CMaNGOS Classic DB, in Haulwise Data). They're marked "est." and "~", and real kills, yours and shared, take over as they come in. Turn them off with **Estimates** on the Farm tab.
+- **Quest items to deliver** say who to bring them to, and a quest offered by several quest givers shows once.
+- **Craft queue**: a close button, Clear, and right-click a craft to take it off.
+
 ## 0.12.0
 - **What an item is for**: item tooltips show the quests that need it (yours in the log first, done and other-faction quests left out), the crafts that use it (your recipes, your alts', and recipes other players shared), who sells it and which mobs drop it. Turn it off in Settings → Used for in tooltips.
 - **Bags keep quest items**: an item a quest in your log needs is never offered to sell or throw away.

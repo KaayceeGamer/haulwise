@@ -71,6 +71,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Farm ranks every mob now, also ones nobody has farmed yet: those are estimates from Classic's loot tables, marked est., until real kills take over."],
     L["Item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and what drops it. Bags keep what a quest in your log needs."],
     L["Zones are shared by map number now, so players in every language add up in the same zone."],
     L["Farm tooltips say what a number is based on and how sure it is. Point at a tab to see what it's for."],

@@ -232,9 +232,9 @@ TAB.farm = {
         if top and top.craft and not top.crafted then earner = earner .. L[" |cff88ccffcraft↑|r"] end
         return {
             name = r.name, icon = top and GP.ItemIcon(top.id) or 133784, zone = grey(GP.ZoneName(r.zone)), lvl = lv,
-            kills = confColor(r.kills) .. r.kills .. "|r",
+            kills = r.estOnly and grey(L["est."]) or (confColor(r.kills) .. r.kills .. "|r"),
             kph = r.measured and tostring(math.floor(r.kph + 0.5)) or grey("~" .. math.floor(r.kph + 0.5)),
-            perKill = Coins(r.perKill), est = (r.kills < 10 and grey("~") or "") .. Coins(r.est, true),
+            perKill = Coins(r.perKill), est = ((r.kills < 10 or r.estOnly) and grey("~") or "") .. Coins(r.est, true),
             safe = grey(Coins(r.safe, true)), top = earner,
         }
     end,
@@ -244,7 +244,9 @@ TAB.farm = {
         if not b then return zone and (L["No mobs recorded in "] .. GP.ZoneName(zone) .. L[" yet."]) or nil end
         local text = string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],
             b.name, GP.ZoneName(b.zone), Coins(b.est, true), grey(L["(safe "] .. Coins(b.safe, true) .. "/h)"))
-        if b.kills < 30 then
+        if b.estOnly then
+            text = text .. "  " .. grey(L["estimate: nobody has farmed it yet"])
+        elseif b.kills < 30 then
             local word, color = GP.Confidence(b.kills)
             text = text .. "  " .. color .. string.format(L["%s, %s"], word, plural(b.kills, "kill")) .. "|r"
         end
@@ -263,6 +265,7 @@ TAB.farm = {
           set = function(on) S().farmZone = on and "here" or nil; GP.scrollToTop = true end },
         { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you."] },
         { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."] },
+        { L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."] },
         { L["Skinning/gathering"], "includeGather", L["Count skinning, mining and herbing off corpses."], function() return GP:PlayerHasGathering() end },
         { L["Pickpocket"], "includePickpocket", L["Add the coins and items you pickpocket."], function() return GP:PlayerIsRogue() end },
         { L["Value as crafted"], "valueAsCrafted", L["Value drops at what they're worth after you craft them (e.g. cooked), when that's more than selling raw."] },
@@ -272,10 +275,17 @@ TAB.farm = {
         t:AddDoubleLine(L["Where"], GP.ZoneName(r.zone), 0.7, 0.7, 0.7, 1, 1, 1)
         local word, color = GP.Confidence(r.kills)
         local others = math.max(0, r.kills - (r.own or r.kills))
-        local basis = others > 0 and string.format(L["%d kills (%d yours, %d from other players)"], r.kills, r.own or 0, others)
-            or string.format(L["%d kills, all yours"], r.kills)
+        local basis
+        if r.estOnly then basis = L["an estimate (classic loot tables)"]
+        elseif others > 0 then basis = string.format(L["%d kills (%d yours, %d from other players)"], r.kills, r.own or 0, others)
+        else basis = string.format(L["%d kills, all yours"], r.kills) end
+        if r.estimated and not r.estOnly then basis = basis .. L[" + an estimate"] end
         t:AddDoubleLine(L["Based on"], basis, 0.7, 0.7, 0.7, 1, 1, 1)
-        t:AddDoubleLine(L["How sure"], color .. word .. "|r", 0.7, 0.7, 0.7)
+        if r.estOnly then
+            t:AddDoubleLine(L["How sure"], L["|cffff9944estimate|r"], 0.7, 0.7, 0.7)
+        else
+            t:AddDoubleLine(L["How sure"], color .. word .. "|r", 0.7, 0.7, 0.7)
+        end
         t:AddDoubleLine(L["Kills per hour"], r.measured and string.format(L["%d (timed)"], r.kph) or string.format(L["~%d (not timed yet)"], r.kph), 0.7, 0.7, 0.7, 1, 1, 1)
         t:AddDoubleLine(L["Coins per kill"], Coins(r.coinsPerKill), 0.7, 0.7, 0.7, 1, 1, 1)
         t:AddLine(" ")
@@ -292,7 +302,10 @@ TAB.farm = {
                 t:AddLine(string.format(L["      |cff88ccffCraft into %s: %s per unit instead of %s|r"], l.craftName or "?", Coins(l.craft), Coins(l.unit)))
             end
         end
-        if r.kills < 30 then
+        if r.estOnly then
+            t:AddLine(" ")
+            t:AddLine(L["Nobody has shared kills of this mob yet, so these are Classic's loot tables. Forever may differ: your kills, and every kill anyone shares, replace the estimate."], 1, 0.6, 0.3, true)
+        elseif r.kills < 30 then
             t:AddLine(" ")
             t:AddLine(L["Few kills so far: drop chances can still move a lot. Every kill anyone shares makes this surer."], 1, 0.45, 0.4, true)
         end

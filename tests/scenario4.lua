@@ -677,6 +677,38 @@ do
   GP.ForgetQuestLog(); GP.ForgetUses()
 end
 
+-- Estimates: mobs nobody has farmed yet still rank, and real kills take over -----------------------
+do
+  local savedHD = HaulwiseData
+  HaulwiseData = { estimates = { [6001] = { "Test Tiger", 32, 33, 1434, 0, "12202:50:1", "4234:50:1" } } }
+  GP.ForgetEstimates()
+  W.items[12202] = W.items[12202] or { name = "Tiger Meat", sell = 20 }
+  GP.db.prices[12202] = { p = 1000, q = 100, t = W.clock }
+  local savedMobs, useEst = GP.db.mobs, GP.db.settings.useEstimates
+  GP.db.mobs = {}
+  GP.db.settings.useEstimates = true
+  local m = GP:MergedMobs()[6001]
+  ok(m and m.est and m.kills == 0 and m.zones["#1434"] ~= nil, "an estimate shows up as a mob with no kills, in its zone")
+  local r = GP:Evaluate(6001, m)
+  ok(r.estOnly and math.abs(r.lines[1].chance - 0.5) < 0.01, "estimate-only: Classic's 50% drop chance")
+  -- 30 real kills with the meat dropping 10 times: the estimate counts as 15 kills of evidence.
+  GP.db.mobs = { [6001] = { name = "Test Tiger", kills = 30, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+                            zones = { ["#1434"] = 30 }, items = { [12202] = { k = 10, q = 10 } }, gather = {}, ppItems = {} } }
+  r = GP:Evaluate(6001, GP:MergedMobs()[6001])
+  local chance
+  for _, l in ipairs(r.lines) do if l.id == 12202 then chance = l.chance end end
+  ok(not r.estOnly and r.estimated and math.abs(chance - (10 + 7.5) / 45) < 0.01, "real kills blend with the estimate (" .. tostring(chance) .. ")")
+  local found
+  for _, row in ipairs(GP:Rank()) do if row.npc == 6001 then found = true end end
+  ok(found, "Farm ranks it")
+  GP.db.settings.useEstimates = false
+  GP.db.mobs = {}
+  ok(GP:MergedMobs()[6001] == nil, "estimates can be turned off")
+  GP.db.mobs, GP.db.settings.useEstimates = savedMobs, useEst
+  HaulwiseData = savedHD
+  GP.ForgetEstimates()
+end
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")
