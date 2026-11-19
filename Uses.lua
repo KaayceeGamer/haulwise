@@ -58,14 +58,23 @@ function GP:QuestsNeeding(itemID)
             local active = log[qid]
             local ok = active or ((q[4] == "" or not fac or q[4] == fac) and not questDone(qid)
                 and (q[2] == 0 or q[2] >= level - 8) and (q[3] or 0) <= level + 10)
-            if ok then out[#out + 1] = { id = qid, name = q[1], level = q[2], active = active and true or false } end
+            if ok then
+                local deliver = q[5] == itemID and (q[6] or 0) > 0 and d.sourceNpcs and d.sourceNpcs[q[6]] or nil
+                out[#out + 1] = { id = qid, name = q[1], level = q[2], active = active and true or false,
+                                  to = deliver and deliver[1], toZone = deliver and (deliver[2] or 0) > 0 and GP.ZoneName("#" .. deliver[2]) or nil }
+            end
         end
     end
     table.sort(out, function(a, b)
         if a.active ~= b.active then return a.active end
         return (a.level or 0) < (b.level or 0)
     end)
-    return out
+    -- The same quest from several quest givers (city donations, both factions): once.
+    local seen, unique = {}, {}
+    for _, q in ipairs(out) do
+        if not seen[q.name] then seen[q.name] = true; unique[#unique + 1] = q end
+    end
+    return unique
 end
 
 -- Why bags should keep an item: a quest in your log needs it. Nil otherwise.
@@ -177,6 +186,9 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
             local lvl = (q.level or 0) > 0 and string.format(" (%d)", q.level) or ""
             tooltip:AddDoubleLine(L["  Quest: "] .. q.name .. lvl, q.active and L["|cff5fd35fin your log|r"] or "",
                 1, 0.82, 0.25, 1, 1, 1)
+            if q.to then
+                tooltip:AddLine("    " .. string.format(L["Bring it to %s"], q.toZone and (q.to .. " (" .. q.toZone .. ")") or q.to), 0.8, 0.8, 0.8)
+            end
         end
         for i, c in ipairs(crafts) do
             if i > MAX_CRAFTS then

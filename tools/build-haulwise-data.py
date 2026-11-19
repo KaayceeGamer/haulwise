@@ -102,7 +102,7 @@ def faction(mask):
     a, h = mask & ALLIANCE, mask & HORDE
     return "A" if a and not h else "H" if h and not a else ""
 
-quests, quest_items = {}, {}
+quests, quest_items, src_npcs_early = {}, {}, {}
 for qid, q in g.QUESTS.items():
     needed = []
     obj = q[QK.objectives]
@@ -112,11 +112,19 @@ for qid, q in g.QUESTS.items():
     req = q[QK.requiredSourceItems]
     if req:
         for i in req.values(): needed.append(int(i))
+    # An item the quest giver hands you is one to deliver: "bring it to" whoever ends the quest.
     provided = q[QK.sourceItemId]
     needed = [i for i in needed if i != provided]
-    if not needed or not q[QK.name]: continue
-    quests[int(qid)] = (q[QK.name], int(q[QK.questLevel] or 0), int(q[QK.requiredLevel] or 0), faction(q[QK.requiredRaces]))
-    for i in set(needed): quest_items.setdefault(i, []).append(int(qid))
+    deliver = int(provided) if provided else 0
+    if not (needed or deliver) or not q[QK.name]: continue
+    ender = 0
+    fb = q[QK.finishedBy]
+    if deliver and fb and fb[1]:
+        for e in fb[1].values():
+            n = g.NPCS[e]
+            if n and n[NK.name]: ender = int(e); src_npcs_early[ender] = n; break
+    quests[int(qid)] = (q[QK.name], int(q[QK.questLevel] or 0), int(q[QK.requiredLevel] or 0), faction(q[QK.requiredRaces]), deliver, ender)
+    for i in set(needed + ([deliver] if deliver else [])): quest_items.setdefault(i, []).append(int(qid))
 
 # Where items come from: who sells them (up to 3) and which mobs drop them (up to 6; items that
 # drop from more than 12 mobs are world drops and just say so).
@@ -125,6 +133,7 @@ def first_map(n):
     s = spawns(n)
     return s[0][0] if s else 0
 src_npcs, sources = {}, {}
+for nid, n in src_npcs_early.items(): src_npcs[nid] = (n[NK.name], first_map(n))
 for iid, it in g.ITEMS.items():
     vend, drops, world = [], [], 0
     vs = it[IK.vendors]
@@ -163,11 +172,12 @@ lines.append("    recipeVendors = {")
 for iid in sorted(vendors):
     lines.append("        [%d] = { %s }," % (iid, ", ".join(str(i) for i in vendors[iid])))
 lines.append("    },")
-# quests[id] = { name, level, required level, faction ("A", "H" or "" for both) }
+# quests[id] = { name, level, required level, faction ("A", "H" or "" for both),
+#                item the giver hands you to deliver (0 if none), NPC to bring it to (0) }
 lines.append("    quests = {")
 for qid in sorted(quests):
-    n, lvl, req, fac = quests[qid]
-    lines.append('        [%d] = { "%s", %d, %d, "%s" },' % (qid, esc(n), lvl, req, fac))
+    n, lvl, req, fac, deliver, ender = quests[qid]
+    lines.append('        [%d] = { "%s", %d, %d, "%s", %d, %d },' % (qid, esc(n), lvl, req, fac, deliver, ender))
 lines.append("    },")
 # questItems[itemID] = { quest IDs that need it }
 lines.append("    questItems = {")

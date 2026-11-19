@@ -624,10 +624,11 @@ do
   local savedHD = HaulwiseData
   HaulwiseData = {
     quests = { [100] = { "Wolf Pelts", 30, 25, "A" }, [101] = { "Horde Pelts", 30, 25, "H" }, [102] = { "Old Pelts", 5, 1, "" },
-               [103] = { "Done Pelts", 32, 25, "" } },
-    questItems = { [5555] = { 100, 101, 102, 103 } },
+               [103] = { "Done Pelts", 32, 25, "" }, [104] = { "Wolf Pelts", 30, 25, "" },
+               [110] = { "Parts for Kravel", 36, 30, "", 5800, 903 } },
+    questItems = { [5555] = { 100, 101, 102, 103, 104 }, [5800] = { 110 } },
     sources = { [5555] = { { 900 }, { 901, 902 }, 0 }, [6666] = { {}, {}, 40 } },
-    sourceNpcs = { [900] = { "Pelt Trader", 0 }, [901] = { "Grey Wolf", 0 }, [902] = { "Black Wolf", 0 } },
+    sourceNpcs = { [900] = { "Pelt Trader", 0 }, [901] = { "Grey Wolf", 0 }, [902] = { "Black Wolf", 0 }, [903] = { "Kravel Koalbeard", 0 } },
   }
   local savedLevel, savedFaction = UnitLevel, UnitFactionGroup
   UnitLevel = function() return 30 end
@@ -641,6 +642,8 @@ do
   local qs = GP:QuestsNeeding(5555)
   ok(#qs == 1 and qs[1].id == 100 and qs[1].active, "quests: yours in the log, not the other faction's, not done or far below you")
   ok(GP:QuestKeepReason(5555) ~= nil and GP:QuestKeepReason(4306) == nil, "bags keep what a quest in your log needs")
+  local kq = GP:QuestsNeeding(5800)
+  ok(#kq == 1 and kq[1].to == "Kravel Koalbeard", "a quest item to deliver says who to bring it to")
   local src = GP:ItemSourcesFromData(5555)
   ok(src and src.vendors[1].name == "Pelt Trader" and #src.drops == 2, "who sells it and what drops it")
   ok(GP:ItemSourcesFromData(6666).world == 40, "world drops just say how many mobs")

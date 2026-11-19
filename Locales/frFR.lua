@@ -867,6 +867,7 @@ GP.LOCALES.frFR = {
     ["  and %d more quests"] = "  et %d quêtes de plus",
     ["  Quest: "] = "  Quête : ",
     ["|cff5fd35fin your log|r"] = "|cff5fd35fdans votre journal|r",
+    ["Bring it to %s"] = "Apportez-le à %s",
     ["  and %d more crafts"] = "  et %d recettes de plus",
     ["|cff5fd35fyou|r"] = "|cff5fd35fvous|r",
     ["|cff8f8b80shared recipe|r"] = "|cff8f8b80recette partagée|r",
