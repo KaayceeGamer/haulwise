@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.13.1"
+GP.VERSION = "0.14.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -43,7 +43,8 @@ local DEFAULTS = {
     names = {},
     speed = {},         -- [itemID] = "sold:days:day": units seen selling over the last 7 days of scans
     sales = {},         -- your auction sales from the mailbox: { t, id, n, c, g, ch, k }
-    salesSeen = {},     -- [mail key] = day: auction mails already logged
+    salesSeen = {},
+    realmPrices = {},   -- ["Realm|A"] = { day, time, players, items = { [id] = { p, n } } }: imported from the website     -- [mail key] = day: auction mails already logged
     recipeSkill = {},   -- [recipe itemID] = skill it needs, read from its tooltip once
     errors = {},        -- the last few Haulwise errors, for /haul feedback         -- [itemID] = name from AH scans, for items the game hasn't loaded yet
     sharedKills = 0,    -- your kill total the last time you opened Share
@@ -225,6 +226,7 @@ GP:On("ADDON_LOADED", function(name)
     end
     GP.db = HaulwiseDB
     if GP.UnpackSaved then GP:UnpackSaved() end
+    if GP.PruneRealmPrices then pcall(GP.PruneRealmPrices, GP) end
     local lang = GP.db.settings.language
     if not lang or lang == "auto" then lang = GetLocale and GetLocale() or "enUS" end
     GP.LANG = lang

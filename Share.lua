@@ -80,6 +80,11 @@ function GP:ExportString()
                 string.format("%.2f", p.x), string.format("%.2f", p.y) }, ",")
         end
     end
+    -- Prices from your last auction house scan (A), if it's at most 3 days old.
+    if self.SharedPriceRecord then
+        local ok, rec = pcall(self.SharedPriceRecord, self)
+        if ok and rec then out[#out + 1] = rec end
+    end
     return table.concat(out, ";")
 end
 
@@ -124,6 +129,7 @@ function GP:ParseExport(str)
     local uid, label, when = head[2], head[3], num(head[4], 4e9)
     local mobs, n = {}, 0
     local sources, vendorBuy, recipeItems, places, crafts = {}, {}, {}, {}, {}
+    local prices, allPrices, nAll
     local function src(key)
         local e = sources[key]
         if not e then e = { trainer = {}, vendor = {} }; sources[key] = e end
@@ -156,6 +162,10 @@ function GP:ParseExport(str)
                     crafts[out] = { out = out, qty = math.max(1, num(f[3], 100)), prof = f[4] ~= "" and f[4] or nil, reagents = reagents }
                 end
             end)
+        elseif kind == "A" then
+            prices = GP.ParsePriceRecord and GP.ParsePriceRecord(f) or prices
+        elseif kind == "M" then
+            if GP.ParseMedianRecord then allPrices, nAll = GP.ParseMedianRecord(f) end
         elseif kind and kind:match("^%u$") then
             -- A record type from a newer Haulwise: skip it.
         else
@@ -176,7 +186,8 @@ function GP:ParseExport(str)
         end
     end
     return uid, { label = label, time = when, build = head[5], contributors = tonumber(head[6]), mobs = mobs, n = n,
-                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems, places = places, crafts = crafts }
+                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems, places = places, crafts = crafts,
+                  prices = prices, allPrices = allPrices, nAll = nAll }
 end
 
 -- Returns ok, message.
@@ -184,6 +195,8 @@ function GP:ImportString(str)
     local ok, result = pcall(function()
         local uid, src = self:ParseExport(str)
         if uid == self.db.uid then error(L["that is your own data"]) end
+        -- Prices for one realm from the website: stored apart, they aren't anyone's drop data.
+        if uid == "prices" then return self:StoreRealmPrices(src) end
         if self.NormalizeZones then self:NormalizeZones(src.mobs) end
         self.mineInPool = nil
         if uid == "community" then
@@ -294,7 +307,7 @@ function GP:MaybeNudgeShare()
     if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
         self.db.shareNudgedAt = own
         self.Print(string.format(L["You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and gives everyone better drop rates, prices and NPC spots."], new, GP.SITE_URL)
-            .. " " .. L["|cff8f8b80Only game stats go along (kills, loot, prices you've seen, recipes you know, where NPCs stand), no names. Nothing leaves your PC unless you paste it. Turn this reminder off in /haul settings.|r"])
+            .. " " .. L["|cff8f8b80Only game stats go along (kills, loot, prices you've seen with your realm, recipes you know, where NPCs stand), no names. Nothing leaves your PC unless you paste it. Turn this reminder off in /haul settings.|r"])
     end
 end
 

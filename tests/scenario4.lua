@@ -750,4 +750,75 @@ SlashCmdList.HAULWISE("minimap")
 ok(not mb.shown and GP.db.settings.minimap == false, "/haul minimap hides it")
 SlashCmdList.HAULWISE("minimap")
 ok(mb.shown, "and brings it back")
+-- Shared auction house prices ----------------------------------------------------------------
+do
+  local now = time()
+  local savedFaction = UnitFactionGroup
+  UnitFactionGroup = function() return "Horde" end
+  local savedPrices, savedScan, savedRealm = GP.db.prices, GP.db.priceScanTime, GP.db.scanRealm
+  GP.db.prices = {
+    [2589] = { p = 120, q = 400, t = now }, [2592] = { p = 300, q = 50, t = now },
+    [123456] = { p = 999, q = 3, t = now },   -- nothing Haulwise uses: not shared
+  }
+  GP.db.vendorBuy[2592] = GP.db.vendorBuy[2592] or 40
+  GP.db.mobs[99001] = GP.db.mobs[99001] or { name = "Test Mob", kills = 1, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0, zones = {}, items = { [2589] = { k = 1, q = 1 } }, gather = {}, ppItems = {} }
+  GP.db.priceScanTime = now
+  GP:NoteScanRealm(now)
+  ok(GP.db.scanRealm and GP.db.scanRealm.r == "Testrealm" and GP.db.scanRealm.f == "H", "a scan remembers its realm and faction")
+  local rec = GP:SharedPriceRecord()
+  print("     price record: " .. tostring(rec))
+  ok(rec and rec:find("^A,Testrealm,H,%d+,") and rec:find("2589:120:400") and rec:find("2592:300:50") and not rec:find("123456"),
+     "export shares prices of items Haulwise uses, with realm and faction")
+  ok(GP:ExportString():find(";A,Testrealm,H,"), "the price record rides in Share data")
+  GP.db.priceScanTime = now - 4 * 86400
+  ok(GP:SharedPriceRecord() == nil, "a scan older than 3 days isn't shared")
+  GP.db.priceScanTime = now
+
+  -- Importing prices for a realm from the website
+  local day = GP.Day()
+  local okImp, msg = GP:ImportString("CF2,prices,Testrealm," .. now .. ",,3;A,Testrealm,H," .. day .. ",2589:100:3/4306:777:2")
+  print("     " .. tostring(msg))
+  ok(okImp and GP.db.realmPrices["Testrealm|H"] and GP.db.realmPrices["Testrealm|H"].items[4306].p == 777, "realm prices import")
+  ok(GP.db.shared.prices == nil, "realm prices aren't stored as somebody's drop data")
+  local okOld = GP:ImportString("CF2,prices,Testrealm," .. now .. ",,3;A,Testrealm,H," .. (day - 2) .. ",2589:1:1")
+  ok(not okOld, "older prices for the same realm are refused")
+
+  -- Which price wins
+  local p, _, _, src = GP:Price(2589)
+  ok(p == 120 and src == "scan", "a fresh own scan always wins")
+  p, _, _, src = GP:Price(4306)
+  ok(p == 777 and src == "realm", "an item your scan doesn't have: your realm's shared price")
+  GP.db.prices[2589].t = now - 5 * 86400
+  p, _, _, src = GP:Price(2589)
+  ok(p == 100 and src == "realm", "own scan older than 3 days and the shared price is fresher: shared price")
+  GP.db.realmPrices["Testrealm|H"].day = day - 6
+  p, _, _, src = GP:Price(2589)
+  ok(p == 120 and src == "scan", "but not when the shared price is older than your scan")
+  GP.db.realmPrices["Testrealm|H"].day = day
+  GP.db.realmPrices["Testrealm|H"].items[2589] = nil
+  GP.db.realmPrices["Otherrealm|A"] = { day = day, items = { [5555] = { p = 50, n = 1 } } }
+  ok(GP:Price(5555) == nil, "another realm's prices are never used")
+
+  -- The median over all realms shipped with the release
+  local okC = pcall(function()
+    local _, src2 = GP:ParseExport("CF2,community,Community," .. now .. ",1.0,5;M,5555:400:3/6666:80:1")
+    GP.community = src2
+    GP.db.shared.community = nil
+  end)
+  p, _, _, src = GP:Price(6666)
+  ok(okC and p == 80 and src == "all", "nothing else: the median over all realms")
+  local _, _, d = GP:BagValue(6666, nil, false)
+  ok(d.ahFrom == "all", "bag values know the price is a rough guess")
+  local lines = {}
+  local tip = { AddLine = function(_, t) lines[#lines + 1] = t end, AddDoubleLine = function(_, l, r) lines[#lines + 1] = l .. " " .. r end }
+  GP.AddValueLines(tip, 80, "AH", { vendor = 0, ah = 76, ahAge = 0, ahFrom = "all" }, 1)
+  ok(table.concat(lines, "|"):find("all realms"), "tooltip says it's from all realms")
+
+  GP.db.prices, GP.db.priceScanTime, GP.db.scanRealm = savedPrices, savedScan, savedRealm
+  GP.db.realmPrices = {}
+  GP.db.mobs[99001] = nil
+  GP.community = nil
+  UnitFactionGroup = savedFaction
+end
+
 print("NEW FEATURES PASSED")

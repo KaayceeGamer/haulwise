@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.13.1
+## 0.14.0
+- **Shared auction house prices**: Share data now also takes the prices from your last AH scan (if it's at most 3 days old) for the items Haulwise uses, about 15-30 KB, with the realm and faction you scanned on. On the website, pick your realm under **Prices for your realm**, copy, and `/haul import`: Haulwise then has prices for items your own scan doesn't, and when your scan is more than 3 days old. Your own scan always comes first.
+- **Prices from day one**: every release brings the median over all realms, so bags and Farm have values before your first scan. Tooltips say when a price is a rough guess from all realms, or shared for your realm.
+
+## 0.13.1 (not released on its own, part of 0.14.0)
 - **Things you use are kept**: items with a Use: effect that you use again and again (a sleeping bag, a toy, a mount or pet item, a single reusable consumable) are never offered to sell or throw away, however little they're worth. Soulbound green-or-better items that aren't gear are kept too. Stacks of food and drink can still go.
 - **Throwing something away** now says in chat what went, and how to always keep it.
 - **Bags full popup**: no more error when going through the items to swap.

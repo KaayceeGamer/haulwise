@@ -33,6 +33,7 @@ Sales.lua
 Gear.lua
 Bags.lua
 Share.lua
+SharedPrices.lua
 Shopping.lua
 Selling.lua
 Auctions.lua

@@ -237,9 +237,19 @@ end
 -- Current price ------------------------------------------------------------------------
 
 -- Returns unit price (copper), units listed (or nil), age in seconds, source label.
+-- Price of one unit: price, units listed, age in seconds, where it's from ("scan", "realm",
+-- "Auctionator" or "all"). Your own scan wins while it's at most 3 days old; then prices other
+-- players shared for your realm (when fresher), your older scan, Auctionator, and last the median
+-- over all realms (see SharedPrices.lua).
+local OWN_FRESH = 3 * 86400
 function GP:Price(id)
     local p = self.db.prices[id]
-    if p and p.p then return p.p, p.q, time() - (p.t or 0), "scan" end
+    local ownAge = p and p.p and (time() - (p.t or 0))
+    if ownAge and ownAge <= OWN_FRESH then return p.p, p.q, ownAge, "scan" end
+    local sp, sAge, kind = nil, nil, nil
+    if self.SharedPrice then sp, sAge, kind = self:SharedPrice(id, false) end
+    if sp and (not ownAge or sAge < ownAge) then return sp, nil, sAge, kind end
+    if ownAge then return p.p, p.q, ownAge, "scan" end
     if Auctionator and Auctionator.API and Auctionator.API.v1 and Auctionator.API.v1.GetAuctionPriceByItemID then
         local ok, price = pcall(Auctionator.API.v1.GetAuctionPriceByItemID, "Haulwise", id)
         if ok and price and price > 0 then
@@ -250,6 +260,10 @@ function GP:Price(id)
             end
             return price, nil, age, "Auctionator"
         end
+    end
+    if self.SharedPrice then
+        local ap, aAge, aKind = self:SharedPrice(id)
+        if ap then return ap, nil, aAge, aKind end
     end
     return nil
 end
@@ -360,6 +374,7 @@ local function finish(lists, names, gear)
     pcall(GP.UpdateSellSpeed, GP, db.prices, db.priceScanTime, lists, t)
     db.prices = prices
     db.priceScanTime = t
+    if GP.NoteScanRealm then GP:NoteScanRealm(t) end
     db.scanDays = db.scanDays or {}
     db.scanDays[day] = true
     scanning = false

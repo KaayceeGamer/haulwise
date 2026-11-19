@@ -23,7 +23,9 @@ export interface Extra {
   places: Place[];                 // where trainers and vendors stand (for waypoints)
   crafts: Craft[];                 // recipes players know: what they make and from what
 }
-export interface Parsed { uid: string; build: string; mobs: Mob[]; kills: number; extra: Extra }
+// Prices from the player's last auction house scan: one per item, for the realm and faction it was taken on.
+export interface Prices { realm: string; fac: "A" | "H"; day: number; list: [number, number, number][] }
+export interface Parsed { uid: string; build: string; mobs: Mob[]; kills: number; extra: Extra; prices: Prices | null }
 
 const MAX_LEN = 2_000_000;
 const MAX_MOBS = 5000;
@@ -69,6 +71,32 @@ function zones(s: string): Record<string, number> {
     if (m) out[m[1].trim()] = int(m[2], 100_000, "zone");
   }
   return out;
+}
+
+const MAX_PRICES = 3000;
+
+// "A,realm,faction,day,item:price:units/..." The scan must be at most 3 days old.
+export function priceRecord(f: string[], now = Date.now()): Prices {
+  const realm = (f[1] ?? "").trim();
+  if (realm.length === 0 || realm.length > 60 || /[,;:/~|<>]/.test(realm)) throw new Error("bad realm");
+  const fac = (f[2] ?? "").trim();
+  if (fac !== "A" && fac !== "H") throw new Error("bad faction");
+  const today = Math.floor(now / 86_400_000);
+  const day = int(f[3], 1_000_000, "price day");
+  if (day < today - 3 || day > today + 1) throw new Error("prices too old");
+  const list: [number, number, number][] = [];
+  const seen = new Set<number>();
+  for (const part of (f[4] ?? "").split("/")) {
+    const m = /^(\d+):(\d+):(\d+)$/.exec(part);
+    if (!m) continue;
+    const id = Number(m[1]), price = Number(m[2]), qty = Number(m[3]);
+    if (id < 1 || id > 9_999_999 || price < 1 || price > 99_999_999_999 || qty < 1 || qty > 999_999 || seen.has(id)) continue;
+    seen.add(id);
+    list.push([id, price, qty]);
+  }
+  if (list.length === 0) throw new Error("no prices");
+  if (list.length > MAX_PRICES) throw new Error("too many prices");
+  return { realm, fac, day, list };
 }
 
 function extraRecord(kind: string, f: string[], extra: Parsed["extra"]): void {
@@ -125,9 +153,15 @@ export function parseExport(raw: string): Parsed {
   const seen = new Set<number>();
   const extra: Extra = { trainers: [], vendors: [], buys: [], recipeItems: [], places: [], crafts: [] };
   let kills = 0;
+  let prices: Prices | null = null;
   for (let i = 1; i < records.length; i++) {
     const f = records[i].split(",");
     const kind = f[0];
+    // Auction house prices: a bad or old price record is skipped, the rest still counts.
+    if (kind === "A") {
+      try { prices = priceRecord(f); } catch { /* skip */ }
+      continue;
+    }
     // Trainer, vendor, price and recipe records are extras: one bad one (an empty name from an
     // older addon version) is skipped instead of throwing the whole upload away.
     if (kind === "T" || kind === "V" || kind === "B" || kind === "R" || kind === "P" || kind === "C") {
@@ -166,8 +200,8 @@ export function parseExport(raw: string): Parsed {
   for (const [k, list] of Object.entries(extra)) {
     if ((list as unknown[]).length > MAX_EXTRA) throw new Error(`too many ${k}`);
   }
-  if (mobs.length === 0 && extra.trainers.length + extra.vendors.length + extra.buys.length + extra.places.length + extra.crafts.length === 0) {
+  if (mobs.length === 0 && !prices && extra.trainers.length + extra.vendors.length + extra.buys.length + extra.places.length + extra.crafts.length === 0) {
     throw new Error("nothing to share yet: kill and loot something, or visit a trainer or vendor");
   }
-  return { uid, build, mobs, kills, extra };
+  return { uid, build, mobs, kills, extra, prices };
 }

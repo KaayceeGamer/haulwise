@@ -132,6 +132,9 @@
   dl.does dt { font: 700 20px/1.35 var(--serif); color: var(--gold-pale); }
   dl.does dd { margin: 0; }
 
+  .realm-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+  .realm-pick label { font-weight: 700; }
+  .realm-pick select { font: inherit; padding: 8px 10px; border-radius: 8px; min-width: 240px; }
   dl.privacy { margin: 0; }
   dl.privacy dt { font-weight: 700; margin-top: 14px; }
   dl.privacy dd { margin: 2px 0 0; color: #c3d3d7; }
@@ -186,7 +189,7 @@
       </ol>
       <textarea id="data" placeholder="Paste your export here. It starts with CF2," spellcheck="false" aria-label="Your Haulwise export"></textarea>
       <label class="consent"><input type="checkbox" id="consent">
-        <span>Share my kills, loot, the recipes I know and the ones I've seen with their prices, and where the trainers and vendors I opened stand, anonymously. They're pooled with everyone else's and published as community data.</span></label>
+        <span>Share my kills, loot, the recipes I know and the ones I've seen with their prices, where the trainers and vendors I opened stand, and the prices from my last auction house scan with its realm and faction, anonymously. They're pooled with everyone else's and published as community data.</span></label>
       <button id="send">Share my data</button>
       <div class="msg" id="msg" role="status"></div>
       <div class="thanks" id="thanks" hidden>
@@ -203,6 +206,18 @@
       <p>Haulwise brings the pool along and gets a fresh copy every day through CurseForge. To get the latest numbers right now, copy them here and type <code>/haul import</code> in game.</p>
       <button class="quiet" id="copy">Copy community data</button>
       <div class="msg" id="copymsg" role="status"></div>
+    </section>
+
+    <section aria-labelledby="prices">
+      <h2 id="prices">Prices for your realm</h2>
+      <p>Every realm has its own auction house, so prices are shared per realm and faction. Pick yours, copy, and type <code>/haul import</code> in game. Haulwise uses them for anything your own scan doesn't have, or when your scan is more than three days old. Your own scan always comes first.</p>
+      <div class="realm-pick" id="realm-pick" hidden>
+        <label for="realm">Realm and faction</label>
+        <select id="realm"></select>
+        <button class="quiet" id="copy-prices">Copy prices for this realm</button>
+      </div>
+      <p class="muted" id="realm-none">No realm has shared prices yet. Scan the auction house in game and share your data: your realm is then the first.</p>
+      <div class="msg" id="pricemsg" role="status"></div>
     </section>
 
     <section aria-labelledby="what">
@@ -236,7 +251,7 @@
         <dt>Only what you paste</dt>
         <dd>The addon can't reach the internet. Data leaves your PC only when you paste it here.</dd>
         <dt>What's in an export</dt>
-        <dd>Kills, loot, coins, levels and zones per mob; the recipes your characters know and what they're made from; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; where the trainers and vendors you opened stand (map and coordinates); and a random id the addon made up, so a new upload replaces your old one.</dd>
+        <dd>Kills, loot, coins, levels and zones per mob; the recipes your characters know and what they're made from; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; where the trainers and vendors you opened stand (map and coordinates); the prices from your last auction house scan, if it's at most three days old, with the realm and faction it was taken on (one price per item for the items Haulwise uses, never the whole auction house, and never who listed what); and a random id the addon made up, so a new upload replaces your old one.</dd>
         <dt>What's kept</dt>
         <dd>Those numbers, stored under a one-way hash of the random id. Character names are thrown away. No accounts, no email, no cookies, no tracking.</dd>
         <dt>Your IP address</dt>
@@ -262,14 +277,15 @@
   const $ = (id) => document.getElementById(id);
   if (CURSEFORGE_URL) { $("cf-link").href = CURSEFORGE_URL; $("cf-link").hidden = false; }
 
-  async function rpc(name) {
+  async function rpc(name, args) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
-      method: "POST", headers: { apikey: PUBLISHABLE_KEY, "Content-Type": "application/json" }, body: "{}",
+      method: "POST", headers: { apikey: PUBLISHABLE_KEY, "Content-Type": "application/json" }, body: JSON.stringify(args || {}),
     });
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }
 
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const n = (x) => Number(x || 0).toLocaleString("en-US");
   const plural = (x, one, many) => `<b>${n(x)}</b> ${Number(x) === 1 ? one : many}`;
 
@@ -326,6 +342,7 @@
         const recipes = (j.trainers || 0) + (j.vendors || 0);
         text += recipes ? `, ${plural(recipes, "recipe source", "recipe sources")}` : "";
         text += j.crafts ? ` and ${plural(j.crafts, "known recipe", "known recipes")}.` : ".";
+        if (j.prices) text += ` Plus auction house prices for ${plural(j.prices, "item", "items")} on ${esc(j.realm || "your realm")}.`;
         text += " They join everyone else's in the community data within the hour, and every player's drop rates get surer.";
         try {
           const s = await rpc("community_stats");
@@ -351,7 +368,7 @@
     try {
       let s = await rpc("community_export");
       // Trainer positions and recipes ride along, as the addon's built-in data does.
-      for (const extra of ["community_places_export", "community_crafts_export"]) {
+      for (const extra of ["community_places_export", "community_crafts_export", "community_prices_export"]) {
         try { const e = await rpc(extra); if (typeof e === "string" && e) s += ";" + e; } catch {}
       }
       await navigator.clipboard.writeText(s);
@@ -363,6 +380,41 @@
   $("thanks-copy").addEventListener("click", () => copyCommunity($("thanks-copymsg")));
 
   $("copy").addEventListener("click", () => copyCommunity($("copymsg")));
+
+  // Realms with shared prices. The list and the prices are medians anyone can see in game anyway.
+  const facName = { A: "Alliance", H: "Horde" };
+  async function loadRealms() {
+    try {
+      const list = await rpc("price_realms");
+      if (!Array.isArray(list) || list.length === 0) return;
+      const sel = $("realm");
+      sel.innerHTML = "";
+      let last = "";
+      try { last = localStorage.getItem("haulwise-realm") || ""; } catch {}
+      for (const r of list) {
+        const o = document.createElement("option");
+        o.value = `${r.realm}|${r.fac}`;
+        o.textContent = `${r.realm} (${facName[r.fac] || r.fac}): ${n(r.items)} items, ${n(r.players)} ${Number(r.players) === 1 ? "player" : "players"}`;
+        if (o.value === last) o.selected = true;
+        sel.appendChild(o);
+      }
+      $("realm-pick").hidden = false;
+      $("realm-none").hidden = true;
+    } catch {}
+  }
+  $("copy-prices").addEventListener("click", async () => {
+    const [realm, fac] = $("realm").value.split("|");
+    try { localStorage.setItem("haulwise-realm", $("realm").value); } catch {}
+    try {
+      const s = await rpc("realm_prices", { p_realm: realm, p_fac: fac });
+      if (typeof s !== "string" || !s) throw new Error("empty");
+      await navigator.clipboard.writeText(s);
+      say($("pricemsg"), "Copied. In game, type /haul import and paste it.", true);
+    } catch {
+      say($("pricemsg"), "Couldn't load the prices. Try again in a few minutes.", false);
+    }
+  });
+  loadRealms();
 
   ["data", "consent"].forEach((id) => $(id).addEventListener("input", () => $("msg").textContent = ""));
   loadStats();

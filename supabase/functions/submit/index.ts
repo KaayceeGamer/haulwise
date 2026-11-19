@@ -90,8 +90,20 @@ Deno.serve(async (req) => {
     if (!craftErr) crafts = n ?? 0;
   }
 
+  // Auction house prices for the realm of the last scan (migration 006).
+  let prices = 0;
+  if (parsed.prices) {
+    const { data: n, error: priceErr } = await db.rpc("replace_prices", {
+      p_uid_hash: await sha256(`${parsed.uid}|${salt}`),
+      p_realm: parsed.prices.realm, p_fac: parsed.prices.fac, p_day: parsed.prices.day,
+      p_prices: parsed.prices.list,
+    });
+    if (!priceErr) prices = n ?? 0;
+  }
+
   return json({
     ok: true, mobs: parsed.mobs.length, kills: parsed.kills,
-    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places, crafts,
+    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places, crafts, prices,
+    realm: parsed.prices ? parsed.prices.realm : undefined,
   });
 });

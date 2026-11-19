@@ -157,5 +157,46 @@ let blockedC = false;
 try { await db.query("select replace_crafts('x','[]'::jsonb)"); } catch { blockedC = true; }
 check(blockedC, "anon cannot call replace_crafts");
 await db.exec("reset role");
+// Auction house prices per realm (migration 006).
+const m6 = readFileSync(new URL("../supabase/migrations/006_prices.sql", import.meta.url), "utf8")
+  .split("\n").filter((l) => !l.startsWith("select cron.") && !l.startsWith("    $$select")).join("\n");
+await db.exec(m6);
+const today = Math.floor(Date.now() / 86_400_000);
+const withPrices = `CF2,abcdef0123456789,Me,1763340000,1.60.1;A,Mirage Raceway,H,${today},2589:120:400/2592:300:50/bad/4306:0:3`;
+const pr = parseExport(withPrices);
+check(pr.prices !== null && pr.prices.realm === "Mirage Raceway" && pr.prices.fac === "H" && pr.prices.list.length === 2,
+  "prices are parsed; bad entries are skipped");
+check(parseExport(`CF2,abcdef0123456789,Me,1,1;B,2589,10;A,Mirage Raceway,H,${today - 5},2589:120:400`).prices === null &&
+  parseExport(`CF2,abcdef0123456789,Me,1,1;B,2589,10;A,Mirage Raceway,X,${today},2589:120:400`).prices === null,
+  "old scans and bad factions are left out");
+const putPrices = (h: string, realm: string, fac: string, list: number[][]) =>
+  db.query("select replace_prices($1, $2, $3, $4, $5::jsonb)", [h, realm, fac, today, JSON.stringify(list)]);
+await putPrices("h_a1", "Mirage Raceway", "H", pr.prices!.list);
+await putPrices("h_a2", "Mirage Raceway", "H", [[2589, 140, 300]]);
+await putPrices("h_a3", "Mirage Raceway", "H", [[2589, 100, 200]]);
+await putPrices("h_a1", "Mirage Raceway", "A", [[2589, 500, 10]]);  // same player, other faction: kept apart
+await putPrices("h_a4", "Nethergarde Keep", "A", [[2589, 900, 10]]);
+let tooOld = false;
+try { await db.query("select replace_prices('h_x','R','A',$1,'[[1,1,1]]'::jsonb)", [today - 9]); } catch { tooOld = true; }
+check(tooOld, "the database refuses scans older than 3 days too");
+await db.exec("select refresh_prices()");
+const rp = (await db.query("select realm_prices('Mirage Raceway', 'H') as s")).rows[0] as { s: string };
+console.log("     realm prices: " + rp.s);
+check(new RegExp(`^CF2,prices,Mirage Raceway,\\d+,,3;A,Mirage Raceway,H,${today},2589:120:3/2592:300:1$`).test(rp.s),
+  "realm prices: the median of the players on that realm and faction, with how many");
+const me = (await db.query("select community_prices_export() as s")).rows[0] as { s: string };
+console.log("     all realms: " + me.s);
+check(me.s === "M,2589:500:3/2592:300:1", "all realms: the median of the realm medians");
+const realms = (await db.query("select price_realms() as r")).rows[0] as { r: { realm: string; fac: string; players: number }[] };
+check(realms.r.length === 3 && realms.r.some((x) => x.realm === "Mirage Raceway" && x.fac === "H" && x.players === 3), "realm list");
+check(((await db.query("select realm_prices('Nowhere', 'A') as s")).rows[0] as { s: string }).s === "", "no prices: empty string");
+await db.exec("set role anon");
+let blockedA = false;
+try { await db.query("select replace_prices('x','R','A',1,'[]'::jsonb)"); } catch { blockedA = true; }
+check(blockedA, "anon cannot call replace_prices");
+const anonRead = (await db.query("select realm_prices('Mirage Raceway', 'H') as s")).rows[0] as { s: string };
+check(anonRead.s.startsWith("CF2,prices,"), "anon can read realm prices");
+await db.exec("reset role");
+
 if (failures) throw new Error(failures + " failures");
 console.log("SERVER TESTS PASSED");

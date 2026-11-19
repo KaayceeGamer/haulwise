@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
+**New in 0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
 
 ---
 
@@ -34,6 +34,7 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 **Never offered for deletion:**
 - crafting materials of any kind
 - quest items
+- things you use again and again: a sleeping bag, toys, mounts and pets
 - tools
 - ammo
 - epics
@@ -101,10 +102,13 @@ Every release includes data pooled from everyone who shares:
 - the recipes players know, and what they're made from
 - trainer and vendor recipes, and where trainers and vendors stand
 - vendor reagent prices
+- auction house prices: the median over all realms comes with every release as a rough guess until you scan
 
 Zones are shared by map number, so a German, French and English player's Stranglethorn Vale add up. Your own upload is taken out of the pool again, so your kills are never counted twice.
 
 **Sharing is manual, and that's on purpose.** WoW addons can't reach the internet, so nothing ever leaves your PC by itself. To share, press **Share data** in the Haulwise window, press Ctrl+C, and paste it on the Haulwise website (link at the bottom). It takes about 10 seconds, and the site shares it as soon as you paste. The button lights up when you have 100+ kills to share, and the bottom line shows what other players have shared about the zone you're in.
+
+**Prices for your realm**: every realm has its own auction house, so shared prices are kept per realm and faction. On the website, pick yours under *Prices for your realm*, copy, and `/haul import`. Haulwise uses them for items your own scan doesn't have and when your scan is more than 3 days old. Your own scan always comes first.
 
 Shared data is anonymous, each player's weight is capped, and outliers are filtered out.
 

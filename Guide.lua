@@ -71,6 +71,8 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Shared AH prices: Share data takes your last scan's prices along. On the website, copy the prices for your realm and /haul import them. Until you scan, values come from all realms (a rough guess)."],
+    L["Things you use again and again, like the Cozy Sleeping Bag, toys and mounts, are never offered to sell or throw away."],
     L["Farm ranks every mob now, also ones nobody has farmed yet: those are estimates from Classic's loot tables, marked est., until real kills take over."],
     L["Item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and what drops it. Bags keep what a quest in your log needs."],
     L["Zones are shared by map number now, so players in every language add up in the same zone."],
