@@ -553,6 +553,7 @@ GP.LOCALES.deDE = {
     ["    You got from %d: %s"] = "    Von dir erhalten aus %d: %s",
     ["    Items like this (%d done): %s"] = "    Ähnliche Gegenstände (%d entzaubert): %s",
     ["|cffffd040Haulwise|r |cff5fd35fupgrade for you +%.0f%%|r%s"] = "|cffffd040Haulwise|r |cff5fd35fVerbesserung für dich +%.0f%%|r%s",
+    ["|cffffd700Haulwise|r ~%s/h  (%s per kill, estimate)"] = "|cffffd700Haulwise|r ~%s/h  (%s pro Kill, Schätzung)",
     ["|cffffd700Haulwise|r %s/h  (%s per kill, %d kills)"] = "|cffffd700Haulwise|r %s/h  (%s pro Kill, %d Kills)",
     ["Farm"] = "Farmen",
     ["Where do I make the most gold per hour? Mobs and zones ranked from real drops."] = "Wo verdiene ich am meisten Gold pro Stunde? Gegner und Zonen nach echten Drops sortiert.",

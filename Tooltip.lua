@@ -118,8 +118,15 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tool
     if not unit then return end
     local npc = GP.NpcFromGUID(UnitGUID(unit))
     local m = npc and GP:MergedMobs()[npc]
-    if not m or m.kills < 10 then return end
+    if not m or (m.kills < 10 and not m.est) then return end
     local r = GP:Evaluate(npc, m)
-    tooltip:AddLine(string.format(L["|cffffd700Haulwise|r %s/h  (%s per kill, %d kills)"],
-        GP.Coins(r.est, true), GP.Coins(r.perKill, true), r.kills), 1, 1, 1)
+    if r.estOnly then
+        -- Nobody has shared kills of it yet: Classic's loot tables, said plainly.
+        tooltip:AddLine(string.format(L["|cffffd700Haulwise|r ~%s/h  (%s per kill, estimate)"],
+            GP.Coins(r.est, true), GP.Coins(r.perKill, true)), 1, 1, 1)
+    else
+        local word, color = GP.Confidence(r.kills)
+        tooltip:AddLine(string.format(L["|cffffd700Haulwise|r %s/h  (%s per kill, %d kills)"],
+            GP.Coins(r.est, true), GP.Coins(r.perKill, true), r.kills) .. (r.kills < 30 and ("  " .. color .. word .. "|r") or ""), 1, 1, 1)
+    end
 end)

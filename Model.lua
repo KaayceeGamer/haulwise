@@ -160,15 +160,21 @@ function GP:MergedMobs()
     if self.db.settings.useEstimates then
         for npc, est in pairs(self:Estimates()) do
             local o = out[npc]
-            if not o then
-                o = { kills = 0, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
-                      zones = {}, items = {}, gather = {}, ppItems = {}, own = 0 }
-                out[npc] = o
+            if o then
+                o.est = est
+                o.name = o.name or est.name
+                o.minL, o.maxL = o.minL or est.minL, o.maxL or est.maxL
+                if est.zone and not next(o.zones) then o.zones[est.zone] = 0 end
+            else
+                -- Nobody has killed it: one shared, read-only record per estimate, made once, so
+                -- tooltips that merge often don't build ~2000 tables each time.
+                if not est.shell then
+                    est.shell = { kills = 0, money = 0, gathered = 0, pp = 0, ppMoney = 0, tIntervals = 0, tSeconds = 0,
+                                  zones = est.zone and { [est.zone] = 0 } or {}, items = {}, gather = {}, ppItems = {}, own = 0,
+                                  est = est, name = est.name, minL = est.minL, maxL = est.maxL }
+                end
+                out[npc] = est.shell
             end
-            o.est = est
-            o.name = o.name or est.name
-            o.minL, o.maxL = o.minL or est.minL, o.maxL or est.maxL
-            if est.zone and not next(o.zones) then o.zones[est.zone] = 0 end
         end
     end
     return out
