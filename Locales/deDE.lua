@@ -586,6 +586,7 @@ GP.LOCALES.deDE = {
     ["Best farm right now:"] = "Bester Farmspot gerade:",
     ["(safe "] = "(sicher ",
     ["%s, %s"] = "%s, %s",
+    ["Nothing farmed in this zone yet, by you or the players who share.\n\nTurn off |cffffd040This zone only|r to see the best farms everywhere."] = "In dieser Zone wurde noch nichts gefarmt, weder von dir noch von den Spielern, die teilen.\n\nSchalte |cffffd040Nur diese Zone|r aus, um die besten Farmen überall zu sehen.",
     ["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."] = "Noch keine Kills aufgezeichnet.\n\nGeh farmen und plündere, was du tötest. Jeder geplünderte Mob erscheint hier, mit seinen echten Dropchancen, wie schnell du ihn tötest und was er in deinem Auktionshaus wert ist.",
     ["Rank zones instead of single mobs: the best gold per hour in each zone."] = "Zonen statt einzelner Mobs sortieren: das beste Gold pro Stunde in jeder Zone.",
     ["Only show mobs from one zone: the zone you're in, or the one you clicked in By zone."] = "Nur Mobs aus einer Zone zeigen: der, in der du bist, oder der, die du unter Nach Zone angeklickt hast.",

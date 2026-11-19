@@ -250,7 +250,12 @@ TAB.farm = {
         end
         return text
     end,
-    empty = L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."],
+    empty = function()
+        if GP:FarmZoneFilter() then
+            return L["Nothing farmed in this zone yet, by you or the players who share.\n\nTurn off |cffffd040This zone only|r to see the best farms everywhere."]
+        end
+        return L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."]
+    end,
     toggles = {
         viewToggle("farm", "zones", L["By zone"], L["Rank zones instead of single mobs: the best gold per hour in each zone."]),
         { L["This zone only"], nil, L["Only show mobs from one zone: the zone you're in, or the one you clicked in By zone."],
