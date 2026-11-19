@@ -101,13 +101,15 @@ local function drawSwap()
     swap.go:SetPrimary(worth)
     swap.cancel:SetLabel(worth and L["Not now"] or L["Leave it"])
     swap.cancel:SetPrimary(not worth)
-    swap.cancel:ClearAllPoints()
+    -- Clear both first: go may still hang off cancel from the last draw, and anchoring
+    -- cancel to next (which hangs off go) before moving go would make a loop.
+    swap.go:ClearAllPoints(); swap.cancel:ClearAllPoints()
     if worth then
+        swap.go:SetPoint("BOTTOMLEFT", 12, 10)
         swap.cancel:SetPoint("LEFT", swap.next, "RIGHT", 6, 0)
-        swap.go:ClearAllPoints(); swap.go:SetPoint("BOTTOMLEFT", 12, 10)
     else
         swap.cancel:SetPoint("BOTTOMLEFT", 12, 10)
-        swap.go:ClearAllPoints(); swap.go:SetPoint("LEFT", swap.cancel, "RIGHT", 6, 0)
+        swap.go:SetPoint("LEFT", swap.cancel, "RIGHT", 6, 0)
     end
 end
 
