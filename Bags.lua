@@ -121,6 +121,11 @@ function GP:ProtectReason(bag, slot, it, info)
     if (it.quality or info.quality or 0) >= 4 then return "epic" end
     local usable = GP.UsableKeepReason(it.itemID, info)
     if usable then return usable end
+    -- Safety net for when the game hasn't told us about the Use: effect yet: a soulbound item
+    -- that isn't gear and is green or better is almost always a quest reward you can't easily
+    -- get back (a sleeping bag costs 17g at Booty Bay's Lost and Found), so it's never offered.
+    local class = info.classID
+    if it.isBound and class ~= 2 and class ~= 4 and (it.quality or info.quality or 0) >= 2 then return L["item you use"] end
     if s.protectReagents and self:IsKeptReagent(it.itemID) then return "reagent" end
     local up = self.IsUpgradeItem and self:IsUpgradeItem(it.itemID)
     if up then return L["upgrade for "] .. up end

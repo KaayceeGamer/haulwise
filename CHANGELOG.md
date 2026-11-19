@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.13.1
-- **Things you use are kept**: items with a Use: effect that you use again and again (a sleeping bag, a toy, a mount or pet item, a single reusable consumable) are never offered to sell or throw away, however little they're worth. Stacks of food and drink still can be.
+- **Things you use are kept**: items with a Use: effect that you use again and again (a sleeping bag, a toy, a mount or pet item, a single reusable consumable) are never offered to sell or throw away, however little they're worth. Soulbound green-or-better items that aren't gear are kept too. Stacks of food and drink can still go.
 - **Throwing something away** now says in chat what went, and how to always keep it.
 - **Bags full popup**: no more error when going through the items to swap.
 

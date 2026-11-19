@@ -263,3 +263,10 @@ ok(GP.UsableKeepReason(8004, { classID = 4, subclassID = 0, maxStack = 1 }) == n
 ok(GP.UsableKeepReason(4865, { classID = 15, subclassID = 0, maxStack = 1 }) == nil, "plain junk without Use: may go")
 ok(GP.UsableKeepReason(8005, { classID = 15, subclassID = 5, maxStack = 1 }) == "mount", "mount item is kept")
 GetItemSpell = nil
+
+-- Safety net: soulbound non-gear green+ items are kept even without a known Use: effect
+do
+    local info = { classID = 15, subclassID = 0, quality = 3, maxStack = 1 }
+    ok(GP:ProtectReason(0, 1, { itemID = 8010, quality = 3, isBound = true }, info) == "item you use", "soulbound rare misc item is kept")
+    ok(GP:ProtectReason(0, 1, { itemID = 8011, quality = 0, isBound = true }, { classID = 15, subclassID = 0, quality = 0 }) == nil, "soulbound grey junk may still go")
+end
