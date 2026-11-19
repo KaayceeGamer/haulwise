@@ -326,6 +326,9 @@ TAB.craft = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
         trainerButton(),
+        { kind = "cycle", label = function() return L["Queue best 5"] end,
+          click = function() GP:QueueBest(5) end,
+          tip = function() return L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] end },
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)
@@ -901,6 +904,9 @@ TAB.craft_skill = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
         trainerButton(),
+        { kind = "cycle", label = function() return L["Queue best 5"] end,
+          click = function() GP:QueueBest(5) end,
+          tip = function() return L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] end },
     },
     extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
     extraButton = function(b)
@@ -1681,6 +1687,12 @@ function GP:RefreshUI()
     local unshared = self:UnsharedKills()
     if unshared > 0 then line = line .. string.format(L["  ·  |cffffd040%d of your kills not shared yet|r"], unshared) end
     f.comm.text:SetText(line)
+    -- The Share button lights up and shows the count once there's a good batch to share.
+    if f.export then
+        local due = unshared >= 100
+        f.export:SetLabel(due and string.format(L["Share data (%d)"], unshared) or L["Share data"])
+        f.export:SetPrimary(due)
+    end
 
     self:RefreshScanButton()
 

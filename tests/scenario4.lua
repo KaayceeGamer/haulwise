@@ -453,6 +453,104 @@ local todayGold = GP:SalesTotal(0)
 ok(GP:SalesTotal(6) == 2375, "earned in the last 7 days")
 GetInboxNumItems, GetInboxHeaderInfo, GetInboxInvoiceInfo = nil, nil, nil
 
+-- Your auctions: undercut ones first ---------------------------------------------------------------
+GP.ahOpen = true
+AuctionHouseFrame = AuctionHouseFrame or CreateFrame("Frame")
+W.owned = {
+  { auctionID = 1, itemKey = { itemID = 4306 }, status = 0, quantity = 10, buyoutAmount = 500 },
+  { auctionID = 2, itemKey = { itemID = 17056 }, status = 0, quantity = 5, buyoutAmount = 30 },
+  { auctionID = 3, itemKey = { itemID = 4865 }, status = 1, quantity = 1, buyoutAmount = 100 },
+}
+C_AuctionHouse.GetNumOwnedAuctions = function() return #W.owned end
+C_AuctionHouse.GetOwnedAuctionInfo = function(i) return W.owned[i] end
+C_AuctionHouse.GetItemKeyInfo = function() return { isCommodity = true } end
+local saved4306, saved17056 = GP.db.prices[4306], GP.db.prices[17056]
+GP.db.prices[4306] = { p = 450, q = 30, t = W.clock, c = "450:20/500:10" }
+GP.db.prices[17056] = { p = 30, q = 10, t = W.clock, c = "30:5/40:5" }
+local mine = GP:MyAuctions()
+ok(#mine == 2 and mine[1].id == 4306 and mine[1].undercut and mine[1].cheapest == 450, "your auctions: the undercut one first, sold ones left out")
+ok(not mine[2].undercut, "the cheapest one isn't undercut")
+C_AuctionHouse.GetNumCommoditySearchResults = function() return 2 end
+C_AuctionHouse.GetCommoditySearchResultInfo = function(_, i)
+  return ({ { unitPrice = 400, quantity = 10, containsOwnerItem = true, numOwnerItems = 10 }, { unitPrice = 520, quantity = 3 } })[i]
+end
+fire("COMMODITY_SEARCH_RESULTS_UPDATED", 4306)
+mine = GP:MyAuctions()
+local m4306
+for _, a in ipairs(mine) do if a.id == 4306 then m4306 = a end end
+ok(m4306 and not m4306.undercut and m4306.from == "live", "a fresh search counts, and your own listings don't undercut you")
+GP:UpdateMyAuctions()
+C_AuctionHouse.GetNumOwnedAuctions, C_AuctionHouse.GetOwnedAuctionInfo, C_AuctionHouse.GetItemKeyInfo = nil, nil, nil
+C_AuctionHouse.GetNumCommoditySearchResults, C_AuctionHouse.GetCommoditySearchResultInfo = nil, nil
+GP.db.prices[4306], GP.db.prices[17056] = saved4306, saved17056
+GP.ahOpen = false
+
+-- Waylaid crates and writs ------------------------------------------------------------------------
+W.items[2447] = { name = "Peacebloom", sell = 1 }
+W.items[2449] = { name = "Earthroot", sell = 2 }
+W.items[777001] = { name = "Waylaid Crate: Apprentice Herbs", quality = 1 }
+W.items[777002] = { name = "Sealed Journeyman Crate", quality = 2 }
+W.items[777003] = { name = "Craftsman's Writ: Heavy Quiver" }
+W.items[777004] = { name = "Heavy Quiver", sell = 50 }
+GP.db.names[2447], GP.db.names[2449], GP.db.names[777004] = "Peacebloom", "Earthroot", "Heavy Quiver"
+GP.db.prices[2447] = { p = 10, q = 100, t = W.clock }
+GP.db.prices[2449] = { p = 50, q = 100, t = W.clock }
+GP.db.prices[777004] = { p = 300, q = 4, t = W.clock }
+W.bags = { [0] = { size = 16, slots = { { id = 2449, count = 10 } } } }
+local bundles = GP.CrateBundles({ "Waylaid Crate: Apprentice Herbs", "Fill with 20 Peacebloom or 10 Earthroot.", "Requires level 10" })
+ok(#bundles == 2 and bundles[1].id == 2447 and bundles[1].n == 20 and bundles[2].n == 10, "crate: reads the ways to fill it")
+ok(GP.CrateFavor("Waylaid Crate: Apprentice Herbs", 1) == 5 and GP.CrateFavor("Sealed Journeyman Crate", 2) == 20 and GP.CrateFavor("Sealed Artisan Crate", 1) == nil,
+   "crate favor: by tier, green doubles, unknown tiers say nothing")
+calls = {}
+assert(loadfile(DIR .. "/Favor.lua"))("Haulwise", GP)
+lines = {}
+for _, fn in ipairs(calls) do fn(tip, { id = 777001, lines = { { leftText = "Waylaid Crate: Apprentice Herbs" }, { leftText = "20 Peacebloom, 10 Earthroot" } } }) end
+local cheapestLine, favorLine
+for _, l in ipairs(lines) do
+  if l:find("20 Peacebloom") and l:find(">", 1, true) then cheapestLine = l end
+  if l:find("Favor") and l:find("|") then favorLine = l end
+end
+print("     " .. tostring(cheapestLine)); print("     " .. tostring(favorLine))
+ok(cheapestLine ~= nil, "crate tooltip marks the cheapest way to fill it (buying 20 Peacebloom beats using your Earthroot)")
+ok(favorLine and favorLine:find("5 Merchant", 1, true), "and what one Favor costs that way")
+lines = {}
+for _, fn in ipairs(calls) do fn(tip, { id = 777003, lines = {} }) end
+local buyLine
+for _, l in ipairs(lines) do if l:find("Buy one", 1, true) then buyLine = l end end
+ok(buyLine ~= nil, "writ tooltip: what the ordered item costs")
+
+-- Craft queue -------------------------------------------------------------------------------------
+GP:Char().recipes = {
+  r555 = { n = "Bolt of Silk", prof = "Tailoring", out = 4305, oq = 1, r = "4306:4", learned = true },
+  ["Tailoring:Linen Thing"] = { n = "Linen Thing", prof = "Tailoring", out = 2996, oq = 1, r = "2589:2", learned = true },
+}
+W.items[4305] = W.items[4305] or { name = "Bolt of Silk Cloth", sell = 100 }
+W.items[2996] = W.items[2996] or { name = "Bolt of Linen Cloth", sell = 25 }
+GP:Char().shopping = { r555 = 3, ["Tailoring:Linen Thing"] = 1 }
+W.bags = { [0] = { size = 16, slots = { { id = 4306, count = 9 } } } }
+local q = GP:QueuedCrafts("Tailoring")
+ok(#q == 2 and q[1].key == "r555" and q[1].can == 2, "queue: what you can make now comes first")
+fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", 555)
+ok(GP:Char().shopping.r555 == 2, "a finished craft comes off the queue")
+GP:CraftDone(nil, "Linen Thing")
+ok(GP:Char().shopping["Tailoring:Linen Thing"] == nil, "classic recipes are matched by name")
+GetNumTradeSkills = function() return 1 end
+GetTradeSkillInfo = function() return "Bolt of Silk", "optimal" end
+SelectTradeSkill = function(i) W.selected = i end
+GP:Char().recipes["Tailoring:Bolt of Silk"] = { n = "Bolt of Silk", prof = "Tailoring", out = 4305, oq = 1, r = "4306:4", learned = true }
+ok(GP:SelectCraft("Tailoring:Bolt of Silk", 2) and W.selected == 1, "clicking a queued craft picks it in the profession window")
+GetNumTradeSkills, GetTradeSkillInfo, SelectTradeSkill = nil, nil, nil
+GP:Char().recipes["Tailoring:Bolt of Silk"] = nil
+GP.db.prices[4305] = { p = 1000, q = 50, t = W.clock }
+GP.db.prices[4306] = { p = 100, q = 50, t = W.clock }
+GP.db.speed = { [4305] = "10.0:2.00:" .. GP.Day() }
+GP:Char().shopping = {}
+GP:QueueBest(5)
+ok(GP:Char().shopping.r555 == 10, "queue best: a profitable craft, as many as sell in ~2 days (got " .. tostring(GP:Char().shopping.r555) .. ")")
+GP.db.speed = {}
+GP:Char().shopping = {}
+GP.db.prices[4306] = saved4306
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

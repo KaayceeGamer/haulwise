@@ -236,7 +236,7 @@ GP.db.mobs[1].name = "Test Mob"
 GP.db.sharedKills, GP.db.shareNudgedAt = 0, 0
 ok(GP:UnsharedKills() == 150, "150 kills not shared yet")
 GP:MaybeNudgeShare()
-ok(#printed == 1 and printed[1]:find("150 kills"), "reminder printed after 100+ unshared kills")
+ok(#printed == 1 and printed[1]:find("150 kills") and printed[1]:find("no names"), "reminder printed after 100+ unshared kills, with what gets shared")
 GP:MaybeNudgeShare()
 ok(#printed == 1, "reminder not repeated before 100 more kills")
 GP:ShowExport()

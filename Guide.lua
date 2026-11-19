@@ -71,6 +71,11 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["At the auction house: Your auctions shows which of yours are undercut, with a Cancel button to post them again at the right price."],
+    L["Sells/day: Haulwise sees how fast things sell from your scans. It's in tooltips, the sell helper and the Craft tab, and Deals won't tell you to buy more than sells."],
+    L["Market → Your sales: what you sold and earned, logged from the mail invoices."],
+    L["Craft queue: open a profession and your queued crafts show beside it. Click one, press Create. Queue best 5 on the Craft tab fills it."],
+    L["Waylaid Crates: the tooltip prices every way to fill one and what one Merchant's Favor costs. Writs show what the ordered item costs."],
     L["Find trainer (Craft tab) or /haul trainer: a waypoint to the nearest trainer that teaches your next rank. Uses TomTom when you have it."],
     L["Recipes: click one for a waypoint to the vendor that sells it. Shift-click searches the AH."],
     L["Profession button in Craft, Skill up and Recipes: show one profession at a time."],
@@ -84,11 +89,7 @@ local function newsLines() return {
     L["Gear → On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold."],
     L["Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession."],
     L["Selling at the AH: a price suggestion next to the sell frame, and a warning when a vendor pays more."],
-    L["At the mailbox: send crafting mats to the alt whose recipes use them, in one click."],
-    L["Bags: Best move for every item, and a Disenchant button when disenchanting pays most."],
-    L["Farm: By zone, and This zone only."],
     L["Share data: the Export button is now Share data (your kills, plus the recipes and vendor prices you've seen). The footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings)."],
-    L["/haul feedback shows where to report bugs and suggest ideas."],
 } end
 
 local guide

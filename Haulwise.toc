@@ -34,11 +34,14 @@ Bags.lua
 Share.lua
 Shopping.lua
 Selling.lua
+Auctions.lua
+Queue.lua
 UI.lua
 Popups.lua
 HUD.lua
 Settings.lua
 Guide.lua
 Tooltip.lua
+Favor.lua
 QuestRewards.lua
 Minimap.lua

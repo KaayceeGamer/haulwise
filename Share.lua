@@ -255,7 +255,8 @@ function GP:MaybeNudgeShare()
     local own, new = self:OwnKills(), self:UnsharedKills()
     if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
         self.db.shareNudgedAt = own
-        self.Print(string.format(L["You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and improves everyone's drop rates. Turn this reminder off in /haul settings."], new, GP.SITE_URL))
+        self.Print(string.format(L["You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and gives everyone better drop rates, prices and NPC spots."], new, GP.SITE_URL)
+            .. " " .. L["|cff8f8b80Only game stats go along (kills, loot, prices you've seen, where NPCs stand), no names. Nothing leaves your PC unless you paste it. Turn this reminder off in /haul settings.|r"])
     end
 end
 

@@ -30,6 +30,7 @@ function GP:AddToShopping(key, n)
     l[key] = math.max(0, (l[key] or 0) + (n or 1))
     if l[key] == 0 then l[key] = nil end
     self:ShowShopping()
+    if GP.RefreshCraftQueue then GP.RefreshCraftQueue() end
 end
 
 -- Everything the list needs: per reagent { id, need, have, alts, buy, unit, where, cost }.

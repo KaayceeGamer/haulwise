@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0
+- **Your auctions**: at the auction house a panel lists what you have up for sale, undercut ones first, with the cheaper price. Click one to search for the newest listings; undercut ones get a Cancel button so you can post them again at the sell helper's price.
+- **Supply crates and writs**: a Waylaid Crate's tooltip prices every way to fill it (the materials you have at what they'd sell for, the rest at the cheapest place to buy), marks the cheapest, and says what one Merchant's Favor costs. Sealed crates say how much Favor they give, and Craftsman's Writs what the ordered item costs to buy or craft. English item names only for now.
+- **Craft queue**: the shopping list is now also a craft queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** on the Craft tab fills it with your most profitable crafts, as many as sell in about 2 days.
+- **Sharing**: the Share data button lights up with your count once you have 100+ kills to share, and the reminder says plainly what gets shared (game stats only, no names, only what you paste).
+
 ## 0.9.0
 - **Demand**: Haulwise now sees how fast things sell. When the cheapest listings from one scan are gone in the next, they sold, so after a few scans you see "sells ~12 a day" in item tooltips, in the sell helper and in a new Sells/day column on the Craft tab. Deals no longer tell you to buy more than sells in about 3 days, and leave out items nobody has bought in days.
 - **Your sales**: open a mailbox and Haulwise logs every auction sale from the invoices. Market → Your sales shows what you earned today, this week and this month, per item, after the AH cut.

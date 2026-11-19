@@ -366,6 +366,21 @@ function GP:RecipeSkill(r)
 end
 
 -- Best value per unit of a reagent if you craft it instead of selling it raw (for the Farm tab).
+-- What one of an item costs you to craft (cheapest recipe you know that makes it), or nil.
+function GP:CraftCostFor(itemID)
+    local best
+    for key, rec in pairs(self:Char().recipes) do
+        if rec.learned and rec.out == itemID then
+            local r = self:EvalRecipe(key, rec)
+            if #r.missing == 0 then
+                local per = r.cost / math.max(1, r.outQty)
+                if not best or per < best then best = per end
+            end
+        end
+    end
+    return best
+end
+
 function GP:CraftValue(itemID)
     if not index then
         index = {}
