@@ -150,6 +150,19 @@ local function build(parent)
     panel.title = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontGold")
     panel.title:SetPoint("TOPLEFT", 10, -8)
     panel.title:SetText(L["Haulwise craft queue"])
+    -- Close hides it until the profession is opened again; Clear empties the queue.
+    local close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    close:SetSize(22, 22)
+    close:SetPoint("TOPRIGHT", 0, 0)
+    close:SetScript("OnClick", function() GP.queueHidden = true; panel:Hide() end)
+    panel.clear = GP.FlatButton(panel, L["Clear"], 54, 18)
+    panel.clear:SetPoint("RIGHT", close, "LEFT", -2, 0)
+    panel.clear:SetScript("OnClick", function()
+        local prof = select(2, openProfession())
+        for _, q in ipairs(GP:QueuedCrafts(prof)) do list()[q.key] = nil end
+        panel:Hide()
+        if GP.RefreshShopping then GP:RefreshShopping() end
+    end)
     panel.note = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGrey")
     panel.note:SetPoint("BOTTOMLEFT", 10, 8)
     panel.note:SetPoint("RIGHT", -10, 0)
@@ -160,7 +173,7 @@ end
 
 function GP:UpdateCraftQueue()
     local frame, prof = openProfession()
-    if not frame then if panel then panel:Hide() end return end
+    if not frame or GP.queueHidden then if panel then panel:Hide() end return end
     local queued = self:QueuedCrafts(prof)
     if #queued == 0 then if panel then panel:Hide() end return end
     if not panel then build(frame) end
@@ -182,9 +195,16 @@ function GP:UpdateCraftQueue()
             t:AddDoubleLine(L["You have mats for"], tostring(q.can))
             t:AddLine(q.can > 0 and L["Click: pick it in the profession window, then press Create."]
                 or L["The shopping list shows what to buy."], 0.6, 0.6, 0.6, true)
+            t:AddLine(L["Right-click: take it off the queue."], 0.6, 0.6, 0.6)
         end
-        row:SetScript("OnClick", function()
-            if q.can > 0 then GP:SelectCraft(q.key, math.min(q.can, q.qty)) elseif GP.ShowShopping then GP:ShowShopping() end
+        row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        row:SetScript("OnClick", function(_, button)
+            if button == "RightButton" then
+                list()[q.key] = nil
+                GP:UpdateCraftQueue()
+                if GP.RefreshShopping then GP:RefreshShopping() end
+            elseif q.can > 0 then GP:SelectCraft(q.key, math.min(q.can, q.qty))
+            elseif GP.ShowShopping then GP:ShowShopping() end
         end)
         row:Show()
         y = y - 22
@@ -208,7 +228,7 @@ end
 GP.RefreshCraftQueue = refresh
 
 for _, ev in ipairs({ "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "BAG_UPDATE_DELAYED" }) do GP:On(ev, refresh) end
-GP:On("TRADE_SKILL_CLOSE", function() if panel then panel:Hide() end end)
+GP:On("TRADE_SKILL_CLOSE", function() GP.queueHidden = nil; if panel then panel:Hide() end end)
 GP:On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
     if unit ~= "player" then return end
     spellID = GP.Safe(spellID)
