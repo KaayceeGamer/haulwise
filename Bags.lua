@@ -80,6 +80,30 @@ local function isQuest(bag, slot, info)
     return false
 end
 
+-- Things you use again and again (a sleeping bag, a toy, a mount or pet, a hearthstone-like item)
+-- are never offered to sell or throw away, however little they're worth. An item counts when it
+-- has a Use: effect and either isn't a consumable or doesn't stack (a stack of food is still fair game).
+local CLASS_CONSUMABLE, CLASS_MISC = 0, 15
+local MISC_PET, MISC_MOUNT = 2, 5
+function GP.UsableKeepReason(itemID, info)
+    if not itemID then return nil end
+    if C_ToyBox and C_ToyBox.GetToyInfo then
+        local ok, toy = pcall(C_ToyBox.GetToyInfo, itemID)
+        if ok and toy then return L["toy"] end
+    end
+    if info and info.classID == CLASS_MISC and (info.subclassID == MISC_PET or info.subclassID == MISC_MOUNT) then
+        return info.subclassID == MISC_MOUNT and L["mount"] or L["pet"]
+    end
+    local getSpell = (C_Item and C_Item.GetItemSpell) or GetItemSpell
+    if not getSpell then return nil end
+    local ok, spellName = pcall(getSpell, itemID)
+    if not (ok and spellName) then return nil end
+    local class = info and info.classID
+    if class == 2 or class == 4 then return nil end -- gear: upgrades and selling are handled elsewhere
+    if class ~= CLASS_CONSUMABLE or (info and info.maxStack or 1) <= 1 then return L["item you use"] end
+    return nil
+end
+
 -- Why an item must never be offered for deletion (nil = it may be).
 function GP:ProtectReason(bag, slot, it, info)
     local s = self.db.settings
@@ -95,6 +119,8 @@ function GP:ProtectReason(bag, slot, it, info)
     if GP.DE_MATS and GP.DE_MATS[it.itemID] then return L["crafting material"] end
     if not isGeneral(bag) then return L["special bag"] end
     if (it.quality or info.quality or 0) >= 4 then return "epic" end
+    local usable = GP.UsableKeepReason(it.itemID, info)
+    if usable then return usable end
     if s.protectReagents and self:IsKeptReagent(it.itemID) then return "reagent" end
     local up = self.IsUpgradeItem and self:IsUpgradeItem(it.itemID)
     if up then return L["upgrade for "] .. up end
@@ -187,6 +213,7 @@ function GP:DeleteBagItem(row)
         GP.Print(L["Confirm the delete in the game's dialog, or right-click to put it back."])
         return false
     end
+    GP.Print(string.format(L["Threw away %s. To always keep it: Shift-click it on the Bags tab."], (row.count or 1) > 1 and (row.link .. "x" .. row.count) or row.link))
     return true
 end
 

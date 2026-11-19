@@ -252,3 +252,14 @@ SlashCmdList.HAULWISE("feedback")
 ok(HaulwiseShareFrame and HaulwiseShareFrame.shown ~= false, "feedback window opens")
 GP.Print = oldPrint
 print("SHARING PASSED")
+
+-- Things you use again and again are never offered to sell or throw away
+local spells = { [8001] = "Rest", [8002] = "Food", [8003] = "Learning", [8004] = "Equip use" }
+GetItemSpell = function(id) return spells[id] end
+ok(GP.UsableKeepReason(8001, { classID = 15, subclassID = 4, maxStack = 1 }) == "item you use", "sleeping bag (misc, Use:) is kept")
+ok(GP.UsableKeepReason(8002, { classID = 0, subclassID = 5, maxStack = 20 }) == nil, "a stack of food may still go")
+ok(GP.UsableKeepReason(8003, { classID = 0, subclassID = 8, maxStack = 1 }) == "item you use", "a single reusable consumable is kept")
+ok(GP.UsableKeepReason(8004, { classID = 4, subclassID = 0, maxStack = 1 }) == nil, "gear with a Use: is left to the gear rules")
+ok(GP.UsableKeepReason(4865, { classID = 15, subclassID = 0, maxStack = 1 }) == nil, "plain junk without Use: may go")
+ok(GP.UsableKeepReason(8005, { classID = 15, subclassID = 5, maxStack = 1 }) == "mount", "mount item is kept")
+GetItemSpell = nil

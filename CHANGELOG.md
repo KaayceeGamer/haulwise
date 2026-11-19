@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.1
+- **Things you use are kept**: items with a Use: effect that you use again and again (a sleeping bag, a toy, a mount or pet item, a single reusable consumable) are never offered to sell or throw away, however little they're worth. Stacks of food and drink still can be.
+- **Throwing something away** now says in chat what went, and how to always keep it.
+- **Bags full popup**: no more error when going through the items to swap.
+
 ## 0.13.0
 - **Estimates for every mob**: Farm now also ranks mobs nobody has farmed yet, from Classic's loot tables (the open-source CMaNGOS Classic DB, in Haulwise Data). They're marked "est." and "~", and real kills, yours and shared, take over as they come in. Turn them off with **Estimates** on the Farm tab.
 - **Quest items to deliver** say who to bring them to, and a quest offered by several quest givers shows once.
