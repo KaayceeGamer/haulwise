@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
+**New in 0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
 
 ---
 
@@ -57,6 +57,8 @@ Haulwise measures:
 Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
 
 Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
+
+**Mobs nobody has farmed yet** are ranked too, from estimated drop rates in Classic's loot tables. They're marked *est.* and *~*, and real kills (yours and shared) take over as they come in. Mob tooltips show the estimated gold per hour as well. Turn estimates off with **Estimates** on the Farm tab.
 
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin, **how many sell per day** and 7-day trend.
@@ -164,6 +166,10 @@ Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (l
 - Source code and issues: https://github.com/KaayceeGamer/haulwise
 
 ### Credits
-Trainer and recipe vendor positions, the quests that need each item, and where items drop and who sells them in **Haulwise Data** (included in the download as its own addon folder) come from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), licensed under GPLv3. Thanks to the Questie team and everyone who contributed. Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie team.
+Trainer and recipe vendor positions, the quests that need each item, and where items drop and who sells them in **Haulwise Data** (included in the download as its own addon folder) come from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), licensed under GPLv3. Thanks to the Questie team and everyone who contributed.
+
+The estimated drop rates for mobs nobody has farmed yet come from the [CMaNGOS Classic database](https://github.com/cmangos/classic-db), licensed under GPLv3. Thanks to the CMaNGOS team.
+
+Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie or CMaNGOS teams.
 
 *Haulwise is a fan project and isn't affiliated with Blizzard Entertainment.*
