@@ -28,6 +28,7 @@ Market.lua
 Sources.lua
 Navigate.lua
 Holdings.lua
+Sales.lua
 Gear.lua
 Bags.lua
 Share.lua

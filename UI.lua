@@ -275,6 +275,15 @@ TAB.farm = {
     end,
 }
 
+-- Sells/day as a short cell: "~12", "<1", or an orange 0 when nothing sold in the scans.
+local function demandCell(id)
+    local per, _, label = GP:SellSpeed(id)
+    if not per then return grey("–") end
+    if label == "none" then return "|cffff99440|r" end
+    if per < 1 then return "|cffffd060<1|r" end
+    return (label == "fast" and "|cff5fd35f~" or "~") .. math.floor(per + 0.5) .. (label == "fast" and "|r" or "")
+end
+
 TAB.craft = {
     cols = {
         { key = "name", title = L["Recipe"], w = 230, icon = true },
@@ -283,7 +292,7 @@ TAB.craft = {
         { key = "sell", title = L["Sells for"], w = 100, align = "RIGHT" },
         { key = "profit", title = L["Profit"], w = 112, align = "RIGHT", bar = true },
         { key = "margin", title = L["Margin"], w = 64, align = "RIGHT" },
-        { key = "listed", title = L["On AH"], w = 64, align = "RIGHT" },
+        { key = "demand", title = L["Sells/day"], w = 64, align = "RIGHT" },
         { key = "trend", title = L["7 days"], w = 64, align = "RIGHT" },
     },
     rows = function() return byProf(GP:CraftRows()) end,
@@ -296,7 +305,7 @@ TAB.craft = {
             cost = #r.missing > 0 and L["|cffff9944no price|r"] or Coins(r.cost, true),
             sell = Coins(r.sell, true),
             profit = #r.missing > 0 and "|cffff9944?|r" or Coins(r.profit, true),
-            margin = #r.missing > 0 and grey("–") or pct(r.margin, true), listed = r.listed and tostring(r.listed) or grey("–"), trend = pct(r.trend, true),
+            margin = #r.missing > 0 and grey("–") or pct(r.margin, true), demand = demandCell(r.out), trend = pct(r.trend, true),
         }
     end,
     hero = function(rows)
@@ -334,6 +343,7 @@ TAB.craft = {
         end
         t:AddDoubleLine(L["Sells for (after AH cut)"], Coins(r.sell), 0.7, 0.7, 0.7)
         t:AddDoubleLine(L["Profit"], Coins(r.profit), 0.7, 0.7, 0.7)
+        if r.listed then t:AddDoubleLine(L["On the AH now"], tostring(r.listed), 0.7, 0.7, 0.7) end
         if #r.missing > 0 then t:AddLine(L["Visit a vendor or scan the AH to price the missing reagents."], 1, 0.6, 0.3, true) end
     end,
 }
@@ -515,6 +525,7 @@ TAB.market = {
         end
         return grey(string.format(L["Weekday pattern: scan on %d more days to see which day your AH is cheapest."], need or 14))
     end,
+    toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
     empty = L["No trends yet.\n\nTrends need 4+ days of AH scans. Scan once a day (ideally around the same time) and this tab shows what's rising, what's falling, and when to sell what you farm and craft."],
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)
@@ -525,6 +536,51 @@ TAB.market = {
         for i = math.max(1, #h - 9), #h do
             local e = h[i]
             t:AddDoubleLine("  " .. date("%a %d %b", e.d * 86400 + 43200), Coins(e.p) .. grey("  " .. e.q .. L[" listed"]))
+        end
+    end,
+}
+
+-- Market → Your sales: what sold and what it earned, from the mail invoices (Sales.lua).
+local function when(t)
+    local d = GP.Day() - GP.Day(t)
+    if d <= 0 then return L["today"] elseif d == 1 then return L["yesterday"] end
+    return string.format(L["%d days ago"], d)
+end
+TAB.market_sales = {
+    cols = {
+        { key = "name", title = L["Item"], w = 250, icon = true },
+        { key = "count", title = L["Sold"], w = 60, align = "RIGHT" },
+        { key = "each", title = L["Each"], w = 100, align = "RIGHT" },
+        { key = "earned", title = L["Earned"], w = 120, align = "RIGHT", bar = true },
+        { key = "last", title = L["Last sold"], w = 100, align = "RIGHT" },
+        { key = "who", title = L["By"], w = 130 },
+    },
+    rows = function() return GP:SalesRows(30) end,
+    bar = function(r) return r.earned end,
+    cells = function(r)
+        return {
+            name = r.id and itemName(r.id) or (r.name or "?"), icon = r.id and GP.ItemIcon(r.id) or 134400,
+            count = tostring(r.count), each = Coins(r.each, true), earned = Coins(r.earned, true),
+            last = grey(when(r.last)), who = grey(r.who),
+        }
+    end,
+    hero = function()
+        local today = GP:SalesTotal(0)
+        local week, wn = GP:SalesTotal(6)
+        local month = GP:SalesTotal(29)
+        return string.format(L["Earned today |cff5fd35f%s|r   ·   last 7 days |cff5fd35f%s|r (%s)   ·   30 days %s"],
+            Coins(today, true), Coins(week, true), plural(wn, "item"), Coins(month, true))
+    end,
+    empty = L["No sales logged yet.\n\nWhen an auction sells, the gold comes by mail. Open a mailbox and Haulwise logs every sale from the invoices: what sold, for how much after the AH cut, and when."],
+    click = function(r) if r.id then GP:SearchAH(r.id) end end,
+    toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
+    tooltip = function(t, r)
+        if r.id then t:SetItemByID(r.id) else t:AddLine(r.name or "?") end
+        t:AddLine(" ")
+        t:AddLine(L["|cffffd040Haulwise|r  your sales (after the AH cut):"])
+        for i, s in ipairs(r.sales) do
+            if i > 10 then t:AddLine(grey(string.format(L["  and %d more"], #r.sales - 10))); break end
+            t:AddDoubleLine("  " .. date("%a %d %b", s.t) .. grey("  " .. (s.ch or "")), s.c .. " x  " .. Coins(s.g))
         end
     end,
 }
@@ -949,7 +1005,7 @@ TAB.craft.sort = {
     name = function(r) return nm(r.out) end, prof = function(r) return r.prof end,
     cost = function(r) return priced(r) and r.cost or nil end, sell = function(r) return r.sell end,
     profit = function(r) return priced(r) and r.profit or nil end, margin = function(r) return priced(r) and r.margin or nil end,
-    listed = function(r) return r.listed end, trend = function(r) return r.trend end,
+    demand = function(r) return (GP:SellSpeed(r.out)) end, trend = function(r) return r.trend end,
 }
 TAB.deals.sort = {
     name = function(r) return nm(r.id) end, kind = function(r) return r.kind end, units = function(r) return r.units end,
@@ -965,6 +1021,11 @@ TAB.recipes.sort = {
 TAB.market.sort = {
     name = function(r) return nm(r.id) end, why = function(r) return r.why end, price = function(r) return r.price end,
     market = function(r) return r.market end, change = function(r) return r.change end, tip = function(r) return r.tip end,
+}
+TAB.market_sales.sort = {
+    name = function(r) return (r.id and nm(r.id)) or (r.name or ""):lower() end, count = function(r) return r.count end,
+    each = function(r) return r.each end, earned = function(r) return r.earned end,
+    last = function(r) return r.last end, who = function(r) return r.who:lower() end,
 }
 TAB.holdings.sort = {
     name = function(r) return nm(r.id) end, count = function(r) return r.count end,

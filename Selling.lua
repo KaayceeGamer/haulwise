@@ -130,6 +130,8 @@ function GP:UpdateSellHelper()
     end
     if current.live then lines[#lines + 1] = L["Cheapest now: "] .. GP.Coins(current.live) end
     if current.usual then lines[#lines + 1] = L["Usual price: "] .. GP.Coins(current.usual) end
+    local speed = self:SellSpeedText(id)
+    if speed then lines[#lines + 1] = L["Demand: "] .. speed end
     if current.vendorBetter then
         lines[#lines + 1] = L["|cffff9944A vendor pays more ("] .. GP.Coins(current.vendor) .. L["). Sell it there.|r"]
     end

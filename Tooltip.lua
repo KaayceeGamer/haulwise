@@ -17,6 +17,8 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
         local right = GP.Coins(ah)
         if trend then right = right .. string.format(trend >= 0 and "  |cff5fd35f+%.0f%%|r" or "  |cffff6b5b%.0f%%|r", trend * 100) end
         tooltip:AddDoubleLine(L["|cffffd700Haulwise|r AH (after cut)"], right, 1, 1, 1, 1, 1, 1)
+        local speed = GP:SellSpeedText(id)
+        if speed then tooltip:AddDoubleLine(L["  Demand"], speed, 0.8, 0.8, 0.8, 1, 1, 1) end
     end
     local craft, craftName = GP:CraftValue(id)
     if craft and craft > (value or 0) then

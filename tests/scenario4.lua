@@ -400,6 +400,59 @@ ok(qp and qp.kind ~= "tool", "but not when they already have a skinning tool")
 W.quest = { 4865 }
 ok(GP:QuestRewardPick() == nil, "nothing to choose with one reward")
 
+-- Sell speed: cheapest listings that are gone in the next scan count as sold ---------------------
+GP.db.speed = {}
+local T0 = W.clock
+local oldP = { [888001] = { c = "100:5/110:5/120:20" }, [888002] = { c = "50:1/60:1" } }
+-- 6 hours later: two of the 100s/110s gone (10 units), the 20 stack is still there; 888002 untouched.
+GP:UpdateSellSpeed(oldP, T0 - 6 * 3600, { [888001] = { { 120, 20 }, { 130, 5 } }, [888002] = { { 50, 1 }, { 60, 1 } } }, T0)
+ok(GP.db.speed[888001] and GP.db.speed[888001]:match("^10%.0:0%.25:"), "listings that vanished between scans count as sold")
+ok(GP:SellSpeed(888001) == nil, "but no speed is shown from a quarter of a day")
+oldP = { [888001] = { c = "120:20/130:5" }, [888002] = { c = "50:1/60:1" } }
+GP:UpdateSellSpeed(oldP, T0 - 6 * 3600, { [888001] = { { 130, 5 } }, [888002] = { { 50, 1 }, { 60, 1 } } }, T0 + 6 * 3600)
+local per, days, label = GP:SellSpeed(888001)
+ok(per and math.abs(per - 40) < 0.01 and label == "fast", "30 units over 18 hours of scans: ~40 a day, fast")
+per, days, label = GP:SellSpeed(888002)
+ok(per == 0 and label == "none", "nothing gone: no sales seen")
+ok(GP:SellSpeedText(888001, true) == "sells ~40 a day", "speed text: " .. tostring(GP:SellSpeedText(888001, true)))
+GP:UpdateSellSpeed(oldP, T0 - 3 * 86400, { [888001] = {} }, T0)
+ok(GP.db.speed[888001]:match("^30"), "scans more than 36 hours apart are not compared")
+-- A slow seller caps what the Deals tab tells you to buy.
+GP.db.speed[888003] = "30.0:3.00:" .. GP.Day()
+GP.db.prices[888003] = { p = 100, q = 400, m = 300, t = W.clock, s = 0, c = "100:50/100:50/100:50/300:10/300:10" }
+W.items[888003] = { name = "Slow Seller", sell = 0 }
+local dealUnits
+for _, r in ipairs(GP:Deals()) do if r.id == 888003 then dealUnits = r.units end end
+ok(dealUnits == 30, "deals: buy no more than sells in ~3 days (got " .. tostring(dealUnits) .. ")")
+GP.db.speed[888003] = "0.0:3.00:" .. GP.Day()
+dealUnits = nil
+for _, r in ipairs(GP:Deals()) do if r.id == 888003 then dealUnits = r.units end end
+ok(dealUnits == nil, "deals: nothing that hasn't sold in days of scans")
+GP.db.prices[888003], GP.db.speed = nil, {}
+
+-- Sales log: auction invoices in the mail, each logged once ---------------------------------------
+W.inbox = {
+  { daysLeft = 29.5, invoice = { "seller", "Light Feather", "Buyer", 2000, 2000, 0, 100, 0, 0, 20 } },
+  { daysLeft = 28.0, invoice = { "seller", "Ruined Pelt", "Other", 500, 500, 0, 25, 0, 0, 1 } },
+  { daysLeft = 20.0, invoice = { "buyer", "Something", "Seller", 900, 900, 0, 0, 0, 0, 1 } },
+}
+GetInboxNumItems = function() return #W.inbox end
+GetInboxHeaderInfo = function(i) return nil, nil, "Auction House", "x", 0, 0, W.inbox[i].daysLeft end
+GetInboxInvoiceInfo = function(i) return unpack(W.inbox[i].invoice) end
+GP.db.sales, GP.db.salesSeen = {}, {}
+local added, gold = GP:ReadSales()
+ok(added == 2 and gold == 1900 + 475, "two seller invoices logged, after the AH cut (" .. tostring(gold) .. ")")
+W.clock = W.clock + 600
+W.inbox[1].daysLeft = W.inbox[1].daysLeft - 600 / 86400
+W.inbox[2].daysLeft = W.inbox[2].daysLeft - 600 / 86400
+added = GP:ReadSales()
+ok(added == 0, "opening the mailbox again logs nothing twice")
+local rows = GP:SalesRows(30)
+ok(#rows == 2 and rows[1].earned == 1900 and rows[1].count == 20, "sales tab: most earned first, with units sold")
+local todayGold = GP:SalesTotal(0)
+ok(GP:SalesTotal(6) == 2375, "earned in the last 7 days")
+GetInboxNumItems, GetInboxHeaderInfo, GetInboxInvoiceInfo = nil, nil, nil
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.8.6
+## 0.9.0
+- **Demand**: Haulwise now sees how fast things sell. When the cheapest listings from one scan are gone in the next, they sold, so after a few scans you see "sells ~12 a day" in item tooltips, in the sell helper and in a new Sells/day column on the Craft tab. Deals no longer tell you to buy more than sells in about 3 days, and leave out items nobody has bought in days.
+- **Your sales**: open a mailbox and Haulwise logs every auction sale from the invoices. Market → Your sales shows what you earned today, this week and this month, per item, after the AH cut.
 - **With TomTom**: the waypoint no longer disappears 10 yards before the NPC. It goes when you talk to them, and a new Haulwise waypoint replaces the old one instead of piling up.
 - **Quest rewards**: a profession tool you need and don't have (Mining Pick, Skinning Knife, Blacksmith Hammer, Arclight Spanner) is now the Haulwise pick, and the pick is much easier to see: thick gold frame, a green tick, a slow pulse and its name after "Choose your reward:".
 

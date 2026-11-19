@@ -7,6 +7,8 @@
 --   s  = vendor sell price, k/sk = item class/subclass, n = name (recipes only, for matching)
 -- Each scan also adds a day to a 28-day history (stored as a compact string per item), which
 -- feeds deals, trends and weekday patterns. Auctionator fills gaps if installed.
+-- Comparing a scan with the one before it shows which of the cheapest listings are gone: that's
+-- how fast an item sells (see Sell speed below).
 local _, GP = ...
 local L = GP.L
 
@@ -114,6 +116,11 @@ function GP:UnpackSaved()
     for id, n in pairs(db.names) do
         if n == "" or not (db.prices[id] or db.history[id]) then db.names[id] = nil end
     end
+    -- Sell speeds nobody has updated for two weeks are stale.
+    for id, raw in pairs(db.speed or {}) do
+        local d = tonumber(raw:match(":(%d+)$"))
+        if not d or d < GP.Day() - 14 then db.speed[id] = nil end
+    end
 end
 
 function GP:PackSaved()
@@ -147,6 +154,84 @@ function GP:MarketValue(id)
     local cur = self.db.prices[id]
     if cur then return cur.m or cur.p, #vals end
     return nil, 0
+end
+
+-- Sell speed -----------------------------------------------------------------------------
+-- Buyers take the cheapest listings first. So when one of the five cheapest listings from the
+-- last scan is gone in this one, it most likely sold. Added up over the last 7 days of scans,
+-- that gives the units sold per day. It's an estimate: a cancelled or expired listing looks the
+-- same, which is why only scans up to 36 hours apart are compared.
+local SPEED_WINDOW, SPEED_MAX_GAP = 7, 1.5
+
+local function listingKey(u, c) return string.format("%.2f:%d", u, c) end
+
+-- old = prices from the previous scan (taken at oldT); lists = this scan's listings per item,
+-- cheapest first, as { unit price, count }; t = this scan's time.
+function GP:UpdateSellSpeed(old, oldT, lists, t)
+    local gap = oldT and oldT > 0 and (t - oldT) / 86400
+    if not gap or gap <= 0 or gap > SPEED_MAX_GAP then return end
+    local db, day = self.db, GP.Day(t)
+    db.speed = db.speed or {}
+    for id, o in pairs(old) do
+        if o.c and o.c ~= "" then
+            local was, top = {}, 0
+            for u, c in o.c:gmatch("([%d%.]+):(%d+)") do
+                u, c = tonumber(u), tonumber(c)
+                was[#was + 1] = { u, c }
+                if u > top then top = u end
+            end
+            local still = {}
+            for _, l in ipairs(lists[id] or {}) do
+                if l[1] > top + 0.005 then break end
+                local k = listingKey(l[1], l[2])
+                still[k] = (still[k] or 0) + 1
+            end
+            local sold = 0
+            for _, w in ipairs(was) do
+                local k = listingKey(w[1], w[2])
+                if (still[k] or 0) > 0 then still[k] = still[k] - 1 else sold = sold + w[2] end
+            end
+            local s, d = 0, 0
+            local raw = db.speed[id]
+            if raw then
+                local a, b = raw:match("^([%d%.]+):([%d%.]+)")
+                s, d = tonumber(a) or 0, tonumber(b) or 0
+            end
+            s, d = s + sold, d + gap
+            if d > SPEED_WINDOW then s, d = s * SPEED_WINDOW / d, SPEED_WINDOW end
+            db.speed[id] = string.format("%.1f:%.2f:%d", s, d, day)
+        end
+    end
+end
+
+-- Units sold per day, days of scans it's based on, and "fast" | "steady" | "slow" | "none".
+-- Nil until scans cover at least half a day.
+function GP:SellSpeed(id)
+    local raw = self.db.speed and self.db.speed[id]
+    if not raw then return nil end
+    local s, d = raw:match("^([%d%.]+):([%d%.]+)")
+    s, d = tonumber(s), tonumber(d)
+    if not (s and d) or d < 0.5 then return nil, d end
+    local per = s / d
+    local label = per >= 10 and "fast" or per >= 1 and "steady" or per > 0 and "slow" or "none"
+    return per, d, label
+end
+
+local SPEED_COLOR = { fast = "|cff5fd35f", steady = "|cffffffff", slow = "|cffffd060", none = "|cffff9944" }
+-- "sells ~12 a day", "sells ~1 every 4 days", "no sales seen in 3 days"; coloured by speed.
+function GP:SellSpeedText(id, plain)
+    local per, days, label = self:SellSpeed(id)
+    if not per then return nil end
+    local text
+    if label == "none" then
+        text = string.format(L["no sales seen in %s"], GP.Plural(math.max(1, math.floor(days + 0.5)), "day", "days"))
+    elseif per >= 1 then
+        text = string.format(L["sells ~%d a day"], math.floor(per + 0.5))
+    else
+        text = string.format(L["sells ~1 every %s"], GP.Plural(math.max(2, math.floor(1 / per + 0.5)), "day", "days"))
+    end
+    if plain then return text, label end
+    return SPEED_COLOR[label] .. text .. "|r", label
 end
 
 -- Current price ------------------------------------------------------------------------
@@ -272,6 +357,7 @@ local function finish(lists, names, gear)
         addHistory(db, id, day, rec.p, total)
         n = n + 1
     end
+    pcall(GP.UpdateSellSpeed, GP, db.prices, db.priceScanTime, lists, t)
     db.prices = prices
     db.priceScanTime = t
     db.scanDays = db.scanDays or {}

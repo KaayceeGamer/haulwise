@@ -38,6 +38,11 @@ function GP:Deals()
             -- At most a quarter of what's listed, and never more than 200: nobody resells 13,000
             -- arrows at a markup, however cheap they are.
             local maxUnits = math.max(1, math.min(200, math.floor((p.q or 1) * 0.25)))
+            -- And no more than sells in about 3 days, once the scans show how fast it sells.
+            -- Nothing seen selling in 2+ days of scans: there's no one to resell to.
+            local perDay, speedDays = self:SellSpeed(id)
+            if perDay and (speedDays or 0) >= 1 then maxUnits = math.min(maxUnits, math.ceil(perDay * 3)) end
+            local unsold = perDay == 0 and (speedDays or 0) >= 2
 
             -- Vendor flips: listed below what a vendor pays. Zero risk.
             local fUnits, fCost, fProfit = 0, 0, 0
@@ -64,7 +69,7 @@ function GP:Deals()
                 end
             end
             local uUnits, uCost, uProfit = 0, 0, 0
-            if target and target > 0 and trusted then
+            if target and target > 0 and trusted and not unsold and maxUnits > 0 then
                 for _, l in ipairs(cheap) do
                     if l.u <= target * 0.70 and uUnits < maxUnits then
                         local take = math.min(l.c, maxUnits - uUnits)
