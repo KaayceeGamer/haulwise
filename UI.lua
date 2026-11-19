@@ -106,6 +106,10 @@ local function flatButton(parent, text, w)
     b.label:SetPoint("CENTER")
     b.label:SetText(text)
     function b:SetLabel(t) self.label:SetText(t) end
+    function b:SetPrimary(on)
+        if on then self:SetBackdropColor(0.16, 0.3, 0.12, 1); self:SetBackdropBorderColor(0.35, 0.7, 0.3, 1)
+        else self:SetBackdropColor(0.14, 0.12, 0.08, 1); self:SetBackdropBorderColor(0.42, 0.33, 0.15, 1) end
+    end
     return b
 end
 
