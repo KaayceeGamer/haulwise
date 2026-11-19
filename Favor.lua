@@ -75,13 +75,19 @@ function GP:BundleCost(id, n)
     return cost, have
 end
 
--- Favor for a crate from its name ("Waylaid Crate: Journeyman Parts", "Sealed Expert Crate")
--- and quality (2 = green: double). Nil when unknown.
-function GP.CrateFavor(name, quality)
-    local tier = name and (name:match("Waylaid Crate: (%a+)") or name:match("Sealed (%a+) Crate"))
-    local base = tier and FAVOR[tier]
-    if not base then return nil end
-    return (quality or 1) >= 2 and base * 2 or base
+-- Favor for a crate. The tooltip's own "15 Merchant's Favor" wins when it has one; otherwise the
+-- tier in the name ("Waylaid Crate: Flowering Expert Herbs", "Sealed Expert Crate") and quality
+-- (green pays double). Nil when unknown.
+function GP.CrateFavor(name, quality, lines)
+    for _, text in ipairs(lines or {}) do
+        local n = type(text) == "string" and text:match("(%d+) Merchant's Favor")
+        if n then return tonumber(n) end
+    end
+    if not name then return nil end
+    for tier, base in pairs(FAVOR) do
+        if name:find("%f[%a]" .. tier .. "%f[%A]") then return (quality or 1) >= 2 and base * 2 or base end
+    end
+    return nil
 end
 
 local function lineTexts(info)
@@ -100,9 +106,10 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     if not name then return end
     local ok, err = pcall(function()
         if name:find("^Waylaid Crate") then
-            local bundles = GP.CrateBundles(lineTexts(info))
+            local texts = lineTexts(info)
+            local bundles = GP.CrateBundles(texts)
             if #bundles == 0 then return end
-            local favor = GP.CrateFavor(name, quality)
+            local favor = GP.CrateFavor(name, quality, texts)
             tooltip:AddLine(" ")
             tooltip:AddLine(L["|cffffd700Haulwise|r  fill it with one of these:"])
             local best
@@ -120,8 +127,8 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
                 tooltip:AddDoubleLine(string.format(L["  %d Merchant's Favor"], favor),
                     string.format(L["%s per Favor"], GP.Coins(best.cost / favor, true)), 0.53, 0.8, 1, 0.53, 0.8, 1)
             end
-        elseif name:find("^Sealed %a+ Crate") then
-            local favor = GP.CrateFavor(name, quality)
+        elseif name:find("^Sealed .*Crate") then
+            local favor = GP.CrateFavor(name, quality, lineTexts(info))
             if favor then
                 tooltip:AddLine(" ")
                 tooltip:AddLine(string.format(L["|cffffd700Haulwise|r  %d Merchant's Favor at your trading camp"], favor))

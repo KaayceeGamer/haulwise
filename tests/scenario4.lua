@@ -510,7 +510,8 @@ GP.db.prices[777004] = { p = 300, q = 4, t = W.clock }
 W.bags = { [0] = { size = 16, slots = { { id = 2449, count = 10 } } } }
 local bundles = GP.CrateBundles({ "Waylaid Crate: Apprentice Herbs", "Fill with 20 Peacebloom or 10 Earthroot.", "Requires level 10" })
 ok(#bundles == 2 and bundles[1].id == 2447 and bundles[1].n == 20 and bundles[2].n == 10, "crate: reads the ways to fill it")
-ok(GP.CrateFavor("Waylaid Crate: Apprentice Herbs", 1) == 5 and GP.CrateFavor("Sealed Journeyman Crate", 2) == 20 and GP.CrateFavor("Sealed Artisan Crate", 1) == nil,
+ok(GP.CrateFavor("Waylaid Crate: Flowering Expert Herbs", 1) == 15 and GP.CrateFavor("x", 1, { "Rewards:", "15 Merchant's Favor" }) == 15
+   and GP.CrateFavor("Waylaid Crate: Apprentice Herbs", 1) == 5 and GP.CrateFavor("Sealed Journeyman Crate", 2) == 20 and GP.CrateFavor("Sealed Artisan Crate", 1) == nil,
    "crate favor: by tier, green doubles, unknown tiers say nothing")
 calls = {}
 assert(loadfile(DIR .. "/Favor.lua"))("Haulwise", GP)
