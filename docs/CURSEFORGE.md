@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.8:** waypoints to the nearest trainer and to the vendor that sells a recipe. **New in 0.7:** a minimap button, German and French, a pick for every quest reward, *Disenchant for mats* for leveling Enchanting, and your own disenchant results in item tooltips.
+**New in 0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
 
 ---
 
@@ -39,13 +39,14 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 - epics
 - reagents your recipes use
 - upgrades for you or your alts
+- items a quest in your log needs
 - anything you mark to keep
 
 ### ⚔️ Upgrade Advisor, for you and your alts
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
 - Bind-on-Equip gear is checked for **all your characters**. At a mailbox, *Send to alts* lists it and attaches it with one click.
 - **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price and click to find it.
-- **Quest reward pick**: when a quest lets you choose, Haulwise frames the best reward in gold and says why in chat: your biggest upgrade, or else the one worth the most.
+- **Quest reward pick**: when a quest lets you choose, Haulwise marks the best reward with a gold frame and a green tick and says why in chat: a profession tool you're missing (like a Mining Pick), your biggest upgrade, or else the one worth the most.
 
 ### 🐺 Farm: the best gold per hour for *your* character
 Haulwise measures:
@@ -55,20 +56,38 @@ Haulwise measures:
 
 Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
 
+Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
+
 ### 🧵 Craft and Recipes
-- **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin and 7-day trend.
+- **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin, **how many sell per day** and 7-day trend.
 - **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, where the rest is cheapest, and what the whole batch earns.
+- **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
 - Show **one profession at a time** with the Profession button.
 
 ### 📈 Deals and Market
-- **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays).
+- **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays). Never more than sells in about three days, and nothing nobody has been buying.
 - **Market**: 7-day trends for what you farm, craft and use, with a tip for each: *Sell now*, *Hold* or *Stock up*. After two weeks of scans it also shows which weekday your auction house is cheapest.
+- **Your sales**: open a mailbox and Haulwise logs every auction sale from the invoices: what you earned today, this week and this month, per item, after the AH cut.
+- **How fast it sells**: from your scans, Haulwise sees which cheap listings disappear. Tooltips, the sell helper and the Craft tab show *sells ~12 a day*.
 
 ### 🏷️ Selling help at the auction house
-When you put an item up for sale, Haulwise suggests a price from the live listings and your scans, and warns you when a vendor would pay more. **Use price** fills it in; you press Post.
+When you put an item up for sale, Haulwise suggests a price that undercuts the real market (not the troll listings), says how fast it sells, and warns you when a vendor would pay more. **Use price** fills it in; you press Post.
+
+**Your auctions**: a panel beside the auction house lists what you have up for sale, undercut ones first. Click one to check the newest price; undercut ones get a Cancel button so you can post them again.
+
+### 🔎 What is this item for?
+Item tooltips show:
+- the **quests that need it**, yours in the log first (done and other-faction quests are left out), and who to bring quest items to
+- the **crafts that use it**: your recipes, your alts', and recipes other players shared
+- **who sells it** and **which mobs drop it**
+
+### 📦 Supply crates and writs
+- **Waylaid Crates**: the tooltip prices every way to fill the crate (the materials you have at what they'd sell for, the rest at the cheapest place to buy), marks the cheapest, and says what one Merchant's Favor costs.
+- **Sealed crates** say how much Merchant's Favor they give.
+- **Craftsman's Writs** say what the ordered item costs to buy or to craft yourself.
 
 ### 📦 Holdings and mail
 - What every character owns and where: bags, bank, equipped, mail and auctions, with values.
@@ -77,10 +96,13 @@ When you put an item up for sale, Haulwise suggests a price from the live listin
 ### 🌍 Community data
 Every release includes data pooled from everyone who shares:
 - drop rates
-- trainer and vendor recipes
+- the recipes players know, and what they're made from
+- trainer and vendor recipes, and where trainers and vendors stand
 - vendor reagent prices
 
-**Sharing is manual, and that's on purpose.** WoW addons can't reach the internet, so nothing ever leaves your PC by itself. To share, press **Share data** in the Haulwise window, press Ctrl+C, and paste it on the Haulwise website (link at the bottom). It takes about 10 seconds. The window shows how many kills you haven't shared yet, and a chat reminder comes every 100 (you can turn it off).
+Zones are shared by map number, so a German, French and English player's Stranglethorn Vale add up. Your own upload is taken out of the pool again, so your kills are never counted twice.
+
+**Sharing is manual, and that's on purpose.** WoW addons can't reach the internet, so nothing ever leaves your PC by itself. To share, press **Share data** in the Haulwise window, press Ctrl+C, and paste it on the Haulwise website (link at the bottom). It takes about 10 seconds, and the site shares it as soon as you paste. The button lights up when you have 100+ kills to share, and the bottom line shows what other players have shared about the zone you're in.
 
 Shared data is anonymous, each player's weight is capped, and outliers are filtered out.
 
@@ -114,6 +136,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 | `/haul room` | make room in your bags |
 | `/haul settings` | settings |
 | `/haul guide` | the guide |
+| `/haul start` | the start card again |
 | `/haul export` / `import` | share your data / load community data |
 | `/haul reset` | reset window positions and sizes |
 | `/haul feedback` | report a bug or suggest an idea |
@@ -141,6 +164,6 @@ Found a bug or have an idea? Leave a comment here, or open an issue on GitHub (l
 - Source code and issues: https://github.com/KaayceeGamer/haulwise
 
 ### Credits
-Trainer and recipe vendor positions in **Haulwise Data** (included in the download as its own addon folder) come from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), licensed under GPLv3. Thanks to the Questie team and everyone who contributed. Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie team.
+Trainer and recipe vendor positions, the quests that need each item, and where items drop and who sells them in **Haulwise Data** (included in the download as its own addon folder) come from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), licensed under GPLv3. Thanks to the Questie team and everyone who contributed. Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie team.
 
 *Haulwise is a fan project and isn't affiliated with Blizzard Entertainment.*
