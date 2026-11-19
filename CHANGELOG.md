@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.0
+- **Zones in every language**: kills are recorded under the zone's map number instead of its name, so a German and an English player's Stranglethorn Vale are the same zone in the shared data. Names show in your own language; older data moves over by itself.
+- **Your kills aren't counted twice**: the community data includes what you shared yourself. Haulwise now takes your own upload out of it, so the numbers aren't skewed towards your luck.
+- **How sure is it**: farm tooltips say what a number is based on ("34 kills: 12 yours, 22 from other players") and how sure it is, from rough guess to solid. Gold/h with under 10 kills gets a ~.
+- **What sharing gives**: the bottom line shows what other players have shared about the zone you're in, and the Share window shows what you bring and what the pool already has.
+- **Easier sharing on the website**: it remembers the consent tick, shares as soon as you paste, and shows a clear thank-you with a button for the newest community data.
+- **Easier start**: point at a tab to see what it's for. New players get a Start here card with three steps (/haul start shows it again).
+- **Market**: says how many days of scans are left before trends show.
+- **Waylaid Crates**: the Favor line now shows for crates like "Flowering Expert Herbs".
+- **Your sales**: a sale is no longer logged twice when the game fills in the count late, and identical sales are each counted.
+
 ## 0.10.0
 - **Your auctions**: at the auction house a panel lists what you have up for sale, undercut ones first, with the cheaper price. Click one to search for the newest listings; undercut ones get a Cancel button so you can post them again at the sell helper's price.
 - **Supply crates and writs**: a Waylaid Crate's tooltip prices every way to fill it (the materials you have at what they'd sell for, the rest at the cheapest place to buy), marks the cheapest, and says what one Merchant's Favor costs. Sealed crates say how much Favor they give, and Craftsman's Writs what the ordered item costs to buy or craft. English item names only for now.

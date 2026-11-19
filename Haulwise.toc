@@ -23,6 +23,7 @@ Prices.lua
 Values.lua
 Disenchant.lua
 Model.lua
+Zones.lua
 Crafting.lua
 Market.lua
 Sources.lua

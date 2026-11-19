@@ -596,6 +596,29 @@ do
   GP.mineInPool = nil
 end
 
+-- Zones by map number, names in your own language ----------------------------------------------
+do
+  local savedMap = C_Map
+  C_Map = {
+    GetBestMapForUnit = function() return 9001 end,
+    GetMapInfo = function(id)
+      return ({ [1434] = { name = "Stranglethorn Vale", mapType = 3, parentMapID = 13 },
+                [9001] = { name = "Booty Bay Cellar", mapType = 5, parentMapID = 1434 },
+                [13] = { name = "Eastern Kingdoms", mapType = 2 } })[id]
+    end,
+  }
+  local realZone = GetRealZoneText
+  GetRealZoneText = function() return "Stranglethorn Vale" end
+  ok(GP.ZoneKey() == "#1434", "kills are recorded under the zone's map number, not a cave inside it")
+  ok(GP.ZoneName("#1434") == "Stranglethorn Vale" and GP.ZoneName("Schlingendorntal") == "Schlingendorntal", "zone numbers show as names")
+  local mobs = { [1] = { zones = { ["Stranglethorn Vale"] = 3, ["#1434"] = 2, ["Schlingendorntal"] = 4 } } }
+  GP:NormalizeZones(mobs)
+  ok(mobs[1].zones["#1434"] == 5 and mobs[1].zones["Stranglethorn Vale"] == nil and mobs[1].zones["Schlingendorntal"] == 4,
+     "names your client knows move to the number; other languages stay")
+  ok(GP:CurrentZone() == "#1434", "the zone you're in is a number too")
+  C_Map, GetRealZoneText = savedMap, realZone
+end
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

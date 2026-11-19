@@ -241,9 +241,10 @@ function GP:CommunityInZone(zone)
     return mobs, kills
 end
 
+-- The zone you're in, as the key kills are recorded under ("#1434", see Zones.lua).
 function GP:CurrentZone()
-    local z = GP.Safe and GP.Safe(GetRealZoneText and GetRealZoneText()) or (GetRealZoneText and GetRealZoneText())
-    return (z and z ~= "") and z or nil
+    local z = GP.ZoneKey and GP.ZoneKey() or GP.Safe(GetRealZoneText and GetRealZoneText())
+    return (z and z ~= "" and z ~= "?") and z or nil
 end
 
 -- The zone the Farm tab is limited to: nil (all), the one you're in, or one you clicked.

@@ -160,6 +160,8 @@ function GP:ImportString(str)
     local ok, result = pcall(function()
         local uid, src = self:ParseExport(str)
         if uid == self.db.uid then error(L["that is your own data"]) end
+        if self.NormalizeZones then self:NormalizeZones(src.mobs) end
+        self.mineInPool = nil
         if uid == "community" then
             -- A fresher community download than the one bundled with the addon.
             if self.community and (self.community.time or 0) >= (src.time or 0) then
@@ -280,7 +282,9 @@ function GP:MySharedMobs(poolTime)
     for _, snap in ipairs(self.db.exportSnaps or {}) do
         if snap.t <= (poolTime or 0) then
             local ok, _, src = pcall(self.ParseExport, self, snap.s)
-            return ok and src and src.mobs or nil
+            if not (ok and src) then return nil end
+            if self.NormalizeZones then self:NormalizeZones(src.mobs) end
+            return src.mobs
         end
     end
 end

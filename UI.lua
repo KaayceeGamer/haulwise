@@ -231,7 +231,7 @@ TAB.farm = {
         local earner = top and (itemName(top.id) .. grey(string.format(" %d%%", share * 100))) or grey("coins")
         if top and top.craft and not top.crafted then earner = earner .. L[" |cff88ccffcraft↑|r"] end
         return {
-            name = r.name, icon = top and GP.ItemIcon(top.id) or 133784, zone = grey(r.zone), lvl = lv,
+            name = r.name, icon = top and GP.ItemIcon(top.id) or 133784, zone = grey(GP.ZoneName(r.zone)), lvl = lv,
             kills = confColor(r.kills) .. r.kills .. "|r",
             kph = r.measured and tostring(math.floor(r.kph + 0.5)) or grey("~" .. math.floor(r.kph + 0.5)),
             perKill = Coins(r.perKill), est = (r.kills < 10 and grey("~") or "") .. Coins(r.est, true),
@@ -241,9 +241,9 @@ TAB.farm = {
     hero = function(rows)
         local b = rows[1]
         local zone = GP:FarmZoneFilter()
-        if not b then return zone and (L["No mobs recorded in "] .. zone .. L[" yet."]) or nil end
+        if not b then return zone and (L["No mobs recorded in "] .. GP.ZoneName(zone) .. L[" yet."]) or nil end
         local text = string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],
-            b.name, b.zone, Coins(b.est, true), grey(L["(safe "] .. Coins(b.safe, true) .. "/h)"))
+            b.name, GP.ZoneName(b.zone), Coins(b.est, true), grey(L["(safe "] .. Coins(b.safe, true) .. "/h)"))
         if b.kills < 30 then
             local word, color = GP.Confidence(b.kills)
             text = text .. "  " .. color .. string.format(L["%s, %s"], word, plural(b.kills, "kill")) .. "|r"
@@ -264,7 +264,7 @@ TAB.farm = {
     },
     tooltip = function(t, r)
         t:AddLine(r.name, GOLD[1], GOLD[2], GOLD[3])
-        t:AddDoubleLine(L["Where"], r.zone, 0.7, 0.7, 0.7, 1, 1, 1)
+        t:AddDoubleLine(L["Where"], GP.ZoneName(r.zone), 0.7, 0.7, 0.7, 1, 1, 1)
         local word, color = GP.Confidence(r.kills)
         local others = math.max(0, r.kills - (r.own or r.kills))
         local basis = others > 0 and string.format(L["%d kills (%d yours, %d from other players)"], r.kills, r.own or 0, others)
@@ -959,7 +959,7 @@ TAB.farm_zones = {
     cells = function(r)
         local lv = r.minL and (r.minL == r.maxL and tostring(r.minL) or (r.minL .. "-" .. r.maxL)) or "?"
         return {
-            name = (r.here and "|cff5fd35f" or "|cffffffff") .. r.zone .. "|r" .. (r.here and grey(L["  (you're here)"]) or ""),
+            name = (r.here and "|cff5fd35f" or "|cffffffff") .. GP.ZoneName(r.zone) .. "|r" .. (r.here and grey(L["  (you're here)"]) or ""),
             lvl = lv, mobs = tostring(r.mobs), kills = confColor(r.kills) .. r.kills .. "|r",
             best = r.bestName, est = Coins(r.est, true), safe = grey(Coins(r.safe, true)),
         }
@@ -973,7 +973,7 @@ TAB.farm_zones = {
         local key = S().sortBy == "est" and "est" or "safe"
         local tail = (here and here ~= b) and grey(string.format(L["   ·   here in %s: %s/h"], here.zone, Coins(here[key], true))) or ""
         local fmt = key == "safe" and L["Best zone:  |cffffffff%s|r   %s/h safe on %s%s"] or L["Best zone:  |cffffffff%s|r   %s/h on %s%s"]
-        return string.format(fmt, b.zone, Coins(b[key], true), b.bestName, tail)
+        return string.format(fmt, GP.ZoneName(b.zone), Coins(b[key], true), b.bestName, tail)
     end,
     empty = L["No kills recorded yet.\n\nGo farm and loot what you kill. Zones are ranked by the best gold per hour you can make there."],
     click = function(r)
@@ -983,7 +983,7 @@ TAB.farm_zones = {
         GP:RefreshUI()
     end,
     tooltip = function(t, r)
-        t:AddLine(r.zone, GOLD[1], GOLD[2], GOLD[3])
+        t:AddLine(GP.ZoneName(r.zone), GOLD[1], GOLD[2], GOLD[3])
         for i, m in ipairs(r.list) do
             if i > 8 then break end
             t:AddDoubleLine(m.name, Coins(m.est, true) .. "/h", 1, 1, 1, 1, 1, 1)
@@ -1004,7 +1004,7 @@ local function nm(id) return ((GP.ItemInfo(id)) or ""):lower() end
 local function topEarner(r) return r.lines[1] and nm(r.lines[1].id) or "" end
 
 TAB.farm.sort = {
-    name = function(r) return r.name:lower() end, zone = function(r) return r.zone:lower() end,
+    name = function(r) return r.name:lower() end, zone = function(r) return GP.ZoneName(r.zone):lower() end,
     lvl = function(r) return r.minL end, kills = function(r) return r.kills end, kph = function(r) return r.kph end,
     perKill = function(r) return r.perKill end, est = function(r) return r.est end, safe = function(r) return r.safe end,
     top = topEarner,
@@ -1030,7 +1030,7 @@ TAB.craft_skill.sort = {
     back = function(r) return r.back end, point = function(r) return r.perPoint end,
 }
 TAB.farm_zones.sort = {
-    name = function(r) return r.zone:lower() end, lvl = function(r) return r.minL end, mobs = function(r) return r.mobs end,
+    name = function(r) return GP.ZoneName(r.zone):lower() end, lvl = function(r) return r.minL end, mobs = function(r) return r.mobs end,
     kills = function(r) return r.kills end, best = function(r) return r.bestName:lower() end,
     est = function(r) return r.est end, safe = function(r) return r.safe end,
 }
@@ -1377,7 +1377,7 @@ local function build()
     -- Start here: three steps for a new player, over the list until they press Got it.
     f.start = CreateFrame("Frame", nil, f, "BackdropTemplate")
     f.start:SetPoint("TOP", 0, -190)
-    f.start:SetSize(620, 250)
+    f.start:SetSize(620, 300)
     f.start:SetBackdrop(FLAT)
     f.start:SetBackdropColor(0.07, 0.075, 0.09, 0.98)
     f.start:SetBackdropBorderColor(0.5, 0.4, 0.18, 1)
@@ -1385,11 +1385,12 @@ local function build()
     f.start:EnableMouse(true)
     local st = f.start:CreateFontString(nil, "OVERLAY", "HaulwiseFontLarge")
     st:SetPoint("TOPLEFT", 20, -18)
-    st:SetText(L["Start here: three steps and Haulwise knows your gold"])
+    st:SetText(L["Start here: four steps and Haulwise knows your gold"])
     local steps = {
         { L["1.  Scan the auction house"], L["Open the AH and press Scan AH (bottom right). Now every item has a price."] },
-        { L["2.  Look in Bags"], L["See what everything you carry is worth, and the best move for each item: sell, auction, disenchant or keep."] },
-        { L["3.  Go farm"], L["Kill and loot as usual. Farm ranks mobs by real gold per hour, and Share data makes everyone's numbers better."] },
+        { L["2.  Open your professions"], L["Open each profession window once, so Craft knows your recipes. Log in on your alts once too: Gear and Holdings then cover them."] },
+        { L["3.  Look in Bags"], L["See what everything you carry is worth, and the best move for each item: sell, auction, disenchant or keep."] },
+        { L["4.  Go farm"], L["Kill and loot as usual. Farm ranks mobs by real gold per hour, and Share data makes everyone's numbers better."] },
     }
     local y = -52
     for _, step in ipairs(steps) do
@@ -1764,7 +1765,7 @@ function GP:RefreshUI()
     local here = self:CurrentZone()
     if here and S().useShared then
         local zm, zk = self:CommunityInZone(here)
-        if zm > 0 then line = line .. string.format(L["  ·  in %s: |cffffffff%s|r from others"], here, string.format(L["%s, %s"], plural(zm, "mob"), plural(zk, "kill"))) end
+        if zm > 0 then line = line .. string.format(L["  ·  in %s: |cffffffff%s|r from others"], GP.ZoneName(here), string.format(L["%s, %s"], plural(zm, "mob"), plural(zk, "kill"))) end
     end
     local unshared = self:UnsharedKills()
     if unshared > 0 then line = line .. string.format(L["  ·  |cffffd040%d of your kills not shared yet|r"], unshared) end

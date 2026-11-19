@@ -57,7 +57,7 @@ end
 local function addKill(guid, npc, when)
     local m = GP:Mob(npc)
     m.kills = m.kills + 1
-    local z = zoneName()
+    local z = GP.ZoneKey and GP.ZoneKey() or zoneName()
     m.zones[z] = (m.zones[z] or 0) + 1
     -- Kill speed: time between kills of the same mob, ignoring breaks over 3 minutes.
     local t = time()
