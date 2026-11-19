@@ -88,6 +88,8 @@ function GP:ProtectReason(bag, slot, it, info)
     if info.classID == CLASS_PROJECTILE or info.classID == CLASS_QUIVER then return "ammo" end
     if info.classID == CLASS_CONTAINER then return "bag" end
     if isQuest(bag, slot, info) then return "quest" end
+    local forQuest = self.QuestKeepReason and self:QuestKeepReason(it.itemID)
+    if forQuest then return forQuest end
     if CRAFTING[info.classID or -1] then return CRAFTING[info.classID] end
     if CLASS_REAGENTS[it.itemID] or (info.classID == 15 and info.subclassID == 1) then return L["class reagent"] end
     if GP.DE_MATS and GP.DE_MATS[it.itemID] then return L["crafting material"] end

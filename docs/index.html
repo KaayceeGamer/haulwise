@@ -172,7 +172,7 @@
       </ol>
       <textarea id="data" placeholder="Paste your export here. It starts with CF2," spellcheck="false" aria-label="Your Haulwise export"></textarea>
       <label class="consent"><input type="checkbox" id="consent">
-        <span>Share my kills, loot, the recipes and vendor prices I've seen, and where the trainers and vendors I opened stand, anonymously. They're pooled with everyone else's and published as community data.</span></label>
+        <span>Share my kills, loot, the recipes I know and the ones I've seen with their prices, and where the trainers and vendors I opened stand, anonymously. They're pooled with everyone else's and published as community data.</span></label>
       <button id="send">Share my data</button>
       <div class="msg" id="msg" role="status"></div>
       <div class="thanks" id="thanks" hidden>
@@ -222,7 +222,7 @@
         <dt>Only what you paste</dt>
         <dd>The addon can't reach the internet. Data leaves your PC only when you paste it here.</dd>
         <dt>What's in an export</dt>
-        <dd>Kills, loot, coins, levels and zones per mob; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; where the trainers and vendors you opened stand (map and coordinates); and a random id the addon made up, so a new upload replaces your old one.</dd>
+        <dd>Kills, loot, coins, levels and zones per mob; the recipes your characters know and what they're made from; recipes you've seen at trainers and vendors with their prices; what vendors charge for reagents; where the trainers and vendors you opened stand (map and coordinates); and a random id the addon made up, so a new upload replaces your old one.</dd>
         <dt>What's kept</dt>
         <dd>Those numbers, stored under a one-way hash of the random id. Character names are thrown away. No accounts, no email, no cookies, no tracking.</dd>
         <dt>Your IP address</dt>
@@ -301,7 +301,8 @@
         $("msg").textContent = "";
         let text = `You shared ${plural(j.kills, "kill", "kills")} on ${plural(j.mobs, "mob", "mobs")}`;
         const recipes = (j.trainers || 0) + (j.vendors || 0);
-        text += recipes ? ` and ${plural(recipes, "recipe source", "recipe sources")}.` : ".";
+        text += recipes ? `, ${plural(recipes, "recipe source", "recipe sources")}` : "";
+        text += j.crafts ? ` and ${plural(j.crafts, "known recipe", "known recipes")}.` : ".";
         text += " They join everyone else's in the community data within the hour, and every player's drop rates get surer.";
         try {
           const s = await rpc("community_stats");
@@ -325,7 +326,11 @@
 
   async function copyCommunity(msgEl) {
     try {
-      const s = await rpc("community_export");
+      let s = await rpc("community_export");
+      // Trainer positions and recipes ride along, as the addon's built-in data does.
+      for (const extra of ["community_places_export", "community_crafts_export"]) {
+        try { const e = await rpc(extra); if (typeof e === "string" && e) s += ";" + e; } catch {}
+      }
       await navigator.clipboard.writeText(s);
       say(msgEl, "Copied. In game, type /haul import and paste it.", true);
     } catch {

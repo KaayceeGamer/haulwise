@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Haulwise Data
-## Notes: Where profession trainers and recipe vendors stand in WoW Forever, for Haulwise's waypoints. Data from QuestieDB (GPLv3).
+## Notes: Trainers and recipe vendors with their positions, the quests that need each item, and where items drop and who sells them, for Haulwise. Data from QuestieDB (GPLv3).
 ## Version: @project-version@
 ## Author: KaayceeGamer
 ## X-License: GPL-3.0

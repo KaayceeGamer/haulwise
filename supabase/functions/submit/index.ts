@@ -80,9 +80,18 @@ Deno.serve(async (req) => {
     });
     if (!placeErr) places = n ?? 0;
   }
+  // Recipes and their reagents (migration 005). An older database without it still takes the rest.
+  let crafts = 0;
+  if (parsed.extra.crafts.length > 0) {
+    const { data: n, error: craftErr } = await db.rpc("replace_crafts", {
+      p_uid_hash: await sha256(`${parsed.uid}|${salt}`),
+      p_crafts: parsed.extra.crafts,
+    });
+    if (!craftErr) crafts = n ?? 0;
+  }
 
   return json({
     ok: true, mobs: parsed.mobs.length, kills: parsed.kills,
-    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places,
+    trainers: parsed.extra.trainers.length, vendors: parsed.extra.vendors.length, places, crafts,
   });
 });

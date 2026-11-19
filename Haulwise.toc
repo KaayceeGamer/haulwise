@@ -43,6 +43,7 @@ HUD.lua
 Settings.lua
 Guide.lua
 Tooltip.lua
+Uses.lua
 Favor.lua
 QuestRewards.lua
 Minimap.lua

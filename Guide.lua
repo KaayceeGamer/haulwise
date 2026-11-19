@@ -71,6 +71,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and what drops it. Bags keep what a quest in your log needs."],
     L["Zones are shared by map number now, so players in every language add up in the same zone."],
     L["Farm tooltips say what a number is based on and how sure it is. Point at a tab to see what it's for."],
     L["At the auction house: Your auctions shows which of yours are undercut, with a Cancel button to post them again at the right price."],

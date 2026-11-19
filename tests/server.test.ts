@@ -136,5 +136,26 @@ let blockedP = false;
 try { await db.query("select replace_places('x','[]'::jsonb)"); } catch { blockedP = true; }
 check(blockedP, "anon cannot call replace_places");
 await db.exec("reset role");
+
+// Recipes and reagents (migration 005).
+const m5 = readFileSync(new URL("../supabase/migrations/005_crafts.sql", import.meta.url), "utf8")
+  .split("\n").filter((l) => !l.startsWith("select cron.") && !l.startsWith("    $$select")).join("\n");
+await db.exec(m5);
+const withCrafts = "CF2,abcdef0123456789,Me,1763340000,1.60.1;C,4305,1,Tailoring,4306:4;C,2996,1,Tailoring,2589:2;" +
+  "C,9999,1,Tailoring,;C,abc,1,Tailoring,1:1";
+const pc = parseExport(withCrafts);
+check(pc.extra.crafts.length === 2 && pc.extra.crafts[0].out === 4305 && pc.extra.crafts[0].reagents[0][1] === 4,
+  "crafts are parsed; bad ones are skipped");
+await db.query("select replace_crafts($1, $2::jsonb)", ["h_c1", JSON.stringify(pc.extra.crafts)]);
+await db.query("select replace_crafts($1, $2::jsonb)", ["h_c2", JSON.stringify([pc.extra.crafts[0]])]);
+await db.exec("select refresh_crafts()");
+const ce = (await db.query("select community_crafts_export() as s")).rows[0] as { s: string };
+console.log("     crafts: " + ce.s);
+check(ce.s === "C,2996,1,Tailoring,2589:2;C,4305,1,Tailoring,4306:4", "craft pool export");
+await db.exec("set role anon");
+let blockedC = false;
+try { await db.query("select replace_crafts('x','[]'::jsonb)"); } catch { blockedC = true; }
+check(blockedC, "anon cannot call replace_crafts");
+await db.exec("reset role");
 if (failures) throw new Error(failures + " failures");
 console.log("SERVER TESTS PASSED");

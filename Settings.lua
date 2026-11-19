@@ -194,7 +194,9 @@ local function build()
     add(check(panel, L["Price help when selling"], 18, y, "sellHelper", L["Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."]))
     y = y - 22
     add(check(panel, L["Disenchant in tooltips"], 18, y, "tooltipDisenchant", L["Item tooltips show what gear disenchants into, at your AH prices, and what your own disenchants gave."]))
-    add(check(panel, L["Mats to crafters"], 200, y + 22, "matsToCrafters", L["At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."]))
+    y = y - 22
+    add(check(panel, L["Used for in tooltips"], 18, y, "tooltipUses", L["Item tooltips show the quests and crafts that use an item, who sells it and what drops it."]))
+    add(check(panel, L["Mats to crafters"], 200, y + 44, "matsToCrafters", L["At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."]))
 
     -- Four buttons of the same width across the bottom, so nothing overlaps.
     local BW, GAP = 86, 6

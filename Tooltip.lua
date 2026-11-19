@@ -9,6 +9,7 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     local id = info and GP.Safe(info.id)
     if not id then return end
     local sources = GP:SourcesFor(id, 3)
+    GP.lastTipSources = { id = id, n = #sources } -- so Uses.lua needn't work it out again
     local value, ah = GP:ItemValue(id)
     if #sources == 0 and not ah then return end
     tooltip:AddLine(" ")

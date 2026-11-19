@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0
+- **What an item is for**: item tooltips show the quests that need it (yours in the log first, done and other-faction quests left out), the crafts that use it (your recipes, your alts', and recipes other players shared), who sells it and which mobs drop it. Turn it off in Settings → Used for in tooltips.
+- **Bags keep quest items**: an item a quest in your log needs is never offered to sell or throw away.
+- **Shared recipes**: Share data now includes the recipes your characters know and their reagents, so everyone's tooltips know what an item is used for, even recipes none of their characters have.
+- **Your sales**: an invoice that says 0 sold counts as one.
+- **Craft queue**: sits a little away from the profession window, clear of other addons' side buttons.
+
 ## 0.11.0
 - **Zones in every language**: kills are recorded under the zone's map number instead of its name, so a German and an English player's Stranglethorn Vale are the same zone in the shared data. Names show in your own language; older data moves over by itself.
 - **Your kills aren't counted twice**: the community data includes what you shared yourself. Haulwise now takes your own upload out of it, so the numbers aren't skewed towards your luck.

@@ -619,6 +619,61 @@ do
   C_Map, GetRealZoneText = savedMap, realZone
 end
 
+-- What an item is for: quests, crafts, who sells it, what drops it ---------------------------------
+do
+  local savedHD = HaulwiseData
+  HaulwiseData = {
+    quests = { [100] = { "Wolf Pelts", 30, 25, "A" }, [101] = { "Horde Pelts", 30, 25, "H" }, [102] = { "Old Pelts", 5, 1, "" },
+               [103] = { "Done Pelts", 32, 25, "" } },
+    questItems = { [5555] = { 100, 101, 102, 103 } },
+    sources = { [5555] = { { 900 }, { 901, 902 }, 0 }, [6666] = { {}, {}, 40 } },
+    sourceNpcs = { [900] = { "Pelt Trader", 0 }, [901] = { "Grey Wolf", 0 }, [902] = { "Black Wolf", 0 } },
+  }
+  local savedLevel, savedFaction = UnitLevel, UnitFactionGroup
+  UnitLevel = function() return 30 end
+  UnitFactionGroup = function() return "Alliance" end
+  C_QuestLog = C_QuestLog or {}
+  local savedLog = { C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetInfo, C_QuestLog.IsQuestFlaggedCompleted }
+  C_QuestLog.GetNumQuestLogEntries = function() return 1 end
+  C_QuestLog.GetInfo = function() return { questID = 100 } end
+  C_QuestLog.IsQuestFlaggedCompleted = function(q) return q == 103 end
+  GP.ForgetQuestLog()
+  local qs = GP:QuestsNeeding(5555)
+  ok(#qs == 1 and qs[1].id == 100 and qs[1].active, "quests: yours in the log, not the other faction's, not done or far below you")
+  ok(GP:QuestKeepReason(5555) ~= nil and GP:QuestKeepReason(4306) == nil, "bags keep what a quest in your log needs")
+  local src = GP:ItemSourcesFromData(5555)
+  ok(src and src.vendors[1].name == "Pelt Trader" and #src.drops == 2, "who sells it and what drops it")
+  ok(GP:ItemSourcesFromData(6666).world == 40, "world drops just say how many mobs")
+  -- Crafts: your recipes and shared ones.
+  GP:Char().recipes = { r555 = { n = "Bolt of Silk", prof = "Tailoring", out = 4305, oq = 1, r = "4306:4", learned = true } }
+  local savedCommunity = GP.community
+  GP.community = { mobs = {}, crafts = { [7777] = { out = 7777, qty = 1, prof = "Tailoring", reagents = { { 4306, 2 } } } } }
+  GP.ForgetUses()
+  local cs = GP:CraftsUsing(4306)
+  ok(#cs == 2 and cs[1].who == "you" and cs[2].who == nil, "crafts that use it: yours first, then shared recipes")
+  -- The export carries your recipes, and an import reads them back.
+  local ex = GP:ExportString()
+  ok(ex:find("C,4305,1,Tailoring,4306:4", 1, true) ~= nil, "export shares the recipes you know")
+  local _, parsed = GP:ParseExport(ex .. ";C,8888,1,Tailoring,bad;C,8889,2,Cooking,2672:1")
+  ok(parsed.crafts[4305] and parsed.crafts[8889] and parsed.crafts[8888] == nil, "import reads recipes and skips broken ones")
+  -- The tooltip lines.
+  calls = {}
+  assert(loadfile(DIR .. "/Uses.lua"))("Haulwise", GP)
+  lines = {}
+  for _, fn in ipairs(calls) do fn(tip, { id = 5555 }) end
+  local questLine, soldLine
+  for _, l in ipairs(lines) do
+    if l:find("Quest: Wolf Pelts", 1, true) then questLine = l end
+    if l:find("Sold by Pelt Trader", 1, true) then soldLine = l end
+  end
+  ok(questLine and questLine:find("in your log", 1, true), "tooltip: the quest, marked in your log")
+  ok(soldLine ~= nil, "tooltip: who sells it")
+  HaulwiseData, GP.community = savedHD, savedCommunity
+  UnitLevel, UnitFactionGroup = savedLevel, savedFaction
+  C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetInfo, C_QuestLog.IsQuestFlaggedCompleted = savedLog[1], savedLog[2], savedLog[3]
+  GP.ForgetQuestLog(); GP.ForgetUses()
+end
+
 -- Saved data is packed on logout and unpacked on login ------------------------------------------
 GP.db.prices[999001] = { p = 1234, q = 7, m = 1500, t = 1700000000, k = 9, sk = 2, s = 50, c = "1234:3/1300.5:4", n = "Pattern: Odd; Name" }
 ok(GP.PackPrice({ c = "2000.00:1/12.50:3" }):find("2000:1/12.5:3", 1, true), "old cheapest-listing text is shortened when saved")

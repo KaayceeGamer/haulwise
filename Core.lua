@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.11.0"
+GP.VERSION = "0.12.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -73,6 +73,7 @@ local DEFAULTS = {
         ahUpgradeMax = 0,
         sellHelper = true,
         tooltipDisenchant = true,
+        tooltipUses = true,       -- item tooltips: quests and crafts that use it, who sells it, what drops it
         recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet

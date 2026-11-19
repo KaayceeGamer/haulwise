@@ -58,6 +58,21 @@ function GP:ExportString()
     for key, id in pairs(self.db.recipeItems or {}) do
         if okText(key) then out[#out + 1] = table.concat({ "R", clean(key), id }, ",") end
     end
+    -- Recipes your characters know (C): what they make, how many, and from what. Lets everyone's
+    -- tooltips say what an item is used for.
+    local crafted = {}
+    for _, c in pairs(self.db.chars or {}) do
+        for _, rec in pairs(c.recipes or {}) do
+            if rec.learned and rec.out and not crafted[rec.out] and rec.r and rec.r ~= "" and okText(rec.prof) then
+                local parts = {}
+                for _, r in ipairs(GP.UnpackReagents(rec.r)) do parts[#parts + 1] = string.format("%d:%d", r[1], r[2]) end
+                if #parts > 0 and #parts <= 12 then
+                    crafted[rec.out] = true
+                    out[#out + 1] = string.format("C,%d,%d,%s,%s", rec.out, math.max(1, math.floor(rec.oq or 1)), clean(rec.prof), table.concat(parts, "/"))
+                end
+            end
+        end
+    end
     -- Where trainers and vendors you opened stand (P), so everyone's waypoints get better.
     for id, p in pairs(self.db.places or {}) do
         if okText(p.n) and p.m and p.x and p.y then
@@ -108,7 +123,7 @@ function GP:ParseExport(str)
     if (head[1] ~= "CF1" and head[1] ~= "CF2") or not head[2] then error(L["not a Haulwise string"]) end
     local uid, label, when = head[2], head[3], num(head[4], 4e9)
     local mobs, n = {}, 0
-    local sources, vendorBuy, recipeItems, places = {}, {}, {}, {}
+    local sources, vendorBuy, recipeItems, places, crafts = {}, {}, {}, {}, {}
     local function src(key)
         local e = sources[key]
         if not e then e = { trainer = {}, vendor = {} }; sources[key] = e end
@@ -132,6 +147,15 @@ function GP:ParseExport(str)
             if x and y and x >= 0 and x <= 100 and y >= 0 and y <= 100 then
                 places[num(f[2], 1e7)] = { n = f[3], k = f[4], p = f[5] ~= "" and f[5] or nil, f = f[6], m = num(f[7], 1e5), x = x, y = y }
             end
+        elseif kind == "C" then
+            -- One odd recipe is skipped, not the whole string.
+            pcall(function()
+                local out, reagents = num(f[2], 1e7), {}
+                for id, n in (f[5] or ""):gmatch("(%d+):(%d+)") do reagents[#reagents + 1] = { num(id, 1e7), num(n, 200) } end
+                if out > 0 and #reagents > 0 then
+                    crafts[out] = { out = out, qty = math.max(1, num(f[3], 100)), prof = f[4] ~= "" and f[4] or nil, reagents = reagents }
+                end
+            end)
         elseif kind and kind:match("^%u$") then
             -- A record type from a newer Haulwise: skip it.
         else
@@ -152,7 +176,7 @@ function GP:ParseExport(str)
         end
     end
     return uid, { label = label, time = when, build = head[5], contributors = tonumber(head[6]), mobs = mobs, n = n,
-                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems, places = places }
+                  sources = sources, vendorBuy = vendorBuy, recipeItems = recipeItems, places = places, crafts = crafts }
 end
 
 -- Returns ok, message.
@@ -188,6 +212,18 @@ function GP:LoadBundledCommunity()
     if saved and (saved.time or 0) >= (src.time or 0) then return end
     self.db.shared.community = nil
     self.community = src
+end
+
+-- Recipes other players shared (community data and friends' imports), by the item they make.
+function GP:SharedCrafts()
+    local out = {}
+    for _, src in pairs(self.db.shared or {}) do
+        for id, c in pairs(src.crafts or {}) do out[id] = out[id] or c end
+    end
+    if self.community then
+        for id, c in pairs(self.community.crafts or {}) do out[id] = out[id] or c end
+    end
+    return out
 end
 
 function GP:CommunityInfo()
@@ -258,7 +294,7 @@ function GP:MaybeNudgeShare()
     if new >= 100 and own - (self.db.shareNudgedAt or 0) >= 100 then
         self.db.shareNudgedAt = own
         self.Print(string.format(L["You have |cffffffff%d kills|r that aren't shared yet. Press |cffffd040Share data|r in the Haulwise window (or type /haul export) and paste it on |cffffffff%s|r. It takes 10 seconds and gives everyone better drop rates, prices and NPC spots."], new, GP.SITE_URL)
-            .. " " .. L["|cff8f8b80Only game stats go along (kills, loot, prices you've seen, where NPCs stand), no names. Nothing leaves your PC unless you paste it. Turn this reminder off in /haul settings.|r"])
+            .. " " .. L["|cff8f8b80Only game stats go along (kills, loot, prices you've seen, recipes you know, where NPCs stand), no names. Nothing leaves your PC unless you paste it. Turn this reminder off in /haul settings.|r"])
     end
 end
 
