@@ -154,6 +154,7 @@ local function build(parent)
     panel.note:SetPoint("BOTTOMLEFT", 10, 8)
     panel.note:SetPoint("RIGHT", -10, 0)
     panel.note:SetJustifyH("LEFT")
+    panel.note:SetSpacing(2)
     panel:Hide()
 end
 
@@ -190,9 +191,11 @@ function GP:UpdateCraftQueue()
     end
     panel.note:SetText(#queued > MAX_ROWS and string.format(L["and %d more in the shopping list"], #queued - MAX_ROWS)
         or L["Click a craft to pick it. Finished crafts come off the queue."])
-    panel:SetHeight(-y + 30)
+    -- Room for the note under the rows, which can wrap to two lines.
+    panel:SetHeight(-y + 44)
+    -- A little away from the window: other addons put side buttons along its edge.
     panel:ClearAllPoints()
-    panel:SetPoint("TOPLEFT", frame, "TOPRIGHT", 4, -40)
+    panel:SetPoint("TOPLEFT", frame, "TOPRIGHT", 60, -40)
     panel:Show()
 end
 

@@ -169,7 +169,7 @@ function GP:UpdateMyAuctions()
     local more = #list - MAX_ROWS
     panel.note:SetText(more > 0 and string.format(L["and %d more on the Auctions tab"], more)
         or L["Click an auction to check the newest price."])
-    panel:SetHeight(-y + 30)
+    panel:SetHeight(-y + 44)
     panel:ClearAllPoints()
     panel:SetPoint("BOTTOMLEFT", AuctionHouseFrame, "BOTTOMRIGHT", 4, 0)
     panel:Show()
