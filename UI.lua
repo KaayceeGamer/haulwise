@@ -548,7 +548,16 @@ TAB.market = {
         return grey(string.format(L["Weekday pattern: scan on %d more days to see which day your AH is cheapest."], need or 14))
     end,
     toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
-    empty = L["No trends yet.\n\nTrends need 4+ days of AH scans. Scan once a day (ideally around the same time) and this tab shows what's rising, what's falling, and when to sell what you farm and craft."],
+    -- How far along the scans are: days counted, how many to go, and whether today is done.
+    empty = function()
+        local days = 0
+        for _ in pairs(GP.db.scanDays or {}) do days = days + 1 end
+        local left = math.max(1, 4 - days)
+        local today = GP.db.scanDays and GP.db.scanDays[GP.Day()]
+        local next = today and L["Today's scan is counted: scan again tomorrow."] or L["Scan today to count another day."]
+        return string.format(L["No trends yet: |cffffffff%d of 4|r days of scans.\n\nScan on %s more and this tab shows what's rising, what's falling, and when to sell what you farm and craft. %s"],
+            math.min(days, 4), plural(left, "day"), next)
+    end,
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)
         t:SetItemByID(r.id)
@@ -1707,7 +1716,8 @@ function GP:RefreshUI()
     if self.scrollToTop then offset, self.scrollToTop = 0, nil end
     offset = math.max(0, math.min(offset, #data - ROWS))
     layoutColumns()
-    f.empty:SetText(L[t.empty or ""])
+    local emptyText = type(t.empty) == "function" and t.empty() or L[t.empty or ""]
+    f.empty:SetText(emptyText)
     f.empty:SetShown(#data == 0)
     if #data == 0 then
         for i, h in ipairs(f.headers) do h:Hide(); f.headerBtns[i]:Hide() end
