@@ -447,6 +447,17 @@ W.inbox[1].daysLeft = W.inbox[1].daysLeft - 600 / 86400
 W.inbox[2].daysLeft = W.inbox[2].daysLeft - 600 / 86400
 added = GP:ReadSales()
 ok(added == 0, "opening the mailbox again logs nothing twice")
+-- The game fills the count in a moment later: still the same sale.
+W.inbox[1].invoice[10] = nil
+added = GP:ReadSales()
+W.inbox[1].invoice[10] = 20
+ok(added == 0, "a count that arrives late doesn't log the sale twice")
+-- Two identical sales are two sales.
+table.insert(W.inbox, { daysLeft = 28.0, invoice = { "seller", "Ruined Pelt", "Other", 500, 500, 0, 25, 0, 0, 1 } })
+added = GP:ReadSales()
+ok(added == 1, "two identical mails are two sales")
+table.remove(W.inbox)
+for i = #GP.db.sales, 1, -1 do if GP.db.sales[i].n == "Ruined Pelt" then table.remove(GP.db.sales, i); break end end
 local rows = GP:SalesRows(30)
 ok(#rows == 2 and rows[1].earned == 1900 and rows[1].count == 20, "sales tab: most earned first, with units sold")
 local todayGold = GP:SalesTotal(0)

@@ -25,12 +25,16 @@ local function idForName(name)
     return nil
 end
 
--- A key that stays the same each time you open the mailbox: the invoice plus when the mail
+-- A key that stays the same each time you open the mailbox: item, price and when the mail
 -- expires, to the hour (checked one hour either side, so a reopen across an hour mark is fine).
-local function mailKeys(name, buyer, bid, count, expiresAt)
-    local base = table.concat({ name or "", buyer or "", bid or 0, count or 1 }, "|") .. "|"
+-- Buyer and count are left out because the game sometimes fills them in a moment later. Two
+-- identical mails are told apart by their order (#1, #2...), so selling five crates at the
+-- same price logs five sales.
+local function mailKeys(name, bid, expiresAt, nth)
+    local base = (name or "") .. "|" .. (bid or 0) .. "|"
     local h = math.floor(expiresAt / 3600)
-    return base .. h, base .. (h - 1), base .. (h + 1)
+    local tail = "#" .. nth
+    return base .. h .. tail, base .. (h - 1) .. tail, base .. (h + 1) .. tail, base .. h
 end
 
 -- Reads every auction invoice in the inbox. Returns how many new sales and their gold.
@@ -39,12 +43,15 @@ function GP:ReadSales()
     local db, now, today = self.db, time(), GP.Day()
     db.sales, db.salesSeen = db.sales or {}, db.salesSeen or {}
     local added, gold = 0, 0
+    local nthOf = {}
     for i = 1, GetInboxNumItems() do
         local okH, _, _, _, _, money, _, daysLeft = pcall(GetInboxHeaderInfo, i)
         local ok, kind, name, buyer, bid, _, _, cut, _, _, count = pcall(GetInboxInvoiceInfo, i)
         if okH and ok and kind == "seller" and name and (bid or 0) > 0 then
             daysLeft = GP.Safe(daysLeft) or MAIL_DAYS
-            local k1, k2, k3 = mailKeys(name, buyer, bid, count, now + daysLeft * 86400)
+            local _, _, _, group = mailKeys(name, bid, now + daysLeft * 86400, 0)
+            nthOf[group] = (nthOf[group] or 0) + 1
+            local k1, k2, k3 = mailKeys(name, bid, now + daysLeft * 86400, nthOf[group])
             if not (db.salesSeen[k1] or db.salesSeen[k2] or db.salesSeen[k3]) then
                 db.salesSeen[k1] = today
                 local earned = bid - (cut or 0)
