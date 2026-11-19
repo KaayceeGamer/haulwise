@@ -58,7 +58,7 @@ function GP:ReadSales()
                 local age = math.max(0, math.min(MAIL_DAYS, MAIL_DAYS - daysLeft))
                 local id = idForName(name)
                 table.insert(db.sales, { t = math.floor(now - age * 86400), id = id, n = name,
-                                         c = GP.Safe(count) or 1, g = earned, ch = charShort() })
+                                         c = math.max(1, GP.Safe(count) or 1), g = earned, ch = charShort() })
                 added, gold = added + 1, gold + earned
             end
         end
@@ -78,7 +78,7 @@ end
 function GP:SalesTotal(days)
     local from, sum, n = (GP.Day() - days) * 86400, 0, 0
     for _, s in ipairs(self.db.sales or {}) do
-        if s.t >= from then sum, n = sum + s.g, n + s.c end
+        if s.t >= from then sum, n = sum + s.g, n + math.max(1, s.c or 1) end
     end
     return sum, n
 end
@@ -96,7 +96,7 @@ function GP:SalesRows(days)
                 r = { id = s.id, name = s.n, count = 0, earned = 0, sales = {}, chars = {} }
                 by[key] = r
             end
-            r.count, r.earned = r.count + s.c, r.earned + s.g
+            r.count, r.earned = r.count + math.max(1, s.c or 1), r.earned + s.g
             r.last = math.max(r.last or 0, s.t)
             r.sales[#r.sales + 1] = s
             r.chars[s.ch or "?"] = true

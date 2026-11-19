@@ -433,7 +433,7 @@ GP.db.prices[888003], GP.db.speed = nil, {}
 -- Sales log: auction invoices in the mail, each logged once ---------------------------------------
 W.inbox = {
   { daysLeft = 29.5, invoice = { "seller", "Light Feather", "Buyer", 2000, 2000, 0, 100, 0, 0, 20 } },
-  { daysLeft = 28.0, invoice = { "seller", "Ruined Pelt", "Other", 500, 500, 0, 25, 0, 0, 1 } },
+  { daysLeft = 28.0, invoice = { "seller", "Ruined Pelt", "Other", 500, 500, 0, 25, 0, 0, 0 } },
   { daysLeft = 20.0, invoice = { "buyer", "Something", "Seller", 900, 900, 0, 0, 0, 0, 1 } },
 }
 GetInboxNumItems = function() return #W.inbox end
@@ -459,7 +459,7 @@ ok(added == 1, "two identical mails are two sales")
 table.remove(W.inbox)
 for i = #GP.db.sales, 1, -1 do if GP.db.sales[i].n == "Ruined Pelt" then table.remove(GP.db.sales, i); break end end
 local rows = GP:SalesRows(30)
-ok(#rows == 2 and rows[1].earned == 1900 and rows[1].count == 20, "sales tab: most earned first, with units sold")
+ok(#rows == 2 and rows[1].earned == 1900 and rows[1].count == 20 and rows[2].count == 1, "sales tab: most earned first, with units sold (a count of 0 means one)")
 local todayGold = GP:SalesTotal(0)
 ok(GP:SalesTotal(6) == 2375, "earned in the last 7 days")
 GetInboxNumItems, GetInboxHeaderInfo, GetInboxInvoiceInfo = nil, nil, nil

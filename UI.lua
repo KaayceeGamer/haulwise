@@ -611,7 +611,7 @@ TAB.market_sales = {
         t:AddLine(L["|cffffd040Haulwise|r  your sales (after the AH cut):"])
         for i, s in ipairs(r.sales) do
             if i > 10 then t:AddLine(grey(string.format(L["  and %d more"], #r.sales - 10))); break end
-            t:AddDoubleLine("  " .. date("%a %d %b", s.t) .. grey("  " .. (s.ch or "")), s.c .. " x  " .. Coins(s.g))
+            t:AddDoubleLine("  " .. date("%a %d %b", s.t) .. grey("  " .. (s.ch or "")), math.max(1, s.c or 1) .. " x  " .. Coins(s.g))
         end
     end,
 }
