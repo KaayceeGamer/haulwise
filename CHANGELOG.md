@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.14.2
+## 0.15.0
+- **Buy from the shopping list**: every reagent you still need has a Buy button. The first click finds the cheapest listings and shows what the amount you need costs right now; the next asks you to confirm the total and buys exactly that many. Your own listings are skipped, and nothing is bought without your click in the confirm box.
+- **Dear today**: a reagent that's 30%+ over its usual price says so, in the list and in the confirm box. Wait a day if it isn't urgent.
+- **Your alts first**: when an alt has a reagent you need, the list names them ("Bankalt has 2"), so you don't buy what you already own.
+- **Vendor reagents**: the button puts an arrow on the nearest vendor that sells it.
+- **Tools and skill-ups**: when nothing on the list sells on the AH (like a Runed Truesilver Rod), it shows what the reagents cost instead of a "loss".
+
+## 0.14.2 (part of 0.15.0)
 - **Market**: the countdown to trends was wrong ("4 of 4 days" and still nothing). Trends compare the last 3 days with the week before, so they need a scan from at least 6 days ago; the tab now says how old your oldest scan is and how many days are left.
 
 ## 0.14.1

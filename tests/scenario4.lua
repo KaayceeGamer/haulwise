@@ -904,4 +904,52 @@ do
   GP.db.scanDays = saved
 end
 
+-- Shopping list: buy at the AH (search, read, confirm), alts, dear days, tools
+do
+  local savedAH, savedOpen, savedPopup, savedDialogs = C_AuctionHouse, GP.ahOpen, StaticPopup_Show, StaticPopupDialogs
+  local calls, popups = {}, {}
+  local listings = { { unitPrice = 100, quantity = 3 }, { unitPrice = 120, quantity = 2, containsOwnerItem = true, numOwnerItems = 2 }, { unitPrice = 150, quantity = 10 } }
+  C_AuctionHouse = setmetatable({
+    MakeItemKey = function(id) return { itemID = id } end,
+    SendSearchQuery = function(key) calls[#calls + 1] = "search " .. key.itemID end,
+    GetNumCommoditySearchResults = function() return #listings end,
+    GetCommoditySearchResultInfo = function(_, i) return listings[i] end,
+    StartCommoditiesPurchase = function(id, q) calls[#calls + 1] = "start " .. id .. "x" .. q end,
+    ConfirmCommoditiesPurchase = function(id, q) calls[#calls + 1] = "confirm " .. id .. "x" .. q end,
+    CancelCommoditiesPurchase = function() calls[#calls + 1] = "cancel" end,
+    GetNumItemSearchResults = function() return 2 end,
+    GetItemSearchResultInfo = function(_, i) return ({ { auctionID = 77, buyoutAmount = 5000, quantity = 1 }, { auctionID = 78, buyoutAmount = 3000, quantity = 1 } })[i] end,
+    PlaceBid = function(aid, amount) calls[#calls + 1] = "bid " .. aid .. " " .. amount end,
+  }, { __index = savedAH })
+  StaticPopup_Show = function(_, text, _, data) popups[#popups + 1] = { text = text, data = data } end
+  GP.ahOpen = true
+  local g = { id = 4306, buy = 5, usual = 80 }
+  GP:ShopBuy(g)
+  ok(calls[1] == "search 4306" and GP:ShopBuyState(4306).stage == "search", "Buy first searches")
+  fire("COMMODITY_SEARCH_RESULTS_UPDATED", 4306)
+  local b = GP:ShopBuyState(4306)
+  ok(b.stage == "ready" and b.got == 5 and b.total == 3 * 100 + 2 * 150, "reads the cheapest 5, skipping your own listings")
+  GP:ShopBuy(g)
+  ok(calls[2] == "start 4306x5", "second click starts the purchase")
+  ok(#popups == 0, "no box before the game confirms the price")
+  fire("COMMODITY_PRICE_UPDATED", 120, 600)
+  print("     " .. tostring(popups[1] and popups[1].text))
+  ok(popups[1] and popups[1].text:find("over the usual price"), "the box warns when it's dear")
+  ok(#calls == 2, "nothing is bought before you press Buy in the box")
+  popups[1].data.go()
+  ok(calls[3] == "confirm 4306x5" and GP:ShopBuyState(4306) == nil, "Buy in the box buys exactly that many")
+  -- Items that aren't commodities: the cheapest single auction
+  local rod = { id = 6338, buy = 1 }
+  GP:ShopBuy(rod)
+  fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = 6338 })
+  ok(GP:ShopBuyState(6338).auctionID == 78 and GP:ShopBuyState(6338).total == 3000, "picks the cheapest auction")
+  GP:ShopBuy(rod)
+  ok(popups[2] and not popups[2].text:find("over the usual"), "asks first")
+  popups[2].data.cancel()
+  local bid = false
+  for _, c in ipairs(calls) do if c:find("^bid") then bid = true end end
+  ok(not bid and GP:ShopBuyState(6338) == nil, "cancel buys nothing")
+  C_AuctionHouse, GP.ahOpen, StaticPopup_Show = savedAH, savedOpen, savedPopup
+end
+
 print("NEW FEATURES PASSED")
