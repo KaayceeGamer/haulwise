@@ -132,6 +132,9 @@
   dl.does dt { font: 700 20px/1.35 var(--serif); color: var(--gold-pale); }
   dl.does dd { margin: 0; }
 
+  .get-option { background: var(--deep); border: 1px solid var(--rim); border-radius: 12px; padding: 18px 20px 14px; margin: 0 0 16px; }
+  .get-option h3 { margin: 0 0 6px; font: 700 22px/1.3 var(--serif); }
+  .get-option p { margin: 0 0 12px; }
   .realm-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
   .realm-pick label { font-weight: 700; }
   .realm-pick select { font: inherit; padding: 8px 10px; border-radius: 8px; min-width: 240px; }
@@ -202,22 +205,32 @@
     </section>
 
     <section aria-labelledby="get">
-      <h2 id="get">Get the newest community data</h2>
-      <p>Haulwise brings the pool along and gets a fresh copy every day through CurseForge. To get the latest numbers right now, copy them here and type <code>/haul import</code> in game.</p>
-      <button class="quiet" id="copy">Copy community data</button>
-      <div class="msg" id="copymsg" role="status"></div>
-    </section>
+      <h2 id="get">Get the newest data into your game</h2>
+      <p>Every Haulwise update on CurseForge already brings everyone's data along, so this is optional. Do it to get today's numbers right away, or prices for your own realm.</p>
+      <ol class="steps">
+        <li>Press one of the copy buttons below.</li>
+        <li>In game, type <code>/haul import</code> (or press <b>Import</b> in the Haulwise window).</li>
+        <li>Paste with <kbd>Ctrl</kbd>+<kbd>V</kbd> and press <b>Import</b>.</li>
+      </ol>
 
-    <section aria-labelledby="prices">
-      <h2 id="prices">Prices for your realm</h2>
-      <p>Every realm has its own auction house, so prices are shared per realm and faction. Pick yours, copy, and type <code>/haul import</code> in game. Haulwise uses them for anything your own scan doesn't have, or when your scan is more than three days old. Your own scan always comes first.</p>
-      <div class="realm-pick" id="realm-pick" hidden>
-        <label for="realm">Realm and faction</label>
-        <select id="realm"></select>
-        <button class="quiet" id="copy-prices">Copy prices for this realm</button>
+      <div class="get-option">
+        <h3>Drop rates, recipes and NPC spots</h3>
+        <p>Everyone's kills and loot, the recipes people know, and where trainers and vendors stand.</p>
+        <button class="quiet" id="copy">Copy community data</button>
+        <div class="msg" id="copymsg" role="status"></div>
       </div>
-      <p class="muted" id="realm-none">No realm has shared prices yet. Scan the auction house in game and share your data: your realm is then the first.</p>
-      <div class="msg" id="pricemsg" role="status"></div>
+
+      <div class="get-option" aria-labelledby="prices">
+        <h3 id="prices">Auction prices for your realm</h3>
+        <p>Every realm has its own auction house, so pick yours. Your own scan still comes first: these fill in what it doesn't have, and stand in when it's more than three days old.</p>
+        <div class="realm-pick" id="realm-pick" hidden>
+          <label for="realm">Realm and faction</label>
+          <select id="realm"></select>
+          <button class="quiet" id="copy-prices">Copy prices for this realm</button>
+        </div>
+        <p class="muted" id="realm-none">No realm has prices yet. Scan the auction house in game and share your data above, and yours is the first.</p>
+        <div class="msg" id="pricemsg" role="status"></div>
+      </div>
     </section>
 
     <section aria-labelledby="what">

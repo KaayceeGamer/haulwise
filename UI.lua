@@ -263,7 +263,7 @@ TAB.farm = {
         { L["This zone only"], nil, L["Only show mobs from one zone: the zone you're in, or the one you clicked in By zone."],
           get = function() return S().farmZone ~= nil end,
           set = function(on) S().farmZone = on and "here" or nil; GP.scrollToTop = true end },
-        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you."] },
+        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."] },
         { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."] },
         { L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."] },
         { L["Skinning/gathering"], "includeGather", L["Count skinning, mining and herbing off corpses."], function() return GP:PlayerHasGathering() end },
@@ -1011,7 +1011,7 @@ TAB.farm_zones = {
     end,
     toggles = {
         viewToggle("farm", "zones", L["By zone"], L["Rank zones instead of single mobs: the best gold per hour in each zone."]),
-        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you."] },
+        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."] },
         { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."] },
     },
 }

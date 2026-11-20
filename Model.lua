@@ -198,8 +198,9 @@ function GP:PlayerIsRogue()
     return class == "ROGUE"
 end
 
+-- The zone with the most kills; a mob only known from the estimates has its zone at 0 kills.
 local function topZone(zones)
-    local best, n = nil, 0
+    local best, n = nil, -1
     for z, c in pairs(zones) do if c > n then best, n = z, c end end
     return best or "?"
 end
@@ -333,7 +334,10 @@ function GP:Rank(zone)
     for npc, m in pairs(self:MergedMobs()) do
         if (m.kills > 0 or m.est) and (not zone or (m.zones and m.zones[zone])) then
             local tooHigh = s.levelWindow and m.minL and m.minL > level + 2
-            if not tooHigh then rows[#rows + 1] = self:Evaluate(npc, m) end
+            -- Mobs nobody has killed, far below you: the estimate assumes ~40 kills an hour and
+            -- would put level 1 kobolds on top for a level 38. Ones with real kills still show.
+            local tooLow = s.levelWindow and m.kills == 0 and m.maxL and m.maxL < level - 10
+            if not tooHigh and not tooLow then rows[#rows + 1] = self:Evaluate(npc, m) end
         end
     end
     local key = s.sortBy == "est" and "est" or "safe"

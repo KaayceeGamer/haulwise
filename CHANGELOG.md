@@ -2,6 +2,7 @@
 
 ## 0.14.1
 - **Login message about sharing**: once a day, a few seconds after you log in, one line in chat if you have something worth sharing (25+ new kills, or an AH scan you haven't shared), with how much the others have shared so far. Turned off together with the share reminder in /haul settings.
+- **Farm**: mobs only known from the estimates show their zone instead of ?, and with *Hide mobs above my level* on, ones nobody has killed that are more than 10 levels below you are left out (no more level 1 kobolds on top for a level 38).
 - Zone names that weren't loaded yet are looked up again instead of showing as a number.
 
 ## 0.14.0

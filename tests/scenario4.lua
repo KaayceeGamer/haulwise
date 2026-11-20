@@ -847,4 +847,30 @@ do
   GP.db.sharedKills, GP.db.loginNudgeDay, GP.db.priceScanTime, GP.db.exportSnaps, GP.community = saved[1], saved[2], saved[3], saved[4], saved[5]
 end
 
+-- Farm: estimate-only mobs show their zone, and ones far below you are left out
+do
+  local savedRaw, savedEst, savedLW = HaulwiseData and HaulwiseData.estimates, GP.db.settings.useEstimates, GP.db.settings.levelWindow
+  HaulwiseData = HaulwiseData or {}
+  HaulwiseData.estimates = {
+    [990001] = { "Test Vermin", 1, 2, 1429, 2, "755:30:1", "" },
+    [990002] = { "Test Ogre", 35, 37, 1434, 500, "755:30:1", "" },
+  }
+  GP.ForgetEstimates()
+  GP.db.settings.useEstimates, GP.db.settings.levelWindow = true, true
+  local savedLevel = UnitLevel
+  UnitLevel = function() return 38 end
+  local found = {}
+  for _, r in ipairs(GP:Rank()) do found[r.npc] = r end
+  ok(found[990002] and found[990002].zone == "#1434", "an estimate-only mob has its zone, not ?")
+  ok(found[990001] == nil, "estimate-only mobs more than 10 levels below you are hidden")
+  GP.db.settings.levelWindow = false
+  found = {}
+  for _, r in ipairs(GP:Rank()) do found[r.npc] = r end
+  ok(found[990001] ~= nil, "unless the level filter is off")
+  UnitLevel = savedLevel
+  HaulwiseData.estimates = savedRaw
+  GP.ForgetEstimates()
+  GP.db.settings.useEstimates, GP.db.settings.levelWindow = savedEst, savedLW
+end
+
 print("NEW FEATURES PASSED")
