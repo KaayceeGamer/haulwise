@@ -821,4 +821,30 @@ do
   UnitFactionGroup = savedFaction
 end
 
+-- Login message about sharing: only with something to share, once a day
+do
+  local saved = { GP.db.sharedKills, GP.db.loginNudgeDay, GP.db.priceScanTime, GP.db.exportSnaps, GP.community }
+  GP.db.loginNudgeDay = nil
+  GP.db.priceScanTime = nil
+  GP.db.sharedKills = GP:OwnKills()
+  ok(GP:LoginShareMessage() == nil, "nothing new: no login message")
+  GP.db.sharedKills = GP:OwnKills() - 40
+  GP.community = { contributors = 7, mobs = { [1] = { kills = 900 }, [2] = { kills = 334 } } }
+  local msg = GP:LoginShareMessage()
+  print("     " .. tostring(msg))
+  ok(msg and msg:find("40 kills aren't shared yet") and msg:find("/haul export") and msg:find("1234 kills from 7 players"), "40 new kills: login message with the pool size")
+  ok(GP:LoginShareMessage() == nil, "only once a day")
+  GP.db.loginNudgeDay = nil
+  GP.db.sharedKills = GP:OwnKills()
+  GP.db.priceScanTime = time() - 3600
+  GP.db.exportSnaps = { { t = time() - 86400, s = "" } }
+  msg = GP:LoginShareMessage()
+  ok(msg and msg:find("latest AH prices"), "an unshared fresh scan is reason enough")
+  GP.db.loginNudgeDay = nil
+  GP.db.settings.shareReminder = false
+  ok(GP:LoginShareMessage() == nil, "off with the share reminder setting")
+  GP.db.settings.shareReminder = true
+  GP.db.sharedKills, GP.db.loginNudgeDay, GP.db.priceScanTime, GP.db.exportSnaps, GP.community = saved[1], saved[2], saved[3], saved[4], saved[5]
+end
+
 print("NEW FEATURES PASSED")

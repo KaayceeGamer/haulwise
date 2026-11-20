@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.1
+- **Login message about sharing**: once a day, a few seconds after you log in, one line in chat if you have something worth sharing (25+ new kills, or an AH scan you haven't shared), with how much the others have shared so far. Turned off together with the share reminder in /haul settings.
+- Zone names that weren't loaded yet are looked up again instead of showing as a number.
+
 ## 0.14.0
 - **Shared auction house prices**: Share data now also takes the prices from your last AH scan (if it's at most 3 days old) for the items Haulwise uses, about 15-30 KB, with the realm and faction you scanned on. On the website, pick your realm under **Prices for your realm**, copy, and `/haul import`: Haulwise then has prices for items your own scan doesn't, and when your scan is more than 3 days old. Your own scan always comes first.
 - **Prices from day one**: every release brings the median over all realms, so bags and Farm have values before your first scan. Tooltips say when a price is a rough guess from all realms, or shared for your realm.

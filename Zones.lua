@@ -51,10 +51,11 @@ function GP.ZoneName(key)
     local id = tonumber(key:match("^#(%d+)$"))
     if not id then return key end
     local n = names[id]
-    if n == nil then
+    if not n then
+        -- Only names that were found are cached: the map data may just not be loaded yet.
         local info = mapInfo(id)
-        n = info and info.name or false
-        names[id] = n
+        n = info and info.name
+        if n then names[id] = n end
     end
     return n or key
 end

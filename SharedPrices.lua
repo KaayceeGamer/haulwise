@@ -137,7 +137,7 @@ function GP:StoreRealmPrices(src)
     local mine = GP.RealmKey()
     local fac = pr.fac == "H" and L["Horde"] or L["Alliance"]
     local msg = string.format(L["Prices for %s (%s): %d items from %s."], pr.realm, fac, pr.count,
-        GP.Plural and GP.Plural(src.contributors or 1, L["player"], L["players"]) or tostring(src.contributors or 1))
+        GP.Plural and GP.Plural(src.contributors or 1, "player", "players") or tostring(src.contributors or 1))
     if mine and mine ~= key then msg = msg .. " " .. L["They're used when you play on that realm."] end
     return msg
 end

@@ -311,6 +311,47 @@ function GP:MaybeNudgeShare()
     end
 end
 
+-- At login, once a day: if you have something worth sharing (25+ new kills, or an AH scan from the
+-- last 3 days that you haven't shared), say so in one line, with how much the others have shared.
+-- Waits 10 seconds so it lands after the login chatter. Off with the share reminder setting.
+function GP:LoginShareMessage()
+    if not self.db.settings.shareReminder then return nil end
+    local today = GP.Day()
+    if self.db.loginNudgeDay == today then return nil end
+    local new = self:UnsharedKills()
+    local lastShare = self.db.exportSnaps and self.db.exportSnaps[1] and self.db.exportSnaps[1].t or 0
+    local scan = self.db.priceScanTime
+    local prices = scan and time() - scan <= 3 * 86400 and scan > lastShare
+    if new < 25 and not prices then return nil end
+    self.db.loginNudgeDay = today
+    local what
+    if new >= 25 and prices then
+        what = string.format(L["%s and your latest AH prices aren't shared yet."], GP.Plural(new, "kill", "kills"))
+    elseif new >= 25 then
+        what = string.format(L["%s aren't shared yet."], GP.Plural(new, "kill", "kills"))
+    else
+        what = L["Your latest AH prices aren't shared yet."]
+    end
+    local msg = what .. " " .. string.format(L["Type |cffffd040/haul export|r and paste it on |cffffffff%s|r: better drop rates and prices for everyone."], GP.SITE_URL)
+    local com = self:CommunityInfo()
+    if com and com.mobs and (com.contributors or 0) > 0 then
+        local kills = 0
+        for _, m in pairs(com.mobs) do kills = kills + (m.kills or 0) end
+        if kills > 0 then
+            msg = msg .. " " .. string.format(L["|cff8f8b80So far %s from %s.|r"], GP.Plural(kills, "kill", "kills"), GP.Plural(com.contributors, "player", "players"))
+        end
+    end
+    return msg
+end
+
+GP:On("PLAYER_ENTERING_WORLD", function(isLogin, isReload)
+    if not isLogin or isReload then return end
+    C_Timer.After(10, function()
+        local ok, msg = pcall(GP.LoginShareMessage, GP)
+        if ok and msg then GP.Print(msg) end
+    end)
+end)
+
 -- What you shared, kept so the community data (which includes your upload once it's pooled)
 -- doesn't count your own kills twice. Only the mob records; the last two exports.
 function GP:SnapshotExport(str)
