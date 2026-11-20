@@ -873,4 +873,21 @@ do
   GP.db.settings.useEstimates, GP.db.settings.levelWindow = savedEst, savedLW
 end
 
+-- "This zone only" says how many mobs with real kills it hides
+do
+  local all, inZone = 0, nil
+  for _, m in pairs(GP:MergedMobs()) do
+    if (m.kills or 0) > 0 then all = all + 1; if not inZone then for z in pairs(m.zones or {}) do inZone = z; break end end end
+  end
+  local hidden = GP:FarmHiddenElsewhere(inZone)
+  ok(all > 0 and hidden < all and hidden >= 0 and GP:FarmHiddenElsewhere(nil) == 0, "counts mobs with kills outside the zone (" .. hidden .. " of " .. all .. ")")
+  GP.db.settings.farmZone = "#99999"
+  GP.db.settings.tab = "farm"
+  local okUI, err = pcall(GP.RefreshUI, GP)
+  ok(okUI, "farm with a zone that has no data draws: " .. tostring(err))
+  GP.db.settings.farmZone = nil
+  local okUI2, err2 = pcall(GP.RefreshUI, GP)
+  ok(okUI2, "footer with price sources draws: " .. tostring(err2))
+end
+
 print("NEW FEATURES PASSED")

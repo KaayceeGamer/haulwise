@@ -3,6 +3,8 @@
 ## 0.14.1
 - **Login message about sharing**: once a day, a few seconds after you log in, one line in chat if you have something worth sharing (25+ new kills, or an AH scan you haven't shared), with how much the others have shared so far. Turned off together with the share reminder in /haul settings.
 - **Farm**: mobs only known from the estimates show their zone instead of ?, and with *Hide mobs above my level* on, ones nobody has killed that are more than 10 levels below you are left out (no more level 1 kobolds on top for a level 38).
+- **This zone only** says what it hides: when only estimates are left in your zone, the banner tells you how many mobs with real kills are in other zones.
+- **Where prices come from**: the bottom line says if values come from your scan (orange when it's over 3 days old), plus prices shared for your realm, or from all realms as a rough guess until you scan.
 - **Scroll bar**: drag it, or click it to jump. It widens when the mouse is on it.
 - Zone names that weren't loaded yet are looked up again instead of showing as a number.
 

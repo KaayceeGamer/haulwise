@@ -244,7 +244,13 @@ TAB.farm = {
         if not b then return zone and (L["No mobs recorded in "] .. GP.ZoneName(zone) .. L[" yet."]) or nil end
         local text = string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],
             b.name, GP.ZoneName(b.zone), Coins(b.est, true), grey(L["(safe "] .. Coins(b.safe, true) .. "/h)"))
-        if b.estOnly then
+        local hidden = zone and GP:FarmHiddenElsewhere(zone) or 0
+        local realHere = false
+        for _, r in ipairs(rows) do if not r.estOnly then realHere = true; break end end
+        if hidden > 0 and (b.estOnly or not realHere) then
+            -- Only guesses here, while real data waits elsewhere: say how to see it.
+            text = text .. "  " .. string.format(L["|cff5fd35f%s in other zones: untick This zone only|r"], plural(hidden, "mob"))
+        elseif b.estOnly then
             text = text .. "  " .. grey(L["estimate: nobody has farmed it yet"])
         elseif b.kills < 30 then
             local word, color = GP.Confidence(b.kills)
@@ -253,8 +259,11 @@ TAB.farm = {
         return text
     end,
     empty = function()
-        if GP:FarmZoneFilter() then
-            return L["Nothing farmed in this zone yet, by you or the players who share.\n\nTurn off |cffffd040This zone only|r to see the best farms everywhere."]
+        local zone = GP:FarmZoneFilter()
+        if zone then
+            local hidden = GP:FarmHiddenElsewhere(zone)
+            local more = hidden > 0 and ("\n" .. string.format(L["%s with real kills are in other zones."], plural(hidden, "mob"))) or ""
+            return L["Nothing farmed in this zone yet, by you or the players who share.\n\nTurn off |cffffd040This zone only|r to see the best farms everywhere."] .. more
         end
         return L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."]
     end,
@@ -1794,11 +1803,24 @@ function GP:RefreshUI()
 
     local nPrices = 0
     for _ in pairs(self.db.prices) do nPrices = nPrices + 1 end
+    -- Where prices come from: your scan, prices shared for your realm, Auctionator, or all realms.
     local priceText
+    local key = GP.RealmKey and GP.RealmKey()
+    local realm = key and self.db.realmPrices and self.db.realmPrices[key]
+    local realmNote = realm and realm.day and grey(string.format(L["  ·  + realm prices %s"], date("%d %b", realm.day * 86400 + 43200))) or ""
     if nPrices > 0 then
-        priceText = string.format(L["|cffffffff%d|r prices  ·  scanned %s"], nPrices, ago(time() - self.db.priceScanTime))
+        local age = time() - (self.db.priceScanTime or 0)
+        local scanned = ago(age)
+        if age > 3 * 86400 then scanned = "|cffff9944" .. scanned .. "|r" end
+        priceText = string.format(L["|cffffffff%d|r prices  ·  scanned %s"], nPrices, scanned) .. realmNote
+    elseif realm then
+        local n = 0
+        for _ in pairs(realm.items or {}) do n = n + 1 end
+        priceText = string.format(L["|cffffffff%d|r prices shared for your realm  ·  %s"], n, date("%d %b", (realm.day or 0) * 86400 + 43200))
     elseif Auctionator and Auctionator.API then
         priceText = L["Prices from Auctionator"]
+    elseif self:CommunityInfo() and self:CommunityInfo().allPrices then
+        priceText = L["|cffff9944Prices from all realms (rough): press Scan AH at the auction house for yours.|r"]
     else
         priceText = L["|cffff9944No AH prices yet: open the auction house and press Scan AH.|r"]
     end

@@ -348,6 +348,16 @@ function GP:Rank(zone)
     return rows
 end
 
+-- Mobs with real kills (yours or shared) outside `zone`: what "This zone only" hides.
+function GP:FarmHiddenElsewhere(zone)
+    if not zone then return 0 end
+    local n = 0
+    for _, m in pairs(self:MergedMobs()) do
+        if (m.kills or 0) > 0 and not (m.zones and m.zones[zone]) then n = n + 1 end
+    end
+    return n
+end
+
 -- Zones ranked by the best gold per hour you can make there.
 function GP:ZoneRows()
     local key = self.db.settings.sortBy == "est" and "est" or "safe"
