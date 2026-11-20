@@ -575,15 +575,20 @@ TAB.market = {
         return grey(string.format(L["Weekday pattern: scan on %d more days to see which day your AH is cheapest."], need or 14))
     end,
     toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
-    -- How far along the scans are: days counted, how many to go, and whether today is done.
+    -- How far along the scans are. A trend compares the last 3 days with 6-13 days ago (see
+    -- GP:Trend), so what counts is how old your oldest scan is, not how many days you scanned.
     empty = function()
-        local days = 0
-        for _ in pairs(GP.db.scanDays or {}) do days = days + 1 end
-        local left = math.max(1, 4 - days)
+        local left, oldest = GP:TrendDaysLeft()
         local today = GP.db.scanDays and GP.db.scanDays[GP.Day()]
         local next = today and L["Today's scan is counted: scan again tomorrow."] or L["Scan today to count another day."]
-        return string.format(L["No trends yet: |cffffffff%d of 4|r days of scans.\n\nScan on %s more and this tab shows what's rising, what's falling, and when to sell what you farm and craft. %s"],
-            math.min(days, 4), plural(left, "day"), next)
+        if not oldest then
+            return L["No trends yet: open the auction house and press Scan AH to start."]
+        end
+        if left > 0 then
+            return string.format(L["No trends yet: they compare the last 3 days with the week before, so they need a scan from at least 6 days ago. Your oldest scan is |cffffffff%s|r old.\n\nKeep scanning and trends show up in |cffffffff%s|r: what's rising, what's falling, and when to sell what you farm and craft. %s"],
+                plural(GP.Day() - oldest, "day"), plural(left, "day"), next)
+        end
+        return string.format(L["No trends yet: there's no scan from the last 3 days to compare with. %s"], next)
     end,
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)

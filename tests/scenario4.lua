@@ -890,4 +890,18 @@ do
   ok(okUI2, "footer with price sources draws: " .. tostring(err2))
 end
 
+-- Market: trends need a scan from 6+ days ago, however many days you scanned
+do
+  local saved = GP.db.scanDays
+  local t = GP.Day()
+  GP.db.scanDays = { [t] = true, [t - 1] = true, [t - 2] = true, [t - 3] = true }
+  local left, oldest = GP:TrendDaysLeft()
+  ok(left == 3 and oldest == t - 3, "4 days in a row: trends in 3 more days")
+  GP.db.scanDays = { [t] = true, [t - 7] = true }
+  ok(GP:TrendDaysLeft() == 0, "two scans a week apart are enough")
+  GP.db.scanDays = {}
+  ok(GP:TrendDaysLeft() == nil, "no scans: nothing to count")
+  GP.db.scanDays = saved
+end
+
 print("NEW FEATURES PASSED")

@@ -25,6 +25,16 @@ function GP:Trend(id)
     return r / p - 1
 end
 
+-- Days until the first trends can show (0 = now), and the oldest scan day counted.
+function GP:TrendDaysLeft()
+    local today, oldest = GP.Day(), nil
+    for d in pairs(self.db.scanDays or {}) do
+        if d > today - 14 and (not oldest or d < oldest) then oldest = d end
+    end
+    if not oldest then return nil, nil end
+    return math.max(0, oldest + 6 - today), oldest
+end
+
 -- Deals ------------------------------------------------------------------------------------
 
 function GP:Deals()
