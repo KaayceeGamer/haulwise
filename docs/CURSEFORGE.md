@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
+**New in 0.15:** buy straight from the shopping list: one click finds the cheapest listings, the next buys exactly what you need after you confirm the total. It warns when a reagent is dear today and names the alt who already has it. **0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
 
 ---
 
@@ -64,6 +64,9 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin, **how many sell per day** and 7-day trend.
 - **Shopping list**: click recipes to add them, and see every reagent you need, what's already in your bags and bank, where the rest is cheapest, and what the whole batch earns.
+  - **Buy** on a reagent finds the cheapest listings (skipping your own) and shows what the amount you need costs now. The next click asks you to confirm the total and buys exactly that many. Nothing is bought without your click.
+  - Says when a reagent is **dear today** (30%+ over its usual price), and which **alt** already has it, so you send it over instead of buying it.
+  - Vendor reagents get an arrow to the nearest vendor that sells them.
 - **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself. **Click one for a waypoint** to the vendor that sells it.
