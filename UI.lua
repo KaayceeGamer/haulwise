@@ -1440,6 +1440,45 @@ local function build()
         GP:DrawRows()
     end)
 
+    -- The scroll bar can be dragged, or clicked to jump. A wider, invisible grip sits over the
+    -- slim track; the thumb widens while the mouse is on it.
+    local grip = CreateFrame("Frame", nil, f)
+    grip:SetPoint("TOP", f.track, "TOP")
+    grip:SetPoint("BOTTOM", f.track, "BOTTOM")
+    grip:SetWidth(16)
+    grip:SetFrameLevel(f:GetFrameLevel() + 30)
+    grip:EnableMouse(true)
+    f.grip = grip
+    local function scrollToCursor()
+        if #data <= ROWS then return end
+        local _, cy = GetCursorPosition()
+        cy = cy / grip:GetEffectiveScale()
+        local top, h, th = f.track:GetTop(), f.track:GetHeight(), f.thumb:GetHeight()
+        if not top then return end
+        local frac = math.max(0, math.min(1, (top - cy - th / 2) / math.max(1, h - th)))
+        local new = math.floor(frac * (#data - ROWS) + 0.5)
+        if new ~= offset then offset = new; GP:DrawRows() end
+    end
+    local function stopDrag(self)
+        self:SetScript("OnUpdate", nil)
+        if not self:IsMouseOver() then f.thumb:SetWidth(3) end
+    end
+    grip:SetScript("OnMouseDown", function(self, button)
+        if button ~= "LeftButton" then return end
+        scrollToCursor()
+        self:SetScript("OnUpdate", function(s)
+            if not IsMouseButtonDown("LeftButton") then stopDrag(s) else scrollToCursor() end
+        end)
+    end)
+    grip:SetScript("OnMouseUp", stopDrag)
+    grip:SetScript("OnEnter", function() f.thumb:SetWidth(6) end)
+    grip:SetScript("OnLeave", function(self) if not self:GetScript("OnUpdate") then f.thumb:SetWidth(3) end end)
+    grip:EnableMouseWheel(true)
+    grip:SetScript("OnMouseWheel", function(_, delta)
+        offset = math.max(0, math.min(#data - ROWS, offset - delta * 3))
+        GP:DrawRows()
+    end)
+
     -- Footer strip
     local foot = tex(f, "BACKGROUND", C.header)
     foot:SetPoint("BOTTOMLEFT", 1, 1)
@@ -1587,8 +1626,10 @@ function GP:DrawRows()
         f.thumb:ClearAllPoints()
         f.thumb:SetPoint("TOP", f.track, "TOP", 0, -(h - th) * offset / (#data - ROWS))
         f.thumb:Show(); f.track:Show()
+        if f.grip then f.grip:Show() end
     else
         f.thumb:Hide(); f.track:Hide()
+        if f.grip then f.grip:Hide() end
     end
 end
 
