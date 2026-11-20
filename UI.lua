@@ -1298,6 +1298,13 @@ local function build()
     sessLabel:SetPoint("LEFT", 10, 0)
     sessLabel:SetText(L["THIS\nSESSION"])
     sessLabel:SetJustifyH("LEFT")
+    pill:EnableMouse(true)
+    pill:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GP.SessionTooltip(GameTooltip)
+        GameTooltip:Show()
+    end)
+    pill:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", 0, 0)
@@ -1595,9 +1602,29 @@ end
 function GP:DrawSession()
     if not f then return end
     local s = self.session
-    local mins = math.max(1, (time() - s.start) / 60)
-    f.sessTop:SetText(Coins(s.value / mins * 60, true) .. L[" |cffaaaaaa/ hour|r"])
-    f.sessBottom:SetText(string.format(L["%s in %d min  ·  %d kills"], Coins(s.value, true), mins, s.kills))
+    local total, perHour, mins = GP.SessionEarned()
+    f.sessTop:SetText(Coins(perHour, true) .. L[" |cffaaaaaa/ hour|r"])
+    if (s.sales or 0) > 0 then
+        f.sessBottom:SetText(string.format(L["loot %s + sales %s  ·  %d min"], Coins(s.value, true), Coins(s.sales, true), mins))
+    else
+        f.sessBottom:SetText(string.format(L["%s in %d min  ·  %d kills"], Coins(total, true), mins, s.kills))
+    end
+end
+
+-- The session box's tooltip: where this session's gold came from.
+function GP.SessionTooltip(t)
+    local s = GP.session
+    local total, perHour, mins = GP.SessionEarned()
+    t:AddLine(L["This session"], 1, 0.82, 0.25)
+    t:AddDoubleLine(L["Loot from kills (worth)"], GP.Coins(s.value or 0), 0.7, 0.7, 0.7, 1, 1, 1)
+    t:AddDoubleLine(string.format(L["AH sales collected (%d)"], s.salesN or 0), GP.Coins(s.sales or 0), 0.7, 0.7, 0.7, 1, 1, 1)
+    t:AddDoubleLine(L["Earned"], GP.Coins(total) .. "  ·  " .. GP.Coins(perHour, true) .. L["/h"], 0.7, 0.7, 0.7, 1, 0.82, 0.25)
+    if GetMoney and s.gold0 then
+        local d = GetMoney() - s.gold0
+        t:AddDoubleLine(L["Gold in your bags"], (d < 0 and "|cffff6b5b-" or "|cff5fd35f+") .. GP.Coins(math.abs(d)) .. "|r", 0.7, 0.7, 0.7, 1, 1, 1)
+    end
+    t:AddDoubleLine(L["Kills"], tostring(s.kills or 0), 0.7, 0.7, 0.7, 1, 1, 1)
+    t:AddLine(string.format(L["%d min. Sales count when you open the mailbox. Gold in your bags also counts vendors, quests and what you spent. /haul session starts over."], mins), 0.6, 0.6, 0.6, true)
 end
 
 function GP:DrawRows()

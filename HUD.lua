@@ -128,9 +128,9 @@ end
 function GP:RefreshHUD(sessionOnly)
     if not hud or not hud:IsShown() then return end
     local s = self.session
-    local mins = math.max(1, (time() - s.start) / 60)
+    local total, perHour = GP.SessionEarned()
     hud.session:SetText(string.format(L["Session  %s|cff8a8880/h   %s · %d kills|r"],
-        GP.Coins(s.value / mins * 60, true), GP.Coins(s.value, true), s.kills))
+        GP.Coins(perHour, true), GP.Coins(total, true), s.kills))
     if sessionOnly then return end
 
     local locked = self.db.settings.hudLocked

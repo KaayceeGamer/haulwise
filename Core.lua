@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.15.0"
+GP.VERSION = "0.15.1"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -233,7 +233,7 @@ GP:On("ADDON_LOADED", function(name)
     if GP.LOCALES[lang] then setmetatable(GP.LOCALE_STRINGS, { __index = GP.LOCALES[lang] }) end
     GP.langReady = true
     GP:LoadBundledCommunity()
-    GP.session = { start = time(), value = 0, money = 0, kills = 0 }
+    GP.session = GP.NewSession()
     if GP.ApplyFonts then GP.ApplyFonts() end
     if GP.OnLoaded then GP:OnLoaded() end
     if not GP.db.introShown then
@@ -243,6 +243,21 @@ GP:On("ADDON_LOADED", function(name)
         end)
     end
 end)
+
+-- This session: loot value from kills, AH sales collected from the mailbox, and the gold you
+-- carried when it started (for "gold change", which also counts vendors, quests and spending).
+function GP.NewSession()
+    local money = GetMoney and GetMoney() or 0
+    return { start = time(), value = 0, money = 0, kills = 0, sales = 0, salesN = 0, gold0 = money }
+end
+
+-- Earned this session (loot + sales), and per hour.
+function GP.SessionEarned()
+    local s = GP.session
+    local total = (s.value or 0) + (s.sales or 0)
+    local mins = math.max(1, (time() - s.start) / 60)
+    return total, total / mins * 60, mins
+end
 
 -- Slash commands -------------------------------------------------------------
 SLASH_HAULWISE1 = "/haulwise"
@@ -259,7 +274,7 @@ SlashCmdList.HAULWISE = function(msg)
         s.trackInGroup = (arg == "on")
         GP.Print(L["Recording in groups: "] .. (s.trackInGroup and L["on"] or L["off"]))
     elseif cmd == "session" then
-        GP.session = { start = time(), value = 0, money = 0, kills = 0 }
+        GP.session = GP.NewSession()
         GP.Print(L["Session reset."])
     elseif cmd == "feedback" or cmd == "bug" then
         GP:ShowFeedback()

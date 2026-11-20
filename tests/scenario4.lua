@@ -952,4 +952,19 @@ do
   C_AuctionHouse, GP.ahOpen, StaticPopup_Show = savedAH, savedOpen, savedPopup
 end
 
+-- Session gold per hour counts AH sales collected from the mail too
+do
+  local saved = GP.session
+  GP.session = GP.NewSession()
+  GP.session.start = time() - 1800
+  GP.session.value, GP.session.sales, GP.session.salesN = 5000, 17000, 5
+  local total, perHour = GP.SessionEarned()
+  ok(total == 22000 and math.abs(perHour - 44000) < 1, "session: loot + sales, per hour")
+  local lines = {}
+  local tip = { AddLine = function(_, t) lines[#lines + 1] = t end, AddDoubleLine = function(_, l, r) lines[#lines + 1] = l .. " " .. r end }
+  GP.SessionTooltip(tip)
+  ok(table.concat(lines, "|"):find("AH sales collected %(5%)"), "session tooltip shows the sales")
+  GP.session = saved
+end
+
 print("NEW FEATURES PASSED")
