@@ -151,7 +151,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 - **Pawn**: Haulwise uses your Pawn scales.
 - **Auctionator**: Haulwise uses its prices until you scan yourself.
 - **TomTom**: waypoints use TomTom's arrow when it's installed; otherwise the game's own map pin.
-- **QuestieDB**: when it's installed, Haulwise also reads trainer and vendor positions from it.
+- **QuestieDB**: not needed. Haulwise Data (included) already has its trainers, vendors, quests and drop sources. If you have QuestieDB installed anyway, Haulwise also uses it to find NPCs that Haulwise Data doesn't cover.
 
 ## Good to know
 - Deleting items can't be undone. If the game wants you to confirm a delete, the item stays on your cursor until you do.
