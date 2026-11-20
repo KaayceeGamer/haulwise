@@ -368,7 +368,7 @@ function GP:RefreshShopping()
             (profit >= 0 and L["|cff5fd35fprofit "] or L["|cffff6b5bloss "]) .. GP.Coins(math.abs(profit), true) .. "|r")
     else
         -- Tools and skill-ups: nobody sells them on the AH, so profit or loss means nothing.
-        text = string.format(L["To buy: |cffffffff%s|r   ·   All reagents: %s   ·   |cff8a8880for use or skill-up, not for sale|r"],
+        text = string.format(L["To buy: |cffffffff%s|r   ·   All reagents: %s   ·   |cff8a8880not for sale|r"],
             GP.Coins(total, true), GP.Coins(used or total, true))
     end
     if unpriced > 0 then text = text .. string.format(L["   |cffff9944(%d without price)|r"], unpriced) end
