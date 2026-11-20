@@ -141,6 +141,14 @@ function GP.ReportError(where, err)
     if GP.debug then print(L["|cffff5555Haulwise error|r"], where, msg) end
 end
 
+-- When the game blocks Haulwise from a protected action, keep which one, for /haul feedback.
+GP:On("ADDON_ACTION_FORBIDDEN", function(addon, func)
+    if addon == ADDON then GP.ReportError("blocked", "blocked from " .. tostring(func)) end
+end)
+GP:On("ADDON_ACTION_BLOCKED", function(addon, func)
+    if addon == ADDON then GP.ReportError("blocked", "blocked from " .. tostring(func)) end
+end)
+
 frame:SetScript("OnEvent", function(_, event, ...)
     local list = handlers[event]
     if not list then return end

@@ -3,6 +3,7 @@
 ## 0.15.1
 - **Session gold per hour counts your AH sales**: sales you collect from the mailbox are added to the session, next to the loot from kills. Hover the session box for the split: loot, sales, and how much the gold in your bags changed (which also counts vendors, quests and spending).
 - Shopping list: shorter bottom line for tools, so it fits.
+- **Fix**: "Haulwise has been blocked from an action" after buying from the shopping list (on Escape or the game menu). The confirm box is now Haulwise's own instead of the game's popup, which it tainted. If the game ever blocks Haulwise again, /haul feedback says from what.
 
 ## 0.15.0
 - **Buy from the shopping list**: every reagent you still need has a Buy button. The first click finds the cheapest listings and shows what the amount you need costs right now; the next asks you to confirm the total and buys exactly that many. Your own listings are skipped, and nothing is bought without your click in the confirm box.

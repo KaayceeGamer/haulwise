@@ -906,7 +906,7 @@ end
 
 -- Shopping list: buy at the AH (search, read, confirm), alts, dear days, tools
 do
-  local savedAH, savedOpen, savedPopup, savedDialogs = C_AuctionHouse, GP.ahOpen, StaticPopup_Show, StaticPopupDialogs
+  local savedAH, savedOpen, savedPopup = C_AuctionHouse, GP.ahOpen, GP._showBuyConfirm
   local calls, popups = {}, {}
   local listings = { { unitPrice = 100, quantity = 3 }, { unitPrice = 120, quantity = 2, containsOwnerItem = true, numOwnerItems = 2 }, { unitPrice = 150, quantity = 10 } }
   C_AuctionHouse = setmetatable({
@@ -921,7 +921,7 @@ do
     GetItemSearchResultInfo = function(_, i) return ({ { auctionID = 77, buyoutAmount = 5000, quantity = 1 }, { auctionID = 78, buyoutAmount = 3000, quantity = 1 } })[i] end,
     PlaceBid = function(aid, amount) calls[#calls + 1] = "bid " .. aid .. " " .. amount end,
   }, { __index = savedAH })
-  StaticPopup_Show = function(_, text, _, data) popups[#popups + 1] = { text = text, data = data } end
+  GP._showBuyConfirm = function(text, data) popups[#popups + 1] = { text = text, data = data } end
   GP.ahOpen = true
   local g = { id = 4306, buy = 5, usual = 80 }
   GP:ShopBuy(g)
@@ -949,7 +949,11 @@ do
   local bid = false
   for _, c in ipairs(calls) do if c:find("^bid") then bid = true end end
   ok(not bid and GP:ShopBuyState(6338) == nil, "cancel buys nothing")
-  C_AuctionHouse, GP.ahOpen, StaticPopup_Show = savedAH, savedOpen, savedPopup
+  -- The real box: Haulwise's own frame, never the game's StaticPopup (that taints Escape)
+  local realBox = savedPopup
+  local okBox = pcall(realBox, "Buy 1 test?", { go = function() end })
+  ok(okBox and StaticPopupDialogs == nil or (StaticPopupDialogs and StaticPopupDialogs.HAULWISE_BUY == nil), "own confirm box, no StaticPopup")
+  C_AuctionHouse, GP.ahOpen, GP._showBuyConfirm = savedAH, savedOpen, savedPopup
 end
 
 -- Session gold per hour counts AH sales collected from the mail too

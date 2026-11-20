@@ -151,13 +151,50 @@ GP:On("ITEM_SEARCH_RESULTS_UPDATED", function(itemKey)
 end)
 
 -- Step 3: your click, then the confirm box. Its Buy button does the purchase.
-StaticPopupDialogs = StaticPopupDialogs or {}
-StaticPopupDialogs["HAULWISE_BUY"] = {
-    text = "%s", button1 = L["Buy"], button2 = CANCEL or "Cancel",
-    OnAccept = function(_, data) if data and data.go then data.go() end end,
-    OnCancel = function(_, data) if data and data.cancel then data.cancel() end end,
-    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
-}
+-- Haulwise's own box, not the game's StaticPopup: an addon using StaticPopup taints the game's
+-- popups, and the next protected thing they do (Escape, the game menu) gets blamed on Haulwise.
+local confirmBox
+local function showConfirm(text, data)
+    if not confirmBox then
+        local b = CreateFrame("Frame", "HaulwiseBuyConfirm", UIParent, "BackdropTemplate")
+        b:SetSize(360, 96)
+        b:SetPoint("TOP", 0, -140)
+        b:SetFrameStrata("DIALOG")
+        b:SetBackdrop(GP.FLAT)
+        b:SetBackdropColor(0.055, 0.058, 0.07, 0.97)
+        b:SetBackdropBorderColor(0.55, 0.45, 0.2, 1)
+        b:EnableMouse(true)
+        b.text = b:CreateFontString(nil, "OVERLAY", "HaulwiseFont")
+        b.text:SetPoint("TOPLEFT", 14, -14)
+        b.text:SetPoint("TOPRIGHT", -14, -14)
+        b.text:SetJustifyH("CENTER")
+        b.buy = GP.FlatButton(b, L["Buy"], 120, 22)
+        b.buy:SetPoint("BOTTOMRIGHT", b, "BOTTOM", -6, 12)
+        b.buy:SetPrimary(true)
+        b.cancel = GP.FlatButton(b, CANCEL or "Cancel", 120, 22)
+        b.cancel:SetPoint("BOTTOMLEFT", b, "BOTTOM", 6, 12)
+        b.buy:SetScript("OnClick", function(self)
+            local d = self:GetParent().data
+            self:GetParent().data = nil
+            self:GetParent():Hide()
+            if d and d.go then d.go() end
+        end)
+        b.cancel:SetScript("OnClick", function(self) self:GetParent():Hide() end)
+        b:SetScript("OnHide", function(self)
+            local d = self.data
+            self.data = nil
+            if d and d.cancel then d.cancel() end
+        end)
+        confirmBox = b
+    end
+    confirmBox.data = nil
+    confirmBox:Hide()
+    confirmBox.text:SetText(text)
+    confirmBox:SetHeight(math.max(96, (confirmBox.text:GetStringHeight() or 20) + 60))
+    confirmBox.data = data
+    confirmBox:Show()
+end
+GP._showBuyConfirm = showConfirm
 
 local function confirmText(b, expected)
     local text = string.format(L["Buy %d %s for %s?"], b.got, reagentName(b.id), GP.Coins(b.total))
@@ -184,7 +221,7 @@ function GP:ShopBuy(g)
         b.expected = expected
     else
         b.stage = "confirm"
-        StaticPopup_Show("HAULWISE_BUY", confirmText(b, expected), nil, {
+        GP._showBuyConfirm(confirmText(b, expected), {
             go = function()
                 local ok = pcall(C_AuctionHouse.PlaceBid, b.auctionID, b.buyout)
                 if not ok then GP.Print(L["Couldn't buy it. Use the auction house's own Buy button."]) end
@@ -201,7 +238,7 @@ GP:On("COMMODITY_PRICE_UPDATED", function(unitPrice, totalPrice)
     local b = buying
     if not (b and b.commodity and b.stage == "confirm") then return end
     b.total = totalPrice or b.total
-    StaticPopup_Show("HAULWISE_BUY", confirmText(b, b.expected), nil, {
+    GP._showBuyConfirm(confirmText(b, b.expected), {
         go = function()
             local ok = pcall(C_AuctionHouse.ConfirmCommoditiesPurchase, b.id, b.got)
             if not ok then GP.Print(L["Couldn't buy it. Use the auction house's own Buy button."]) end
@@ -222,7 +259,7 @@ GP:On("COMMODITY_PRICE_UNAVAILABLE", function()
         GP:RefreshShopping()
     end
 end)
-GP:On("AUCTION_HOUSE_CLOSED", function() buying = nil end)
+GP:On("AUCTION_HOUSE_CLOSED", function() buying = nil; if confirmBox then confirmBox:Hide() end end)
 
 -- Vendor reagents: an arrow to the nearest vendor that sells it (Haulwise Data), if one is known.
 function GP:GoToVendorFor(id)
