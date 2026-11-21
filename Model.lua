@@ -60,7 +60,8 @@ function GP:Estimates()
     local raw = type(HaulwiseData) == "table" and HaulwiseData.estimates
     for npc, e in pairs(raw or {}) do
         estimates[npc] = { name = e[1], minL = e[2] ~= 0 and e[2] or nil, maxL = e[3] ~= 0 and e[3] or nil,
-                           zone = (e[4] or 0) > 0 and ("#" .. e[4]) or nil, coins = e[5] or 0, raw = e }
+                           zone = (e[4] or 0) > 0 and ("#" .. e[4]) or nil, coins = e[5] or 0, raw = e,
+                           kph = (tonumber(e[11]) or 0) > 0 and tonumber(e[11]) or nil }
     end
     return estimates
 end
@@ -246,7 +247,10 @@ function GP:Evaluate(npc, m)
     local s = self.db.settings
     local K = math.max(1, m.kills)
     local measured = m.tIntervals >= MIN_TIMED and m.tSeconds > 0
-    local kph = measured and (3600 * m.tIntervals / m.tSeconds) or s.defaultKph
+    -- Not timed yet: the estimate from how close together the mob stands (Haulwise Data), scaled
+    -- by your own "kills per hour" setting (40 = as estimated), else that setting.
+    local estKph = m.est and m.est.kph and m.est.kph * (s.defaultKph or 40) / 40
+    local kph = measured and (3600 * m.tIntervals / m.tSeconds) or estKph or s.defaultKph
 
     local lines = {}
     local items, tries, money = m.items, K, m.money

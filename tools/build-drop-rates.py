@@ -143,6 +143,32 @@ def main_map(n):
 
 def esc(s): return s.replace("\\", "\\\\").replace('"', '\\"')
 
+# Kills an hour, estimated from where the mob stands (QuestieDB spawns in its main zone):
+# fighting, looting and resting take ~30 s plus half a second per mob level, then the walk to the
+# next one: twice the median distance to the nearest other spawn (paths aren't straight), at ~30
+# yards per map percent and 7 yards a second. Never more than the spawns give back (one respawn
+# every ~5 minutes each). Between 15 and 90. Fitted to real kills (Drywhisker Digger, level 36:
+# ~66 an hour); real kills, yours and shared, replace it as they come in.
+YARDS_PER_PCT, RUN, RESPAWN = 30.0, 7.0, 300.0
+def kills_per_hour(n):
+    sp = n[NK.spawns]
+    if not sp: return 0
+    best = None
+    for area, pts in sp.items():
+        if not g.AREA[area]: continue
+        p = [(float(v[1]), float(v[2])) for v in pts.values()] if pts else []
+        if best is None or len(p) > len(best): best = p
+    if not best or len(best) < 2: return 0
+    nn = []
+    for i, (x, y) in enumerate(best):
+        nn.append(min(((x - a) ** 2 + (y - b) ** 2) ** 0.5 for j, (a, b) in enumerate(best) if j != i))
+    nn.sort()
+    walk = 2 * nn[len(nn) // 2] * YARDS_PER_PCT / RUN
+    level = ((n[NK.minLevel] or 1) + (n[NK.maxLevel] or n[NK.minLevel] or 1)) / 2
+    kph = 3600.0 / (30 + 0.5 * level + walk)
+    kph = min(kph, len(best) * 3600.0 / RESPAWN)
+    return int(round(max(15, min(90, kph))))
+
 mobs = {}
 for nid, n in g.NPCS.items():
     nid = int(nid)
@@ -163,7 +189,7 @@ for nid, n in g.NPCS.items():
     m = main_map(n)
     if not m: continue
     mobs[nid] = (n[NK.name], int(n[NK.minLevel] or 0), int(n[NK.maxLevel] or 0), m, int(t["gold"]), di, si,
-                 int(t["type"]), int(t["family"]), int(t["model"]))
+                 int(t["type"]), int(t["family"]), int(t["model"]), kills_per_hour(n))
 
 lines = [
     "-- Haulwise Data: estimated drop rates and coins per kill for WoW Forever's mobs.",
@@ -173,13 +199,13 @@ lines = [
     "-- [npcID] = { name, min level, max level, map number, coins per kill (copper),",
     "--             \"item:chance%:count/...\" (loot), \"item:chance%:count/...\" (skinning),",
     "--             creature type (1 beast ... 7 humanoid ...), beast family (1 wolf, 3 spider ...),",
-    "--             creature display id (for its portrait) }",
+    "--             creature display id (for its portrait), estimated kills an hour (0: unknown) }",
     "HaulwiseData = HaulwiseData or {}",
     "HaulwiseData.estimates = {",
 ]
 for nid in sorted(mobs):
-    name, lo, hi, m, gold, di, si, ty, fam, model = mobs[nid]
-    lines.append('    [%d] = { "%s", %d, %d, %d, %d, "%s", "%s", %d, %d, %d },' % (nid, esc(name), lo, hi, m, gold, di, si, ty, fam, model))
+    name, lo, hi, m, gold, di, si, ty, fam, model, kph = mobs[nid]
+    lines.append('    [%d] = { "%s", %d, %d, %d, %d, "%s", "%s", %d, %d, %d, %d },' % (nid, esc(name), lo, hi, m, gold, di, si, ty, fam, model, kph))
 lines.append("}")
 open(out, "w", encoding="utf-8").write("\n".join(lines) + "\n")
 print("mobs with estimates", len(mobs), "->", out)

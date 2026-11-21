@@ -1060,4 +1060,24 @@ do
   HaulwiseData.estimates = savedRaw
 end
 
+-- Kills an hour for mobs nobody has timed: from how close together they stand
+do
+  local savedRaw, savedEst = HaulwiseData and HaulwiseData.estimates, GP.db.settings.useEstimates
+  HaulwiseData = HaulwiseData or {}
+  HaulwiseData.estimates = { [990020] = { "Dense Mob", 30, 31, 1417, 100, "2589:50:1", "", 7, 0, 1, 65 }, [990021] = { "Old Mob", 30, 31, 1417, 100, "2589:50:1", "" } }
+  GP.ForgetEstimates()
+  GP.db.settings.useEstimates = true
+  local savedKph = GP.db.settings.defaultKph
+  GP.db.settings.defaultKph = 40
+  local m = GP:MergedMobs()
+  local a, b = GP:Evaluate(990020, m[990020]), GP:Evaluate(990021, m[990021])
+  ok(math.abs(a.kph - 65) < 0.01 and b.kph == GP.db.settings.defaultKph, "estimated kills an hour from spawns (65), else the setting")
+  GP.db.settings.defaultKph = 80
+  ok(math.abs(GP:Evaluate(990020, m[990020]).kph - 130) < 0.01, "your kills-per-hour setting scales it")
+  GP.db.settings.defaultKph = savedKph
+  HaulwiseData.estimates = savedRaw
+  GP.ForgetEstimates()
+  GP.db.settings.useEstimates = savedEst
+end
+
 print("NEW FEATURES PASSED")
