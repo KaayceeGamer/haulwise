@@ -4,6 +4,7 @@
 - **Farm: estimates and real kills apart**: a new *Show* menu picks all mobs, only farmed ones (real kills, yours or shared) or only estimates. Under *Safe*, a mob nobody has killed counts its loot-table items for half, so mobs with real kills aren't buried under guesses. When the top row is a guess, the hero line also names the best farmed mob. A picked zone (*Where you are*) shows its low mobs too, instead of an empty list.
 - **Settings window**: sections on the left (Look, Bags and loot, Gear, Farming, Auction house and mail, Tooltips), and every switch says what it does right under it, no hovering needed. *Use Pawn* is now in the Weights menu on the Gear tab.
 - **Scan AH** says how long the game's wait has left ("Scan AH in 12 min").
+- **Smoother with the window open**: Farm, Zones, Deals and Market keep their lists for a few seconds between redraws (loot, bags and kills redraw often), and work them out again at once when you change a setting, menu or zone.
 - **/haul perf**: shows how much memory Haulwise uses and how long each list takes to work out, slowest first, to find what stutters.
 
 ## 0.16.1

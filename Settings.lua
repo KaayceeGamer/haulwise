@@ -184,7 +184,7 @@ local function buildAppearance(page, s, add)
     return -y
 end
 
-local W, SIDE = 640, 150
+local W, SIDE = 660, 170
 local function build()
     panel = GP.Panel("HaulwiseSettings", W, 470, L["Haulwise settings"])
     panel:SetFrameStrata("DIALOG")

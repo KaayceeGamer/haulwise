@@ -300,6 +300,7 @@ local function stepsPicker(prefix, key, steps, default, anyLabel, tipText)
 end
 
 TAB.farm = {
+    keepFor = 3,
     cols = {
         { key = "name", title = L["Mob"], w = 196, icon = true },
         { key = "zone", title = L["Zone"], w = 118 },
@@ -486,6 +487,7 @@ TAB.craft = {
 
 local MIN_STEPS = { 1000, 2000, 5000, 10000, 50000 }
 TAB.deals = {
+    keepFor = 10,
     cols = {
         { key = "name", title = L["Item"], w = 236, icon = true },
         { key = "kind", title = L["Deal"], w = 104 },
@@ -636,6 +638,7 @@ TAB.recipes = {
 }
 
 TAB.market = {
+    keepFor = 10,
     cols = {
         { key = "name", title = L["Item"], w = 250, icon = true },
         { key = "why", title = "", w = 130 },
@@ -1119,6 +1122,7 @@ TAB.craft_enchants = {
 
 -- Farm → By zone: where to go, not just which mob.
 TAB.farm_zones = {
+    keepFor = 3,
     cols = {
         { key = "name", title = L["Zone"], w = 190 },
         { key = "lvl", title = L["Lvl"], w = 60, align = "CENTER" },
@@ -1291,6 +1295,7 @@ end
 
 local f, rows, offset, data = nil, {}, 0, {}
 local tabButtons, toggleBar = {}, {}
+local cachedRows
 local updateDisenchant -- defined below RefreshUI's helpers
 
 
@@ -2174,6 +2179,31 @@ GP:On("PLAYER_REGEN_DISABLED", function()
 end)
 GP:On("PLAYER_REGEN_ENABLED", function() if f and f:IsShown() then GP:RefreshUI() end end)
 
+-- Lists that take tens of milliseconds to work out (Farm, Deals...) are kept for a few seconds
+-- between redraws: bags, loot and kills redraw the window often. Any change of a setting, menu,
+-- view, zone or AH scan works them out again at once.
+local rowCache = {}
+local function settingsToken()
+    local parts = {}
+    for k, v in pairs(S()) do if type(v) ~= "table" then parts[#parts + 1] = tostring(v) end end
+    local views = S().views or {}
+    parts[#parts + 1] = tostring(views[S().tab])
+    parts[#parts + 1] = tostring(GP:Char().profFilter)
+    parts[#parts + 1] = tostring(GP.db.priceScanTime)
+    parts[#parts + 1] = tostring(GP:CurrentZone())
+    return table.concat(parts, "|")
+end
+cachedRows = function(t, key)
+    if not t.keepFor then return t.rows() end
+    local token = key .. "|" .. settingsToken()
+    local c = rowCache[key]
+    if c and c.token == token and GetTime() - c.t < t.keepFor then return c.rows end
+    local rows = t.rows()
+    rowCache[key] = { token = token, t = GetTime(), rows = rows }
+    return rows
+end
+function GP:ForgetRows() rowCache = {} end
+
 function GP:RefreshUI()
     if not f or not f:IsShown() then updateDisenchant(false); return end
     local key = current()
@@ -2190,7 +2220,7 @@ function GP:RefreshUI()
     buildControls(t, S().tab)
     updateDisenchant(key == "bags")
 
-    data = t.rows()
+    data = cachedRows(t, key)
     GP:ApplySort(t, data)
     if self.scrollToTop then offset, self.scrollToTop = 0, nil end
     offset = math.max(0, math.min(offset, #data - ROWS))
