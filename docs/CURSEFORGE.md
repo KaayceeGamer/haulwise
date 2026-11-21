@@ -47,7 +47,7 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
 - Only gear your class can wear is suggested, and only once you can put it on within 3 levels (marked *at level 40* until then). No mail armor for a level 5 shaman.
 - Bind-on-Equip gear is checked for **all your characters**. At a mailbox, *Send to alts* lists it and attaches it with one click.
-- **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price and click to find it.
+- **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts (thousands of listings, each item once at its cheapest), ranked by how much upgrade each gold buys. Set a max price and click to find it.
 - **Quest reward pick**: when a quest lets you choose, Haulwise marks the best reward with a gold frame and a green tick and says why in chat: a profession tool you're missing (like a Mining Pick), your biggest upgrade, or else the one worth the most.
 
 ### 🐺 Farm: the best gold per hour for *your* character
@@ -70,7 +70,7 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
   - Vendor reagents get an arrow to the nearest vendor that sells them.
 - **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
-- **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself. **Click one for a waypoint** to the vendor that sells it.
+- **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, auction house) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
 - Show **one profession at a time** with the Profession button.
 

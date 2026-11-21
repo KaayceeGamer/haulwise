@@ -399,11 +399,16 @@ function GP:FindAHUpgrades(gear, done)
             if not (r.forMe and tooltipBlocked(r.link)) then keep[#keep + 1] = r end
         end
         table.sort(keep, function(a, b) return a.perGold > b.perGold end)
-        local perKey, rows = {}, {}
+        local perKey, rows, seenItem = {}, {}, {}
         for _, r in ipairs(keep) do
-            local k = (r.alt or "me") .. ":" .. (r.slotName or "?")
-            perKey[k] = (perKey[k] or 0) + 1
-            if perKey[k] <= PER_SLOT and #rows < 200 then rows[#rows + 1] = r end
+            -- The same item listed several times: only the best buy per character.
+            local ik = (r.alt or "me") .. ":" .. tostring(r.id)
+            if not seenItem[ik] then
+                seenItem[ik] = true
+                local k = (r.alt or "me") .. ":" .. (r.slotName or "?")
+                perKey[k] = (perKey[k] or 0) + 1
+                if perKey[k] <= PER_SLOT and #rows < 200 then rows[#rows + 1] = r end
+            end
         end
         self.db.ahUpgrades = { t = time(), rows = rows, listings = #links, checked = checked, unloaded = #retry }
         if #rows > 0 then

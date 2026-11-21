@@ -1014,4 +1014,17 @@ do
   GP.db.settings.recipesShowAll = false
 end
 
+-- The same item listed twice on the AH: one row, the cheapest
+do
+  local saved = GP.db.ahUpgrades
+  local l1 = LINK(7010)
+  local l2 = l1:gsub("item:7010::", "item:7010:0:")
+  GP.db.ahUpgrades = nil
+  GP:FindAHUpgrades({ [l1] = { id = 7010, price = 20000 }, [l2] = { id = 7010, price = 15000 } })
+  local n, price = 0, nil
+  for _, r in ipairs(GP.db.ahUpgrades.rows) do if r.id == 7010 and r.forMe then n = n + 1; price = r.price end end
+  ok(n == 1 and price == 15000, "an item listed twice shows once, the cheaper one")
+  GP.db.ahUpgrades = saved
+end
+
 print("NEW FEATURES PASSED")

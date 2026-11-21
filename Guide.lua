@@ -71,6 +71,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Gear on the AH finds far more upgrades: it now waits for the game to send the stats of gear you've never seen."],
     L["Shopping list: press Buy on a reagent to find the cheapest listings, then confirm to buy exactly what you need. It warns when a reagent is dear today, and names the alt who already has it."],
     L["Shared AH prices: Share data takes your last scan's prices along. On the website, copy the prices for your realm and /haul import them. Until you scan, values come from all realms (a rough guess)."],
     L["Things you use again and again, like the Cozy Sleeping Bag, toys and mounts, are never offered to sell or throw away."],
