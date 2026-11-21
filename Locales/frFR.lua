@@ -247,6 +247,7 @@ GP.LOCALES.frFR = {
     ["/haul reset"] = "/haul reset",
     [" window positions and sizes"] = " positions et tailles des fenêtres",
     ["Click any column title to sort. Drag a window's corner to resize it. Ctrl + mouse wheel scales it."] = "Cliquez sur un titre de colonne pour trier. Tirez le coin d'une fenêtre pour la redimensionner. Ctrl + molette change son échelle.",
+    ["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."] = "Recettes sait comment chaque recette de Forever s'apprend (entraîneur, marchand, butin, quête) et la compétence exacte requise, d'après Warcraft Wiki.",
     ["Every mob gets its own kills-per-hour estimate from how close together it stands."] = "Chaque monstre a sa propre estimation de victimes par heure, selon la densité de ses apparitions.",
     ["Gear tab: click an upgrade at the auction house to buy that exact listing."] = "Équipement : cliquez sur une amélioration à l'hôtel des ventes pour acheter exactement cette offre.",
     ["Your auctions: after Cancel, post it again from the panel once it's back in your bags."] = "Vos enchères : après Annuler, remettez-le en vente depuis le panneau dès qu'il est de retour dans vos sacs.",

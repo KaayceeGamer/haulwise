@@ -71,6 +71,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],
     L["Every mob gets its own kills-per-hour estimate from how close together it stands."],
     L["Gear tab: click an upgrade at the auction house to buy that exact listing."],
     L["Your auctions: after Cancel, post it again from the panel once it's back in your bags."],

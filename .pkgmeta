@@ -6,6 +6,7 @@ ignore:
   - tools
   - tests
   - SETUP.md
+  - CLAUDE.md
 
 # Haulwise Data (GPLv3, data only) ships in the same download as its own addon folder.
 move-folders:
