@@ -5,6 +5,7 @@
 - **Settings window**: sections on the left (Look, Bags and loot, Gear, Farming, Auction house and mail, Tooltips), and every switch says what it does right under it, no hovering needed. *Use Pawn* is now in the Weights menu on the Gear tab.
 - **Scan AH** says how long the game's wait has left ("Scan AH in 12 min").
 - **Smoother with the window open**: Farm, Zones, Deals and Market keep their lists for a few seconds between redraws (loot, bags and kills redraw often), and work them out again at once when you change a setting, menu or zone.
+- **New icon**: the bag of gold is now on the minimap button, the window, the HUD and the addon list.
 - **/haul perf**: shows how much memory Haulwise uses and how long each list takes to work out, slowest first, to find what stutters.
 
 ## 0.16.1
