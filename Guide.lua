@@ -71,6 +71,9 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Every mob gets its own kills-per-hour estimate from how close together it stands."],
+    L["Gear tab: click an upgrade at the auction house to buy that exact listing."],
+    L["Your auctions: after Cancel, post it again from the panel once it's back in your bags."],
     L["Farm shows each mob's own portrait, drawn by the game."],
     L["Gear on the AH finds far more upgrades: it now waits for the game to send the stats of gear you've never seen."],
     L["Shopping list: press Buy on a reagent to find the cheapest listings, then confirm to buy exactly what you need. It warns when a reagent is dear today, and names the alt who already has it."],

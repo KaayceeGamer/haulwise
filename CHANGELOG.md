@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0
+- **Kills per hour for every mob**: mobs nobody has timed no longer all count as 40 kills an hour. Haulwise Data now has an estimate per mob from how close together it stands (its spawns), its level and how many there are (55-90 an hour for most), scaled by your own kills-per-hour setting. Real kills still replace it.
+- **Buy gear upgrades from the Gear tab**: at the auction house, click an upgrade on *On the AH* and Haulwise finds that exact listing (same "of the Owl" suffix, not a cheaper one with other stats) and asks you to confirm the price. Bought upgrades leave the list.
+- **Post cancelled auctions again**: after Cancel in *Your auctions*, the item waits in the panel ("in your mailbox" until it's back), then Post puts it up again at the price the sell helper picks, after you confirm quantity, price and deposit.
+- **Less memory**: no price history or sell speed for gear (each piece is its own listing, so trends meant little; it was 62% of both), 21 days of history instead of 28, and the bundled community text is freed once read.
+- **Website**: lists the realms that share prices, with how many players and how fresh.
+
 ## 0.15.5
 - **Farm**: mobs show their own portrait, drawn by the game from the mob's model, instead of the icon of their main loot. Where the game can't draw one, an icon for what the mob is (a wolf, a spider, a humanoid, an elemental...). From the CMaNGOS creature data in Haulwise Data.
 

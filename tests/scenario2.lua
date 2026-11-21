@@ -97,9 +97,12 @@ print("PART 2 PASSED")
 
 -- Part 3: community data bundled in Data.lua.
 local fh = assert(io.open(DIR .. "/tests/community_export.txt"))
-Haulwise_Community = fh:read("*a"); fh:close()
+local communityText = fh:read("*a"); fh:close()
+Haulwise_Community = communityText
 local before = GP:MergedMobs()[113].kills
 GP:LoadBundledCommunity()
+assert(Haulwise_Community == nil, "the bundled text is freed once parsed")
+Haulwise_Community = communityText
 assert(GP.community and (GP.community.contributors or 0) > 0, "community not loaded")
 local after = GP:MergedMobs()[113].kills
 print("coyote kills mine+friend:", before, " with community:", after)
