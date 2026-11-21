@@ -45,6 +45,7 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 
 ### ⚔️ Upgrade Advisor, for you and your alts
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
+- Only gear your class can wear is suggested, and only once you can put it on within 3 levels (marked *at level 40* until then). No mail armor for a level 5 shaman.
 - Bind-on-Equip gear is checked for **all your characters**. At a mailbox, *Send to alts* lists it and attaches it with one click.
 - **Upgrades on the AH**: every auction house scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price and click to find it.
 - **Quest reward pick**: when a quest lets you choose, Haulwise marks the best reward with a gold frame and a green tick and says why in chat: a profession tool you're missing (like a Mining Pick), your biggest upgrade, or else the one worth the most.
