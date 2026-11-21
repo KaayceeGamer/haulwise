@@ -1229,6 +1229,10 @@ do -- Enchant requests in trade chat: an estimate, counted per enchant
   ok(#rows == 1 and rows[1].n == 3 and rows[1].offer == 50000, "three players asked for crusader, one offered 5g")
   ok(math.abs(info.hours - 1000 / 3600) < 0.01 and info.supply == 1, "listening time and enchanters advertising")
   ok(rows[1].perHour and rows[1].perHourGold, "an estimate per hour")
+  local uf = UnitFactionGroup
+  UnitFactionGroup = function() return nil end
+  ok(GP:EnchantDemand(7) ~= nil, "no realm or faction yet (just logged in): no error")
+  UnitFactionGroup = uf
   HaulwiseData.wikiRecipes = saved
 end
 

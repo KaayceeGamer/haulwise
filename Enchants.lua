@@ -41,7 +41,8 @@ local catalog       -- [enchant name lower] = family key
 local families      -- [family key] = { slot, base, label, names = { full names } }
 local effects       -- [base effect] = { [slot] = family key }
 local function build()
-    if catalog then return end
+    -- Built once Haulwise Data's recipe list is there (or again if it came later).
+    if catalog and (next(catalog) or not (HaulwiseData and HaulwiseData.wikiRecipes)) then return end
     catalog, families, effects = {}, {}, {}
     local wiki = HaulwiseData and HaulwiseData.wikiRecipes or {}
     for name, v in pairs(wiki) do
@@ -192,6 +193,8 @@ local function store()
     local db = GP.db
     db.enchantDemand = db.enchantDemand or {}
     local key = GP.RealmKey()
+    -- Right after login the game may not know your realm or faction yet: an empty, unsaved list.
+    if not key then return { list = {}, listen = {}, supply = {} } end
     local s = db.enchantDemand[key]
     if not s then s = { list = {}, listen = {}, supply = {} }; db.enchantDemand[key] = s end
     if not prunedNow[key] then prunedNow[key] = true; prune(s, time()) end
