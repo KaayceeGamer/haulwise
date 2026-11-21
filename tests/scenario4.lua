@@ -986,4 +986,15 @@ do
   ok(near and near.atLevel == 9, "level 9 leather at level 7: shows, at level 9")
 end
 
+-- Gear tab label with Pawn scales in use (scalesLabel was called before it was defined)
+do
+  local up, vs = GP.UsePawn, GP.PawnVisibleScales
+  GP.UsePawn = function() return true end
+  GP.PawnVisibleScales = function() return { { "\"Wowhead\":MageFrost", "\"Wowhead\":MageFrost" } } end
+  local okL, label = pcall(GP.WeightsLabel, GP)
+  print("     " .. tostring(label))
+  ok(okL and label == "Pawn: MageFrost", "Gear tab label with Pawn scales")
+  GP.UsePawn, GP.PawnVisibleScales = up, vs
+end
+
 print("NEW FEATURES PASSED")

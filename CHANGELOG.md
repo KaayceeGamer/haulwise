@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.3
+- **Fix**: Lua error on the Gear tab with Pawn in use (Gear.lua:67, "attempt to call a nil value").
+- The session box is wider, so "loot + sales" no longer runs into the THIS SESSION label.
+
 ## 0.15.2
 - **Gear**: no more suggestions you can't wear for ages. A level 5 shaman was told to upgrade to mail armor (shamans wear mail from level 40). Gear you can wear within 3 levels still shows ("at level 40" for a level 38); anything further off isn't suggested. Thanks for the report!
 

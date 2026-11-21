@@ -62,12 +62,6 @@ function GP:CycleSpec()
     self:ScanUpgrades()
 end
 
-function GP:WeightsLabel()
-    local scales = self:UsePawn() and self:PawnVisibleScales()
-    if scales then return scalesLabel(scales) end
-    return L[self:CurrentSpec()] .. " (Haulwise)"
-end
-
 local function weightsFor(classFile, spec)
     for _, t in ipairs(treesFor(classFile)) do if t[1] == spec then return t[2] end end
     return treesFor(classFile)[1][2]
@@ -136,6 +130,14 @@ local function scalesLabel(scales)
     for _, sc in ipairs(scales) do names[#names + 1] = (sc[2]:gsub("^\"[^\"]*\":", "")) end
     return "Pawn: " .. table.concat(names, ", ")
 end
+
+-- (After scalesLabel: as a local it has to be defined before the functions that use it.)
+function GP:WeightsLabel()
+    local scales = self:UsePawn() and self:PawnVisibleScales()
+    if scales then return scalesLabel(scales) end
+    return L[self:CurrentSpec()] .. " (Haulwise)"
+end
+
 
 -- Scoring --------------------------------------------------------------------------------------
 

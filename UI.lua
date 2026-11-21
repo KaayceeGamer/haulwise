@@ -1285,7 +1285,7 @@ local function build()
 
     -- Session pill (right side of header)
     local pill = CreateFrame("Frame", nil, f, "BackdropTemplate")
-    pill:SetSize(250, 34)
+    pill:SetSize(310, 34)
     pill:SetPoint("TOPRIGHT", -96, -11)
     pill:SetBackdrop(FLAT)
     pill:SetBackdropColor(0.13, 0.11, 0.07, 1)
