@@ -114,18 +114,88 @@ local function rowFor(i)
     return row
 end
 
+-- Posting again after a cancel ------------------------------------------------------------------
+-- Cancel remembers the item; once it's back in your bags (straight away, or from the mailbox),
+-- the panel offers to post it again at the price the sell helper would pick right then. The box
+-- shows quantity, price and deposit first: nothing is posted without your click.
+
+local function findInBags(id)
+    if not (C_Container and C_Container.GetContainerNumSlots) then return nil end
+    for bag = 0, (NUM_BAG_SLOTS or 4) do
+        for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.itemID == id and not info.isLocked then return bag, slot, info.stackCount or 1 end
+        end
+    end
+end
+
+function GP:RememberRepost(a)
+    self.db.repost = self.db.repost or {}
+    self.db.repost[a.id] = { qty = a.qty or 1, commodity = a.commodity and true or nil, t = time() }
+end
+
+function GP:RepostList()
+    local out = {}
+    for id, e in pairs(self.db.repost or {}) do
+        if type(e) ~= "table" or time() - (e.t or 0) > 3 * 86400 then
+            self.db.repost[id] = nil
+        else
+            local bag, slot, n = findInBags(id)
+            out[#out + 1] = { id = id, e = e, bag = bag, slot = slot, n = n }
+        end
+    end
+    table.sort(out, function(a, b) return (a.bag and 1 or 0) > (b.bag and 1 or 0) end)
+    return out
+end
+
+local DURATION = 2   -- the middle one (24 hours on most auction houses)
+
+function GP:Repost(r)
+    if not (r.bag and ItemLocation and ItemLocation.CreateFromBagAndSlot) then return end
+    local advice = self:SellAdvice(r.id, nil, r.e.commodity)
+    local unit = advice.price
+    if not unit or unit <= 0 then return self.Print(L["No price to post at yet: search the AH for it first."]) end
+    local loc = ItemLocation:CreateFromBagAndSlot(r.bag, r.slot)
+    local have = (C_Item and C_Item.GetItemCount and C_Item.GetItemCount(r.id)) or GetItemCount and GetItemCount(r.id) or r.n
+    local qty = r.e.commodity and math.max(1, math.min(r.e.qty or 1, have or 1)) or (r.n or 1)
+    local deposit
+    if r.e.commodity and C_AuctionHouse.CalculateCommodityDeposit then
+        local ok, d = pcall(C_AuctionHouse.CalculateCommodityDeposit, r.id, DURATION, qty); deposit = ok and d or nil
+    elseif C_AuctionHouse.CalculateItemDeposit then
+        local ok, d = pcall(C_AuctionHouse.CalculateItemDeposit, loc, DURATION, qty); deposit = ok and d or nil
+    end
+    local text = string.format(L["Post %d %s at %s each (%s in all)?"], qty, GP.ItemInfo(r.id) or "?", GP.Coins(unit), GP.Coins(unit * qty))
+    if deposit then text = text .. "\n" .. string.format(L["Deposit: %s"], GP.Coins(deposit)) end
+    GP._showBuyConfirm(text, { go = function()
+        local ok
+        if r.e.commodity then
+            ok = pcall(C_AuctionHouse.PostCommodity, loc, DURATION, qty, unit)
+        else
+            -- The whole stack's price: if the game wanted it per item, this errs on the high side.
+            ok = pcall(C_AuctionHouse.PostItem, loc, DURATION, qty, nil, unit * qty)
+        end
+        if ok then
+            self.db.repost[r.id] = nil
+        else
+            GP.Print(L["Couldn't post it here. Post it on the Sell tab."])
+        end
+        GP:UpdateMyAuctions()
+    end }, L["Post"])
+end
+
 function GP:UpdateMyAuctions()
     if not (self.db and self.db.settings.sellHelper and self.ahOpen and AuctionHouseFrame) then
         if panel then panel:Hide() end
         return
     end
     local list = self:MyAuctions()
-    if #list == 0 then if panel then panel:Hide() end return end
+    local reposts = self:RepostList()
+    if #list == 0 and #reposts == 0 then if panel then panel:Hide() end return end
     if not panel then build() end
     local under = 0
     for _, a in ipairs(list) do if a.undercut then under = under + 1 end end
     panel.title:SetText(under > 0 and string.format(L["Your auctions: |cffff9944%d undercut|r"], under)
-        or L["Your auctions: |cff5fd35fall cheapest|r"])
+        or (#list > 0 and L["Your auctions: |cff5fd35fall cheapest|r"] or L["Your auctions"]))
     for _, r in ipairs(rows) do r:Hide(); r.cancel:Hide() end
     local y = -28
     for i, a in ipairs(list) do
@@ -158,12 +228,47 @@ function GP:UpdateMyAuctions()
         row:SetScript("OnClick", function() GP:SearchAH(a.id) end)
         row:Show()
         if a.undercut and a.auctionID and C_AuctionHouse.CancelAuction then
+            row.cancel:SetLabel(L["Cancel"])
             row.cancel:SetScript("OnClick", function()
                 local ok = pcall(C_AuctionHouse.CancelAuction, a.auctionID)
-                if not ok then GP.Print(L["Couldn't cancel it here. Cancel it on the Auctions tab."]) end
+                if not ok then
+                    GP.Print(L["Couldn't cancel it here. Cancel it on the Auctions tab."])
+                else
+                    GP:RememberRepost(a)
+                    GP.Print(string.format(L["Cancelled %s. When it's back in your bags, post it again from this panel."], GP.ItemInfo(a.id) or "?"))
+                end
             end)
             row.cancel:Show()
         end
+        y = y - 22
+    end
+    -- Cancelled ones to post again.
+    local shown = math.min(#list, MAX_ROWS)
+    for k, r in ipairs(reposts) do
+        if shown + k > MAX_ROWS + 3 then break end
+        local row = rowFor(shown + k)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", 10, y)
+        local advice = self:SellAdvice(r.id, nil, r.e.commodity)
+        if r.bag then
+            row.right:SetPoint("RIGHT", -60, 0)
+            row:SetItem(r.id, nil, advice.price and ("|cff5fd35f" .. GP.Coins(advice.price, true) .. "|r") or L["|cff8a8880no price yet|r"], r.n)
+            row.cancel:SetLabel(L["Post"])
+            row.cancel:SetScript("OnClick", function() GP:Repost(r) end)
+            row.cancel:Show()
+        else
+            row.right:SetPoint("RIGHT", -2, 0)
+            row:SetItem(r.id, nil, L["|cff8a8880in your mailbox|r"], r.e.qty)
+        end
+        row.tip = function(t)
+            t:SetItemByID(r.id)
+            t:AddLine(" ")
+            t:AddLine(L["You cancelled this. Post it again at the price the sell helper picks now."], 1, 1, 1, true)
+            if advice.price then t:AddDoubleLine(L["Post again at"], GP.Coins(advice.price)) end
+            if not r.bag then t:AddLine(L["Take it from your mailbox first."], 1, 0.6, 0.3, true) end
+        end
+        row:SetScript("OnClick", function() GP:SearchAH(r.id) end)
+        row:Show()
         y = y - 22
     end
     local more = #list - MAX_ROWS
@@ -188,6 +293,7 @@ GP:On("AUCTION_CANCELED", function()
     if C_AuctionHouse and C_AuctionHouse.QueryOwnedAuctions then pcall(C_AuctionHouse.QueryOwnedAuctions, {}) end
 end)
 GP:On("AUCTION_HOUSE_CLOSED", function() if panel then panel:Hide() end end)
+GP:On("BAG_UPDATE_DELAYED", function() if GP.ahOpen and GP.db and next(GP.db.repost or {}) then refresh() end end)
 GP:On("COMMODITY_SEARCH_RESULTS_UPDATED", function(id)
     id = GP.Safe(id)
     if id then readLive(id); refresh() end

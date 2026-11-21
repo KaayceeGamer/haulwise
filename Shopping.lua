@@ -181,7 +181,7 @@ end)
 -- Haulwise's own box, not the game's StaticPopup: an addon using StaticPopup taints the game's
 -- popups, and the next protected thing they do (Escape, the game menu) gets blamed on Haulwise.
 local confirmBox
-local function showConfirm(text, data)
+local function showConfirm(text, data, button)
     if not confirmBox then
         local b = CreateFrame("Frame", "HaulwiseBuyConfirm", UIParent, "BackdropTemplate")
         b:SetSize(360, 96)
@@ -217,6 +217,7 @@ local function showConfirm(text, data)
     confirmBox.data = nil
     confirmBox:Hide()
     confirmBox.text:SetText(text)
+    confirmBox.buy:SetLabel(button or L["Buy"])
     confirmBox:SetHeight(math.max(96, (confirmBox.text:GetStringHeight() or 20) + 60))
     confirmBox.data = data
     confirmBox:Show()

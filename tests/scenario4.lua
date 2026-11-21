@@ -1107,4 +1107,34 @@ do
   C_AuctionHouse, GP.ahOpen, GP._showBuyConfirm = savedAH, savedOpen, savedPopup
 end
 
+-- Cancel, then post again once it's back in your bags
+do
+  local savedAH, savedPopup, savedLoc, savedAdvice = C_AuctionHouse, GP._showBuyConfirm, ItemLocation, GP.SellAdvice
+  local popups, posted = {}, {}
+  ItemLocation = { CreateFromBagAndSlot = function(_, b, s) return { b = b, s = s } end }
+  C_AuctionHouse = setmetatable({
+    PostCommodity = function(loc, dur, qty, unit) posted[#posted + 1] = string.format("%d/%d x%d @%d", loc.b, loc.s, qty, unit) end,
+    CalculateCommodityDeposit = function() return 120 end,
+  }, { __index = savedAH })
+  GP._showBuyConfirm = function(text, data, button) popups[#popups + 1] = { text = text, data = data, button = button } end
+  GP.SellAdvice = function() return { price = 450 } end
+  GP.db.repost = {}
+  W.items[99123] = { name = "Test Cloth", sell = 10, quality = 1, k = 7, sk = 5, stack = 20 }
+  GP:RememberRepost({ id = 99123, qty = 5, commodity = true })
+  local list = GP:RepostList()
+  ok(#list == 1 and list[1].bag == nil, "cancelled, not back yet: waits for the mailbox")
+  W.bags[3] = W.bags[3] or { size = 4, slots = {} }
+  local savedSlot = W.bags[3].slots[4]
+  W.bags[3].slots[4] = { id = 99123, count = 5 }
+  list = GP:RepostList()
+  ok(list[1].bag ~= nil, "back in the bags: ready to post")
+  GP:Repost(list[1])
+  print("     " .. tostring(popups[1] and popups[1].text))
+  ok(popups[1] and popups[1].button == "Post" and #posted == 0, "asks first, with the deposit")
+  popups[1].data.go()
+  ok(posted[1] and posted[1]:find("x5 @450") and GP.db.repost[99123] == nil, "posts the 5 at the sell helper's price, then forgets it")
+  W.bags[3].slots[4] = savedSlot
+  C_AuctionHouse, GP._showBuyConfirm, ItemLocation, GP.SellAdvice = savedAH, savedPopup, savedLoc, savedAdvice
+end
+
 print("NEW FEATURES PASSED")
