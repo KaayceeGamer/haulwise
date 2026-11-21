@@ -971,4 +971,19 @@ do
   GP.session = saved
 end
 
+-- Gear: a level 5 shaman isn't offered mail (level 40) or anything wearable 4+ levels away
+do
+  W.items[7030] = { name = "Test Mail Hauberk", sell = 300, quality = 2, k = 4, sk = 3, ilvl = 20, minLevel = 1, equipLoc = "INVTYPE_CHEST" }
+  W.stats[7030] = { ITEM_MOD_STRENGTH_SHORT = 8, ITEM_MOD_STAMINA_SHORT = 8, RESISTANCE0_NAME = 200 }
+  W.items[7031] = { name = "Test Leather Vest", sell = 300, quality = 2, k = 4, sk = 2, ilvl = 20, minLevel = 9, equipLoc = "INVTYPE_CHEST" }
+  W.stats[7031] = { ITEM_MOD_STRENGTH_SHORT = 8, ITEM_MOD_STAMINA_SHORT = 8, RESISTANCE0_NAME = 80 }
+  local shaman = function(level) return { classFile = "SHAMAN", level = level, spec = "Enhancement", links = {}, me = false } end
+  ok(GP:CompareGear(LINK(7030), shaman(5)) == nil, "level 5 shaman: no mail armor (that's level 40)")
+  local soon = GP:CompareGear(LINK(7030), shaman(38))
+  ok(soon and soon.atLevel == 40, "level 38 shaman: mail shows, at level 40")
+  ok(GP:CompareGear(LINK(7031), shaman(5)) == nil, "level 9 leather at level 5: too far ahead")
+  local near = GP:CompareGear(LINK(7031), shaman(7))
+  ok(near and near.atLevel == 9, "level 9 leather at level 7: shows, at level 9")
+end
+
 print("NEW FEATURES PASSED")

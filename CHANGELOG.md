@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.15.2
+- **Gear**: no more suggestions you can't wear for ages. A level 5 shaman was told to upgrade to mail armor (shamans wear mail from level 40). Gear you can wear within 3 levels still shows ("at level 40" for a level 38); anything further off isn't suggested. Thanks for the report!
+
 ## 0.15.1
 - **Session gold per hour counts your AH sales**: sales you collect from the mailbox are added to the session, next to the loot from kills. Hover the session box for the split: loot, sales, and how much the gold in your bags changed (which also counts vendors, quests and spending).
 - Shopping list: shorter bottom line for tools, so it fits.

@@ -178,6 +178,10 @@ local function score(link, w)
 end
 GP.GearScore = score
 
+-- Gear you can wear within 3 levels is shown ("at level 40"); further off, it isn't suggested at
+-- all: a level 5 shaman doesn't want to hear about mail armor (level 40) or level 30 drops.
+local LEVEL_AHEAD = 3
+
 -- Can this class (at this level) use the item at all?
 local function canUse(info, classFile, level)
     if info.classID == 4 then
@@ -251,7 +255,10 @@ function GP:CompareGear(link, who)
         end
     end
     if not best then return nil end
-    local atLevel = (info.minLevel and info.minLevel > (who.level or 1)) and info.minLevel or armorLevel
+    local level = who.level or 1
+    local atLevel = math.max(info.minLevel or 0, armorLevel or 0)
+    if atLevel <= level then atLevel = nil end
+    if atLevel and atLevel > level + LEVEL_AHEAD then return nil end
     best.atLevel = atLevel
     best.slotName = L[SLOT_NAME[best.slot]]
     return best
@@ -340,7 +347,6 @@ function GP:AltUpgradesInBags() return self.upgrades.alts end
 
 local CHUNK_LINKS = 150
 local MIN_GAIN = 0.03
-local LEVEL_AHEAD = 3   -- also show gear you can wear within 3 levels
 local PER_SLOT = 3      -- best few listings per character and slot
 
 local function ahWhoList()
