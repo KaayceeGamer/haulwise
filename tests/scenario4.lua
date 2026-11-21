@@ -1309,11 +1309,17 @@ do -- A mob Haulwise Data doesn't know: its look is remembered when targeted
   local cf = CreateFrame
   CreateFrame = function(kind, ...)
     local f = cf(kind, ...)
-    if kind == "PlayerModel" then f.SetUnit = function() end; f.GetDisplayInfo = function() return 4321 end end
+    if kind == "PlayerModel" then
+      local shown
+      f.SetCreature = function(_, npc) shown = npc end
+      f.GetDisplayInfo = function() return shown == 987654 and 4321 or 0 end
+    end
     return f
   end
+  GP._ResetLooks()
   fire("PLAYER_TARGET_CHANGED")
-  ok(GP.MobDisplay(987654) == 4321 and GP.MobIcon(987654):find("Pet_Bat"), "a new mob's portrait and icon come from targeting it")
+  ok(GP.MobDisplay(987654) == 4321 and GP.MobIcon(987654):find("Pet_Bat"), "a new mob's portrait comes from its NPC number, its icon from targeting it")
   UnitExists, UnitGUID, UnitIsPlayer, UnitCreatureType, UnitCreatureFamily, CreateFrame = unpack(saved)
+  GP._ResetLooks()
 end
 print("NEW FEATURES PASSED")

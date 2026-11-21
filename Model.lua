@@ -380,13 +380,76 @@ local TYPE_ICON = {
     [7] = "INV_Misc_Head_Human_01", [8] = "Spell_Nature_Polymorph", [9] = "INV_Misc_Gear_01",
 }
 -- The mob's model (creature display id) for a real portrait, from Haulwise Data.
+-- Mobs Haulwise Data doesn't know (new in WoW Forever) get their model from the game: a model
+-- frame shown the creature by its NPC number tells its display id (asking through the unit
+-- you target gives 0). One mob per step, in the background, once per session each.
+local looker
+local function lookFrame()
+    if looker or not CreateFrame then return looker end
+    local ok, m = pcall(CreateFrame, "PlayerModel", nil, UIParent)
+    if not ok or not m then return nil end
+    looker = m
+    m:SetSize(1, 1)
+    m:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
+    m:SetAlpha(0)
+    m:Show()
+    return m
+end
+
+local queue, queued, asked = {}, {}, {}
+local working = false
+local function displayOf(npc)
+    local m = lookFrame()
+    if not (m and m.SetCreature and m.GetDisplayInfo) then return nil end
+    if not pcall(m.SetCreature, m, npc) then return nil end
+    local ok, d = pcall(m.GetDisplayInfo, m)
+    return ok and type(d) == "number" and d > 0 and d or nil
+end
+local function step()
+    local npc = table.remove(queue, 1)
+    if not npc then
+        working = false
+        if GP.lookFound then
+            GP.lookFound = nil
+            if GP.ForgetRows then GP:ForgetRows() end
+            if GP.RefreshUI then GP:RefreshUI() end
+        end
+        return
+    end
+    queued[npc] = nil
+    asked[npc] = (asked[npc] or 0) + 1
+    local d = displayOf(npc)
+    if d then
+        GP.db.mobLook = GP.db.mobLook or {}
+        GP.db.mobLook[npc] = GP.db.mobLook[npc] or {}
+        GP.db.mobLook[npc].d = d
+        GP.lookFound = true
+    elseif asked[npc] < 2 then
+        -- The game may not have had it yet: one more try at the end.
+        queue[#queue + 1] = npc
+        queued[npc] = true
+    end
+    C_Timer.After(0.05, step)
+end
+local function wantLook(npc)
+    if queued[npc] or (asked[npc] or 0) >= 2 then return end
+    queued[npc] = true
+    queue[#queue + 1] = npc
+    if not working then working = true; C_Timer.After(0.1, step) end
+end
+
+-- For the tests: start over, as after a /reload.
+function GP._ResetLooks() looker, queue, queued, asked, working = nil, {}, {}, {}, false end
+
 function GP.MobDisplay(npc)
-    local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
+    npc = tonumber(npc) or 0
+    local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[npc]
     local d = e and tonumber(e[10])
     if d and d > 0 then return d end
-    -- Mobs Haulwise Data doesn't know (new in WoW Forever): the look you saw when you targeted it.
-    local look = GP.db and GP.db.mobLook and GP.db.mobLook[tonumber(npc) or 0]
-    return look and look.d or nil
+    local look = GP.db and GP.db.mobLook and GP.db.mobLook[npc]
+    if look and look.d then return look.d end
+    if npc > 0 and GP.db then wantLook(npc) end
+    return nil
 end
 
 function GP.MobIcon(npc)
@@ -398,68 +461,28 @@ function GP.MobIcon(npc)
     return name and ("Interface\\Icons\\" .. name) or nil
 end
 
--- Remember how a mob looks when you target it or point at it: its model (for the portrait),
--- creature type and beast family (for the icon). Only for mobs Haulwise Data doesn't know.
-local looker
--- The game fills a model in only once it has loaded it, so the model frame stays "shown" (1 pixel,
--- invisible) and asks again when it has loaded, and a moment later in case that never comes.
-local function readModel(npc, guid, unit)
-    if not looker then return end
-    local ok, d = pcall(looker.GetDisplayInfo, looker)
-    if ok and type(d) == "number" and d > 0 and GP.db.mobLook[npc] then
-        GP.db.mobLook[npc].d = d
-        looker.npc = nil
-        if GP.ForgetRows then GP:ForgetRows() end
-        return true
-    end
-end
+-- Creature type and beast family, for the icon while there's no portrait: read when you target
+-- a mob or point at it.
 local function noteLook(unit)
     if not (UnitExists and UnitExists(unit)) or UnitIsPlayer(unit) then return end
-    local guid = GP.Safe(UnitGUID(unit))
-    local npc = GP.NpcFromGUID(guid)
+    local npc = GP.NpcFromGUID(GP.Safe(UnitGUID(unit)))
     if not npc or not GP.db then return end
     local known = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[npc]
     if known and tonumber(known[10] or 0) > 0 then return end
     GP.db.mobLook = GP.db.mobLook or {}
-    local look = GP.db.mobLook[npc]
-    if look and look.d then return end
-    look = look or {}
-    if UnitCreatureType then
+    local look = GP.db.mobLook[npc] or {}
+    if not look.t and UnitCreatureType then
         local ok, _, typeID = pcall(UnitCreatureType, unit)
         if ok and type(typeID) == "number" then look.t = typeID end
     end
-    if UnitCreatureFamily then
+    if not look.f and UnitCreatureFamily then
         local ok, _, familyID = pcall(UnitCreatureFamily, unit)
         if ok and type(familyID) == "number" then look.f = familyID end
     end
     GP.db.mobLook[npc] = look
-    if CreateFrame and not looker then
-        local ok, m = pcall(CreateFrame, "PlayerModel", nil, UIParent)
-        if ok and m then
-            looker = m
-            m:SetSize(1, 1)
-            m:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-            m:SetAlpha(0)
-            m:Show()
-            pcall(m.SetScript, m, "OnModelLoaded", function(self)
-                if self.npc then readModel(self.npc) end
-            end)
-        end
-    end
-    if not (looker and looker.SetUnit and looker.GetDisplayInfo) then return end
-    looker.npc = npc
-    if not pcall(looker.SetUnit, looker, unit) then return end
-    if readModel(npc) then return end
-    for _, wait in ipairs({ 0.3, 1.5 }) do
-        C_Timer.After(wait, function()
-            if looker.npc ~= npc then return end
-            -- Point it at the unit again if it's still the same mob: the first try may have
-            -- come before the game had its model.
-            if GP.Safe(UnitGUID(unit)) == guid then pcall(looker.SetUnit, looker, unit) end
-            readModel(npc)
-        end)
-    end
+    if not look.d then asked[npc] = nil; wantLook(npc) end
 end
+
 -- /haul look: what the game tells about your target's look (to find out why a portrait is missing).
 function GP:DebugLook()
     local P = GP.Print
@@ -467,12 +490,17 @@ function GP:DebugLook()
     local npc = GP.NpcFromGUID(guid)
     P("target npc: " .. tostring(npc) .. "  guid: " .. tostring(guid))
     if UnitCreatureType then P("UnitCreatureType: " .. table.concat({ tostring((select(1, pcall(UnitCreatureType, "target")))), tostring(select(2, pcall(UnitCreatureType, "target"))), tostring(select(3, pcall(UnitCreatureType, "target"))) }, ", ")) end
+    lookFrame()
     P("looker: " .. tostring(looker) .. "  shown: " .. tostring(looker and looker:IsShown()) .. "  GetDisplayInfo: " .. tostring(looker and looker.GetDisplayInfo ~= nil))
     if looker then
         local ok, e = pcall(looker.SetUnit, looker, "target")
         P("SetUnit: " .. tostring(ok) .. " " .. tostring(e))
         local ok2, d = pcall(looker.GetDisplayInfo, looker)
         P("GetDisplayInfo now: " .. tostring(ok2) .. " " .. tostring(d))
+        local okc, ec = pcall(looker.SetCreature, looker, npc)
+        P("SetCreature: " .. tostring(okc) .. " " .. tostring(ec))
+        local okc2, dc = pcall(looker.GetDisplayInfo, looker)
+        P("GetDisplayInfo after SetCreature: " .. tostring(okc2) .. " " .. tostring(dc))
         C_Timer.After(1, function()
             local ok3, d3 = pcall(looker.GetDisplayInfo, looker)
             P("GetDisplayInfo after 1s: " .. tostring(ok3) .. " " .. tostring(d3))
