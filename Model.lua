@@ -401,9 +401,22 @@ end
 -- Remember how a mob looks when you target it or point at it: its model (for the portrait),
 -- creature type and beast family (for the icon). Only for mobs Haulwise Data doesn't know.
 local looker
+-- The game fills a model in only once it has loaded it, so the model frame stays "shown" (1 pixel,
+-- invisible) and asks again when it has loaded, and a moment later in case that never comes.
+local function readModel(npc, guid, unit)
+    if not looker then return end
+    local ok, d = pcall(looker.GetDisplayInfo, looker)
+    if ok and type(d) == "number" and d > 0 and GP.db.mobLook[npc] then
+        GP.db.mobLook[npc].d = d
+        looker.npc = nil
+        if GP.ForgetRows then GP:ForgetRows() end
+        return true
+    end
+end
 local function noteLook(unit)
     if not (UnitExists and UnitExists(unit)) or UnitIsPlayer(unit) then return end
-    local npc = GP.NpcFromGUID(GP.Safe(UnitGUID(unit)))
+    local guid = GP.Safe(UnitGUID(unit))
+    local npc = GP.NpcFromGUID(guid)
     if not npc or not GP.db then return end
     local known = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[npc]
     if known and tonumber(known[10] or 0) > 0 then return end
@@ -419,16 +432,33 @@ local function noteLook(unit)
         local ok, _, familyID = pcall(UnitCreatureFamily, unit)
         if ok and type(familyID) == "number" then look.f = familyID end
     end
+    GP.db.mobLook[npc] = look
     if CreateFrame and not looker then
         local ok, m = pcall(CreateFrame, "PlayerModel", nil, UIParent)
-        if ok and m then looker = m; m:Hide() end
+        if ok and m then
+            looker = m
+            m:SetSize(1, 1)
+            m:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
+            m:SetAlpha(0)
+            m:Show()
+            pcall(m.SetScript, m, "OnModelLoaded", function(self)
+                if self.npc then readModel(self.npc) end
+            end)
+        end
     end
-    if looker and looker.SetUnit and looker.GetDisplayInfo then
-        local ok = pcall(looker.SetUnit, looker, unit)
-        local ok2, d = pcall(looker.GetDisplayInfo, looker)
-        if ok and ok2 and type(d) == "number" and d > 0 then look.d = d end
+    if not (looker and looker.SetUnit and looker.GetDisplayInfo) then return end
+    looker.npc = npc
+    if not pcall(looker.SetUnit, looker, unit) then return end
+    if readModel(npc) then return end
+    for _, wait in ipairs({ 0.3, 1.5 }) do
+        C_Timer.After(wait, function()
+            if looker.npc ~= npc then return end
+            -- Point it at the unit again if it's still the same mob: the first try may have
+            -- come before the game had its model.
+            if GP.Safe(UnitGUID(unit)) == guid then pcall(looker.SetUnit, looker, unit) end
+            readModel(npc)
+        end)
     end
-    if next(look) then GP.db.mobLook[npc] = look end
 end
 GP:On("PLAYER_TARGET_CHANGED", function() noteLook("target") end)
 GP:On("UPDATE_MOUSEOVER_UNIT", function() noteLook("mouseover") end)
