@@ -15,7 +15,10 @@ local L = GP.L
 local AH_CUT = 0.95
 local THROTTLE = 15 * 60
 local CHUNK = 2500
-local HISTORY_DAYS = 28
+local HISTORY_DAYS = 21   -- trends look 13 days back, the weekday pattern needs 14
+-- Gear (weapons 2, armor 4) gets no price history or sell speed: each piece is its own listing,
+-- often with its own suffix, so a "trend" means little, and it was over a third of the memory.
+local function tracked(classID) return classID ~= 2 and classID ~= 4 end
 local RECIPE_CLASS = 9
 
 GP.ahOpen = false
@@ -107,6 +110,8 @@ function GP:UnpackSaved()
     -- Tidy up: history older than we keep, empty entries, and names nothing refers to.
     local oldest = GP.Day() - HISTORY_DAYS
     for id, h in pairs(db.history) do
+        local p = db.prices[id]
+        if p and not tracked(p.k) then h = "" end   -- gear: no history any more
         local parts = {}
         for d, pp, qq in h:gmatch("(%d+):(%d+):(%d+)") do
             if tonumber(d) > oldest then parts[#parts + 1] = d .. ":" .. pp .. ":" .. qq end
@@ -119,7 +124,8 @@ function GP:UnpackSaved()
     -- Sell speeds nobody has updated for two weeks are stale.
     for id, raw in pairs(db.speed or {}) do
         local d = tonumber(raw:match(":(%d+)$"))
-        if not d or d < GP.Day() - 14 then db.speed[id] = nil end
+        local p = db.prices[id]
+        if not d or d < GP.Day() - 14 or (p and not tracked(p.k)) then db.speed[id] = nil end
     end
 end
 
@@ -173,7 +179,7 @@ function GP:UpdateSellSpeed(old, oldT, lists, t)
     local db, day = self.db, GP.Day(t)
     db.speed = db.speed or {}
     for id, o in pairs(old) do
-        if o.c and o.c ~= "" then
+        if o.c and o.c ~= "" and tracked(o.k) then
             local was, top = {}, 0
             for u, c in o.c:gmatch("([%d%.]+):(%d+)") do
                 u, c = tonumber(u), tonumber(c)
@@ -369,7 +375,7 @@ local function finish(lists, names, gear)
         end
         prices[id] = rec
         if names[id] then db.names[id] = names[id] end
-        addHistory(db, id, day, rec.p, total)
+        if tracked(rec.k) then addHistory(db, id, day, rec.p, total) end
         n = n + 1
     end
     pcall(GP.UpdateSellSpeed, GP, db.prices, db.priceScanTime, lists, t)

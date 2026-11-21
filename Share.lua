@@ -221,6 +221,8 @@ function GP:LoadBundledCommunity()
     if type(Haulwise_Community) ~= "string" or Haulwise_Community == "" then return end
     local ok, uid, src = pcall(self.ParseExport, self, Haulwise_Community)
     if not ok or uid ~= "community" then return end
+    -- The text itself (over a megabyte) isn't needed once parsed: let the game free it.
+    Haulwise_Community = nil
     local saved = self.db.shared.community
     if saved and (saved.time or 0) >= (src.time or 0) then return end
     self.db.shared.community = nil
