@@ -84,6 +84,17 @@ for nid, n in g.NPCS.items():
             if s:
                 npcs[nid] = n; trainers.setdefault(p, []).append(nid)
 
+# Recipe items by what they teach ("Pattern: Icy Cloak" -> "icy cloak"), so Haulwise can find a
+# recipe's item (and so its vendors and drops) from the name its profession window shows.
+RECIPE_PREFIX = re.compile(r"^(Pattern|Plans|Schematic|Recipe|Formula|Manual|Design|Technique|Book|Tome): ", re.I)
+recipe_names = {}
+for iid, it in g.ITEMS.items():
+    if it[IK["class"]] != 9: continue
+    nm = it[IK.name] or ""
+    if RECIPE_PREFIX.match(nm):
+        key = RECIPE_PREFIX.sub("", nm).strip().lower()
+        if key and (key not in recipe_names or int(iid) < recipe_names[key]): recipe_names[key] = int(iid)
+
 for iid, it in g.ITEMS.items():
     if it[IK["class"]] != 9: continue  # recipes
     vs = it[IK.vendors]
@@ -167,6 +178,10 @@ lines.append("    },")
 lines.append("    trainers = {")
 for p in sorted(trainers):
     lines.append('        ["%s"] = { %s },' % (p, ", ".join(str(i) for i in sorted(trainers[p]))))
+lines.append("    },")
+lines.append("    recipeItems = {")
+for key in sorted(recipe_names):
+    lines.append('        ["%s"] = %d,' % (esc(key), recipe_names[key]))
 lines.append("    },")
 lines.append("    recipeVendors = {")
 for iid in sorted(vendors):

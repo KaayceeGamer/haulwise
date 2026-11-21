@@ -767,6 +767,7 @@ GP.LOCALES.frFR = {
     ["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."] = "Les recettes demandant 30+ points de plus que votre niveau sont masquées. Le niveau vient des maîtres, de l'infobulle de la recette, ou (avec ~) d'une estimation d'après le niveau requis de l'objet fabriqué.",
     ["|cffffd040Haulwise|r: how to get it"] = "|cffffd040Haulwise|r : comment l'obtenir",
     ["  Not seen yet. Open profession trainers and vendors that sell recipes, and Haulwise remembers what they offer."] = "  Pas encore vu. Ouvrez les maîtres de métier et les marchands de recettes, et Haulwise retient ce qu'ils proposent.",
+    ["Which vendor or mob isn't known yet. When you or another Haulwise player opens a vendor that sells it or loots it, it shows up here (share your data so others get it too)."] = "Le marchand ou le monstre n'est pas encore connu. Dès que vous ou un autre joueur de Haulwise ouvrez un marchand qui le vend ou le ramassez, il apparaît ici (partagez vos données pour que les autres l'aient aussi).",
     ["Cheapest way to learn it"] = "Façon la moins chère de l'apprendre",
     ["Reagents cost"] = "Coût des composants",
     ["Nobody sells the result on your AH (it may bind when made), so there's no profit to show."] = "Personne ne vend le résultat à votre HV (il est peut-être lié une fois fabriqué), il n'y a donc pas de profit à afficher.",

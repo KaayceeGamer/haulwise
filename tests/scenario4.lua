@@ -1162,4 +1162,14 @@ do
   HaulwiseData.wikiRecipes = saved
 end
 
+-- A recipe's item from Haulwise Data by its name: its vendors and drops without ever seeing it
+do
+  HaulwiseData = HaulwiseData or {}
+  local savedI, savedV = HaulwiseData.recipeItems, HaulwiseData.recipeVendors
+  HaulwiseData.recipeItems = { ["test vendor cloak"] = 99555 }
+  local _, _, id = GP:RecipeSources("Test Vendor Cloak", nil)
+  ok(id == 99555, "the pattern item is found by the recipe's name")
+  HaulwiseData.recipeItems, HaulwiseData.recipeVendors = savedI, savedV
+end
+
 print("NEW FEATURES PASSED")

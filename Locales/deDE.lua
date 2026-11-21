@@ -767,6 +767,7 @@ GP.LOCALES.deDE = {
     ["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."] = "Rezepte, die 30+ Skill mehr brauchen, als du hast, sind verborgen. Der Skill stammt von Lehrern, aus dem Tooltip des Rezepts oder (mit ~) als Schätzung aus der Stufe, die die hergestellte Ausrüstung braucht.",
     ["|cffffd040Haulwise|r: how to get it"] = "|cffffd040Haulwise|r: wie man es bekommt",
     ["  Not seen yet. Open profession trainers and vendors that sell recipes, and Haulwise remembers what they offer."] = "  Noch nicht gesehen. Öffne Berufslehrer und Händler, die Rezepte verkaufen, und Haulwise merkt sich, was sie anbieten.",
+    ["Which vendor or mob isn't known yet. When you or another Haulwise player opens a vendor that sells it or loots it, it shows up here (share your data so others get it too)."] = "Welcher Händler oder Mob ist noch unbekannt. Sobald du oder ein anderer Haulwise-Spieler einen Händler öffnet, der es verkauft, oder es erbeutet, erscheint es hier (teile deine Daten, damit andere es auch bekommen).",
     ["Cheapest way to learn it"] = "Billigster Weg, es zu lernen",
     ["Reagents cost"] = "Reagenzien kosten",
     ["Nobody sells the result on your AH (it may bind when made), so there's no profit to show."] = "Niemand verkauft das Ergebnis in deinem AH (es wird vielleicht beim Herstellen gebunden), also gibt es keinen Gewinn anzuzeigen.",

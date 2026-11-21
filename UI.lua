@@ -532,6 +532,12 @@ TAB.recipes = {
             t:AddLine(L["  Not seen yet. Open profession trainers and vendors that sell recipes, and Haulwise remembers what they offer."], 0.6, 0.6, 0.6, true)
         end
         if r.src then t:AddLine(r.src, 0.85, 0.85, 0.85, true) end
+        -- Only the wiki knows how it's learned: say how the rest gets filled in.
+        local onlyWiki = r.sources and #r.sources > 0
+        for _, s in ipairs(r.sources or {}) do if s.kind ~= "Wiki" then onlyWiki = false end end
+        if onlyWiki then
+            t:AddLine(L["Which vendor or mob isn't known yet. When you or another Haulwise player opens a vendor that sells it or loots it, it shows up here (share your data so others get it too)."], 0.6, 0.6, 0.6, true)
+        end
         if r.learnCost then t:AddDoubleLine(L["Cheapest way to learn it"], Coins(r.learnCost)) end
         if r.profit then t:AddDoubleLine(L["Profit per craft"], Coins(r.profit)) end
         if r.noSale then

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.16.1
+- **Recipes: which vendor**: Haulwise Data now links 759 recipes to their pattern, plan or formula item (from QuestieDB), so "how to get it" names the vendors that sell it and the mobs that drop it, and a click sets a waypoint, also for recipes whose item you've never seen. For the new Forever recipes nobody has mapped yet, the tooltip says how they get filled in: by Haulwise players opening those vendors and sharing.
+
 ## 0.16.0
 - **Kills per hour for every mob**: mobs nobody has timed no longer all count as 40 kills an hour. Haulwise Data now has an estimate per mob from how close together it stands (its spawns), its level and how many there are (55-90 an hour for most), scaled by your own kills-per-hour setting. Real kills still replace it.
 - **Buy gear upgrades from the Gear tab**: at the auction house, click an upgrade on *On the AH* and Haulwise finds that exact listing (same "of the Owl" suffix, not a cheaper one with other stats) and asks you to confirm the price. Bought upgrades leave the list.

@@ -173,6 +173,12 @@ function GP:RecipeSources(recipeName, itemID)
         end
     end
     itemID = itemID or (key and self.db.recipeItems[key])
+    -- The recipe's item from Haulwise Data (QuestieDB), by what it teaches: that finds its
+    -- vendors and drops even if you've never seen the item.
+    if not itemID and recipeName and type(HaulwiseData) == "table" and HaulwiseData.recipeItems then
+        local plain = recipeName:gsub("^[^:]+: ", ""):lower()
+        itemID = HaulwiseData.recipeItems[plain]
+    end
     if not itemID and key then
         for _, srcData in ipairs(self:SharedSources()) do
             if srcData.recipeItems and srcData.recipeItems[key] then itemID = srcData.recipeItems[key]; break end
