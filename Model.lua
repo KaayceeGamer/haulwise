@@ -460,6 +460,28 @@ local function noteLook(unit)
         end)
     end
 end
+-- /haul look: what the game tells about your target's look (to find out why a portrait is missing).
+function GP:DebugLook()
+    local P = GP.Print
+    local guid = GP.Safe(UnitGUID("target"))
+    local npc = GP.NpcFromGUID(guid)
+    P("target npc: " .. tostring(npc) .. "  guid: " .. tostring(guid))
+    if UnitCreatureType then P("UnitCreatureType: " .. table.concat({ tostring((select(1, pcall(UnitCreatureType, "target")))), tostring(select(2, pcall(UnitCreatureType, "target"))), tostring(select(3, pcall(UnitCreatureType, "target"))) }, ", ")) end
+    P("looker: " .. tostring(looker) .. "  shown: " .. tostring(looker and looker:IsShown()) .. "  GetDisplayInfo: " .. tostring(looker and looker.GetDisplayInfo ~= nil))
+    if looker then
+        local ok, e = pcall(looker.SetUnit, looker, "target")
+        P("SetUnit: " .. tostring(ok) .. " " .. tostring(e))
+        local ok2, d = pcall(looker.GetDisplayInfo, looker)
+        P("GetDisplayInfo now: " .. tostring(ok2) .. " " .. tostring(d))
+        C_Timer.After(1, function()
+            local ok3, d3 = pcall(looker.GetDisplayInfo, looker)
+            P("GetDisplayInfo after 1s: " .. tostring(ok3) .. " " .. tostring(d3))
+            local look = npc and GP.db.mobLook and GP.db.mobLook[npc]
+            P("saved: " .. (look and ("d=" .. tostring(look.d) .. " t=" .. tostring(look.t) .. " f=" .. tostring(look.f)) or "nothing"))
+        end)
+    end
+end
+
 GP:On("PLAYER_TARGET_CHANGED", function() noteLook("target") end)
 GP:On("UPDATE_MOUSEOVER_UNIT", function() noteLook("mouseover") end)
 
