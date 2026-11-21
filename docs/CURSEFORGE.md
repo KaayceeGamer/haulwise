@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.15:** buy straight from the shopping list: one click finds the cheapest listings, the next buys exactly what you need after you confirm the total. It warns when a reagent is dear today and names the alt who already has it. **0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
+**New in 0.15:** buy straight from the shopping list: one click finds the cheapest listings, the next buys exactly what you need after you confirm the total. It warns when a reagent is dear today and names the alt who already has it. Session gold per hour counts your AH sales, Gear finds far more upgrades on the AH, and Farm shows each mob's own portrait. **0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
 
 ---
 
@@ -56,7 +56,7 @@ Haulwise measures:
 - Coins, skinning and pickpocket
 - How fast **you** kill each mob
 
-Each mob is valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
+Each mob is shown with its own portrait and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
 
 Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
 
