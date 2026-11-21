@@ -229,6 +229,27 @@ local function rankPicker()
     }
 end
 
+-- Farm: every mob, only the ones somebody has farmed, or only the estimates.
+local function showPicker()
+    local NAMES = { real = L["Farmed"], est = L["Estimates"] }
+    return {
+        label = function() return L["Show: "] .. (NAMES[S().farmData] or L["All mobs"]) end,
+        items = function()
+            local cur = S().farmData
+            return {
+                { text = L["All mobs"], value = false, checked = cur == nil,
+                  tip = L["Mobs with real kills and estimates together. Under Safe, an estimate counts for less."] },
+                { text = L["Farmed"], value = "real", checked = cur == "real",
+                  tip = L["Only mobs that you or players who share have killed: real drop rates."] },
+                { text = L["Estimates"], value = "est", checked = cur == "est",
+                  tip = L["Only mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Worth a try, then your kills tell the truth."] },
+            }
+        end,
+        pick = function(v) S().farmData = v or nil; GP.scrollToTop = true end,
+        tip = L["Real kills, estimates from loot tables, or both."],
+    }
+end
+
 local function zonePicker()
     return {
         label = function()
@@ -320,7 +341,14 @@ TAB.farm = {
             -- Only guesses here, while real data waits elsewhere: say how to see it.
             text = text .. "  " .. string.format(L["|cff5fd35f%s in other zones: set Zone to All|r"], plural(hidden, "mob"))
         elseif b.estOnly then
-            text = text .. "  " .. grey(L["estimate: nobody has farmed it yet"])
+            -- The top is a guess: name the best mob with real kills too.
+            local real
+            for _, r in ipairs(rows) do if not r.estOnly then real = r; break end end
+            text = text .. "  " .. grey(L["estimate"])
+            if real then
+                local key = S().sortBy == "est" and "est" or "safe"
+                text = text .. grey("   ·   ") .. string.format(L["farmed: |cffffffff%s|r %s/h"], real.name, Coins(real[key], true))
+            end
         elseif b.kills < 30 then
             local word, color = GP.Confidence(b.kills)
             text = text .. "  " .. color .. string.format(L["%s, %s"], word, plural(b.kills, "kill")) .. "|r"
@@ -376,11 +404,10 @@ TAB.farm = {
             t:AddLine(L["Few kills so far: drop chances can still move a lot. Every kill anyone shares makes this surer."], 1, 0.45, 0.4, true)
         end
     end,
-    pickers = { rankPicker(), zonePicker() },
+    pickers = { rankPicker(), showPicker(), zonePicker() },
     options = {
         option(L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."]),
         option(L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."]),
-        option(L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."]),
         option(L["Skinning/gathering"], "includeGather", L["Count skinning, mining and herbing off corpses."], function() return GP:PlayerHasGathering() end),
         option(L["Pickpocket"], "includePickpocket", L["Add the coins and items you pickpocket."], function() return GP:PlayerIsRogue() end),
         option(L["Value as crafted"], "valueAsCrafted", L["Value drops at what they're worth after you craft them (e.g. cooked), when that's more than selling raw."]),
@@ -1138,11 +1165,10 @@ TAB.farm_zones = {
         t:AddLine(" ")
         t:AddLine(L["Click: show only this zone's mobs."], 0.6, 0.6, 0.6)
     end,
-    pickers = { rankPicker() },
+    pickers = { rankPicker(), showPicker() },
     options = {
         option(L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."]),
         option(L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."]),
-        option(L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."]),
     },
 }
 
@@ -1724,7 +1750,7 @@ local function build()
     local acc = 0
     f:SetScript("OnUpdate", function(_, el)
         acc = acc + el
-        if acc > 5 then acc = 0; GP:DrawSession() end
+        if acc > 5 then acc = 0; GP:DrawSession(); GP:RefreshScanButton() end
     end)
     f:SetScript("OnShow", function() GP:RefreshUI() end)
 end
@@ -2226,7 +2252,7 @@ function GP:RefreshUI()
     else
         line = L["|cffff9944No community data yet: click to import it|r"]
     end
-    if not S().useShared then line = line .. grey(L["  (turned off on the Farm tab)"]) end
+    if not S().useShared then line = line .. grey(L["  (turned off in Options on the Farm tab)"]) end
     local here = self:CurrentZone()
     if here and S().useShared then
         local zm, zk = self:CommunityInZone(here)
@@ -2265,7 +2291,10 @@ function GP:RefreshScanButton()
     end
     f.scan.label:SetTextColor(canScan and GOLD[1] or 0.5, canScan and GOLD[2] or 0.5, canScan and GOLD[3] or 0.5)
     local p = self.scanProgress
-    f.scan:SetLabel(not p and L["Scan AH"] or (p == 0 and L["Waiting for AH..."] or string.format(L["Scanning %d%%"], math.floor(p * 100))))
+    local label = L["Scan AH"]
+    if p then label = p == 0 and L["Waiting for AH..."] or string.format(L["Scanning %d%%"], math.floor(p * 100))
+    elseif wait > 0 then label = string.format(L["Scan AH in %d min"], math.ceil(wait / 60)) end
+    f.scan:SetLabel(label)
 end
 
 local function place()

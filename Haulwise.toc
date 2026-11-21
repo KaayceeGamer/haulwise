@@ -49,3 +49,4 @@ Uses.lua
 Favor.lua
 QuestRewards.lua
 Minimap.lua
+Perf.lua

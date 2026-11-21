@@ -72,6 +72,8 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Farm: the Show menu splits mobs with real kills from estimates, and estimates count for less under Safe."],
+    L["Settings: sections on the left, and every switch says what it does."],
     L["Clearer controls: small tabs switch what a list shows, menus filter it, and Options holds the switches. Popups and mailbox settings moved to Settings."],
     L["Craft → Enchant requests: what people ask an enchanter for in trade chat, and what they offer. An estimate, not sales."],
     L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],

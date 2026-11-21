@@ -46,6 +46,9 @@ end
 -- the CMaNGOS Classic DB). They count as PRIOR_KILLS kills' worth of evidence: enough to rank
 -- a mob before anyone farms it, and soon outweighed by real kills.
 local PRIOR_KILLS = 15
+-- A mob nobody has killed is all estimate: Classic's loot table may not match WoW Forever, so
+-- under Safe its items count for half. Real kills, yours or shared, soon outrank it.
+local EST_ONLY_SAFE = 0.5
 local estimates
 local function parseDrops(s)
     local out = {}
@@ -276,6 +279,7 @@ function GP:Evaluate(npc, m)
         est, safe = est + e3 + ppCoins, safe + s3 + ppCoins
     end
     table.sort(lines, function(a, b) return a.perHour > b.perHour end)
+    if m.est and m.kills == 0 then safe = coins + (safe - coins) * EST_ONLY_SAFE end
 
     local unpriced = 0
     for _, l in ipairs(lines) do if not l.priced and l.vendor == 0 then unpriced = unpriced + 1 end end
@@ -343,7 +347,12 @@ function GP:Rank(zone)
             -- would put level 1 kobolds on top for a level 38. Ones with real kills still show.
             -- With one zone picked, show its low mobs anyway: you asked about that zone.
             local tooLow = s.levelWindow and not zone and m.kills == 0 and m.maxL and m.maxL < level - 10
-            if not tooHigh and not tooLow then rows[#rows + 1] = self:Evaluate(npc, m) end
+            -- Show: all mobs, only farmed ones (real kills, yours or shared), or only estimates.
+            local show = s.farmData
+            local estOnly = m.kills == 0
+            if not tooHigh and not tooLow and not (show == "real" and estOnly) and not (show == "est" and not estOnly) then
+                rows[#rows + 1] = self:Evaluate(npc, m)
+            end
         end
     end
     local key = s.sortBy == "est" and "est" or "safe"

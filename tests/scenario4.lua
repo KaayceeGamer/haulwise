@@ -1277,4 +1277,26 @@ do -- Enchant requests in trade chat: an estimate, counted per enchant
   HaulwiseData.wikiRecipes = saved
 end
 
+do -- Farm: Show all / farmed / estimates, and an estimate counts for less under Safe
+  local all = GP:Rank()
+  local nEst, nReal = 0, 0
+  for _, r in ipairs(all) do if r.estOnly then nEst = nEst + 1 else nReal = nReal + 1 end end
+  GP.db.settings.farmData = "real"
+  local real = GP:Rank()
+  GP.db.settings.farmData = "est"
+  local est = GP:Rank()
+  GP.db.settings.farmData = nil
+  ok(#real == nReal and #est == nEst, "Show: farmed and estimates split the list (" .. nReal .. " + " .. nEst .. ")")
+  for _, r in ipairs(est) do ok(r.safe < r.est or r.est == 0, "an estimate's safe figure is well below its expected one"); break end
+end
+do -- /haul perf runs every list without an error
+  local lines = {}
+  local real = GP.Print
+  GP.Print = function(t) lines[#lines + 1] = t end
+  SlashCmdList.HAULWISE("perf")
+  GP.Print = real
+  local errors = 0
+  for _, l in ipairs(lines) do if l:find("error") then errors = errors + 1; print(l) end end
+  ok(#lines >= 12 and errors == 0, "/haul perf times every list (" .. #lines .. " lines)")
+end
 print("NEW FEATURES PASSED")

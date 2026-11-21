@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.16.1"
+GP.VERSION = "0.17.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -317,6 +317,8 @@ SlashCmdList.HAULWISE = function(msg)
         s.minimap = not (s.minimap ~= false)
         GP:UpdateMinimapButton()
         GP.Print(s.minimap and GP.L["Minimap button shown."] or GP.L["Minimap button hidden. /haul minimap brings it back."])
+    elseif cmd == "perf" then
+        GP:Perf()
     elseif cmd == "room" then
         GP:ShowMakeRoom()
     elseif cmd == "bags" or cmd == "gear" or cmd == "holdings" then

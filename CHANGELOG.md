@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.0
+- **Farm: estimates and real kills apart**: a new *Show* menu picks all mobs, only farmed ones (real kills, yours or shared) or only estimates. Under *Safe*, a mob nobody has killed counts its loot-table items for half, so mobs with real kills aren't buried under guesses. When the top row is a guess, the hero line also names the best farmed mob. A picked zone (*Where you are*) shows its low mobs too, instead of an empty list.
+- **Settings window**: sections on the left (Look, Bags and loot, Gear, Farming, Auction house and mail, Tooltips), and every switch says what it does right under it, no hovering needed. *Use Pawn* is now in the Weights menu on the Gear tab.
+- **Scan AH** says how long the game's wait has left ("Scan AH in 12 min").
+- **/haul perf**: shows how much memory Haulwise uses and how long each list takes to work out, slowest first, to find what stutters.
+
 ## 0.16.1
 - **Clearer controls on every tab**: the row under the tabs no longer mixes everything as checkboxes. Small tabs on the left switch what a list shows (Farm: Mobs | Zones, Craft: Best profit | Skill up | Enchant requests, Gear: Your gear | On the AH, Market: Prices | Your sales). Menus pick one of a few choices (Profession, Rank by, Zone, Weights, Min profit, Max price, Character, Where). One *Options* menu holds the switches that change what a list counts. Buttons that do something (Find trainer, Queue best 5, Shopping list, Make room) sit on the right. Settings that change what Haulwise does elsewhere (upgrade popups, the mailbox, trade chat) are in the settings window.
 - **Enchant requests (an estimate)**: Craft has a new view, *Enchant requests*. In a city, Haulwise reads trade chat for messages asking for an enchanter ("LF crusader", "WTB +7 agi boots, tip 5g"), counts them per enchant and times how long you listened, so you see the requests per hour, the gold people name (middle value), a rough gold per hour, and whether one of your characters knows it. Everything is marked as an estimate: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved. Turn it off with *Listen to trade chat*.
