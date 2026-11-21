@@ -348,6 +348,29 @@ function GP:Rank(zone)
     return rows
 end
 
+-- An icon for a mob: its beast family (wolf, spider, raptor...) or creature type (humanoid,
+-- elemental, undead...), from Haulwise Data. nil when the mob isn't in it.
+local FAMILY_ICON = {
+    [1] = "Ability_Hunter_Pet_Wolf", [2] = "Ability_Hunter_Pet_Cat", [3] = "Ability_Hunter_Pet_Spider",
+    [4] = "Ability_Hunter_Pet_Bear", [5] = "Ability_Hunter_Pet_Boar", [6] = "Ability_Hunter_Pet_Crocolisk",
+    [7] = "Ability_Hunter_Pet_Vulture", [8] = "Ability_Hunter_Pet_Crab", [9] = "Ability_Hunter_Pet_Gorilla",
+    [11] = "Ability_Hunter_Pet_Raptor", [12] = "Ability_Hunter_Pet_TallStrider", [15] = "Spell_Shadow_SummonFelHunter",
+    [16] = "Spell_Shadow_SummonVoidWalker", [17] = "Spell_Shadow_SummonSuccubus", [20] = "Ability_Hunter_Pet_Scorpid",
+    [21] = "Ability_Hunter_Pet_Turtle", [23] = "Spell_Shadow_SummonImp", [24] = "Ability_Hunter_Pet_Bat",
+    [25] = "Ability_Hunter_Pet_Hyena", [26] = "Ability_Hunter_Pet_Owl", [27] = "Ability_Hunter_Pet_WindSerpent",
+}
+local TYPE_ICON = {
+    [1] = "Ability_Hunter_BeastTaming", [2] = "INV_Misc_Head_Dragon_01", [3] = "Spell_Shadow_SummonFelHunter",
+    [4] = "Spell_Frost_SummonWaterElemental", [5] = "Spell_Nature_Earthquake", [6] = "Spell_Shadow_RaiseDead",
+    [7] = "INV_Misc_Head_Human_01", [8] = "Spell_Nature_Polymorph", [9] = "INV_Misc_Gear_01",
+}
+function GP.MobIcon(npc)
+    local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
+    if not e then return nil end
+    local name = FAMILY_ICON[e[9] or 0] or TYPE_ICON[e[8] or 0]
+    return name and ("Interface\\Icons\\" .. name) or nil
+end
+
 -- Mobs with real kills (yours or shared) outside `zone`: what "This zone only" hides.
 function GP:FarmHiddenElsewhere(zone)
     if not zone then return 0 end

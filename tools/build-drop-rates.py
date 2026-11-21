@@ -71,10 +71,12 @@ with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
     dump = [l for l in f if l.startswith("INSERT INTO `creature_template`") or l.startswith("INSERT INTO `creature_loot_template`")
             or l.startswith("INSERT INTO `reference_loot_template`") or l.startswith("INSERT INTO `skinning_loot_template`")]
 
-# creature_template columns (0-based): Entry 0, Rank 33, MinLootGold 54, MaxLootGold 55, LootId 56, SkinningLootId 58
+# creature_template columns (0-based): Entry 0, Family 11, CreatureType 12, Rank 33, MinLootGold 54,
+# MaxLootGold 55, LootId 56, SkinningLootId 58
 templates = {}
 for r in table_rows(dump, "creature_template"):
-    templates[r[0]] = {"rank": r[33], "gold": ((r[54] or 0) + (r[55] or 0)) / 2, "loot": r[56] or 0, "skin": r[58] or 0}
+    templates[r[0]] = {"rank": r[33], "gold": ((r[54] or 0) + (r[55] or 0)) / 2, "loot": r[56] or 0, "skin": r[58] or 0,
+                       "type": r[12] or 0, "family": r[11] or 0}
 
 def loot_table(name):
     t = {}
@@ -160,7 +162,8 @@ for nid, n in g.NPCS.items():
     if not di and not t["gold"]: continue
     m = main_map(n)
     if not m: continue
-    mobs[nid] = (n[NK.name], int(n[NK.minLevel] or 0), int(n[NK.maxLevel] or 0), m, int(t["gold"]), di, si)
+    mobs[nid] = (n[NK.name], int(n[NK.minLevel] or 0), int(n[NK.maxLevel] or 0), m, int(t["gold"]), di, si,
+                 int(t["type"]), int(t["family"]))
 
 lines = [
     "-- Haulwise Data: estimated drop rates and coins per kill for WoW Forever's mobs.",
@@ -168,13 +171,14 @@ lines = [
     "-- https://github.com/cmangos/classic-db; thanks to the CMaNGOS team and contributors), with",
     "-- Forever's mob names, levels and zones from QuestieDB (GPLv3). Licensed under the GNU GPL v3.",
     "-- [npcID] = { name, min level, max level, map number, coins per kill (copper),",
-    "--             \"item:chance%:count/...\" (loot), \"item:chance%:count/...\" (skinning) }",
+    "--             \"item:chance%:count/...\" (loot), \"item:chance%:count/...\" (skinning),",
+    "--             creature type (1 beast ... 7 humanoid ...), beast family (1 wolf, 3 spider ...) }",
     "HaulwiseData = HaulwiseData or {}",
     "HaulwiseData.estimates = {",
 ]
 for nid in sorted(mobs):
-    name, lo, hi, m, gold, di, si = mobs[nid]
-    lines.append('    [%d] = { "%s", %d, %d, %d, %d, "%s", "%s" },' % (nid, esc(name), lo, hi, m, gold, di, si))
+    name, lo, hi, m, gold, di, si, ty, fam = mobs[nid]
+    lines.append('    [%d] = { "%s", %d, %d, %d, %d, "%s", "%s", %d, %d },' % (nid, esc(name), lo, hi, m, gold, di, si, ty, fam))
 lines.append("}")
 open(out, "w", encoding="utf-8").write("\n".join(lines) + "\n")
 print("mobs with estimates", len(mobs), "->", out)

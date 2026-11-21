@@ -1048,4 +1048,15 @@ do
   GP.db.ahUpgrades = saved
 end
 
+-- Farm: mobs get an icon for what they are (wolf, spider, humanoid, elemental), not an item
+do
+  local savedRaw = HaulwiseData and HaulwiseData.estimates
+  HaulwiseData = HaulwiseData or {}
+  HaulwiseData.estimates = { [990010] = { "Wolf", 7, 8, 1429, 0, "", "", 1, 1 }, [990011] = { "Exile", 38, 39, 1417, 0, "", "", 4, 0 }, [990012] = { "Old", 1, 1, 1, 0, "", "" } }
+  ok(GP.MobIcon(990010) == "Interface\\Icons\\Ability_Hunter_Pet_Wolf", "a wolf gets a wolf")
+  ok(GP.MobIcon(990011) == "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "an elemental gets an elemental")
+  ok(GP.MobIcon(990012) == nil and GP.MobIcon(123) == nil, "unknown: nil (the row falls back to its main item)")
+  HaulwiseData.estimates = savedRaw
+end
+
 print("NEW FEATURES PASSED")
