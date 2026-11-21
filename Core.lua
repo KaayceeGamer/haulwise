@@ -39,6 +39,7 @@ local DEFAULTS = {
     sizes = {},         -- [frameName] = { width, height }
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
+    mobLook = {},       -- [npcID] = { d = display id, t = creature type, f = beast family }: mobs Haulwise Data lacks
     enchantDemand = {}, -- ["Realm|A"] = { list = { {time, enchant, gold offered} }, listen = {[day] = seconds}, supply = {[day] = n} }
     shared = {},        -- [sourceId] = { label, time, mobs }
     names = {},

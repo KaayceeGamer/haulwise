@@ -321,7 +321,7 @@ TAB.farm = {
         local earner = top and (itemName(top.id) .. grey(string.format(" %d%%", share * 100))) or grey("coins")
         if top and top.craft and not top.crafted then earner = earner .. L[" |cff88ccffcraft↑|r"] end
         return {
-            name = r.name, icon = GP.MobIcon(r.npc) or (top and GP.ItemIcon(top.id)) or 133784, portrait = GP.MobDisplay(r.npc),
+            name = r.name, icon = GP.MobIcon(r.npc) or "Interface\\Icons\\INV_Misc_QuestionMark", portrait = GP.MobDisplay(r.npc),
             zone = grey(GP.ZoneName(r.zone)), lvl = lv,
             kills = r.estOnly and grey(L["est."]) or (confColor(r.kills) .. r.kills .. "|r"),
             kph = r.measured and tostring(math.floor(r.kph + 0.5)) or grey("~" .. math.floor(r.kph + 0.5)),

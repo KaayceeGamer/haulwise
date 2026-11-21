@@ -1299,4 +1299,21 @@ do -- /haul perf runs every list without an error
   for _, l in ipairs(lines) do if l:find("error") then errors = errors + 1; print(l) end end
   ok(#lines >= 12 and errors == 0, "/haul perf times every list (" .. #lines .. " lines)")
 end
+do -- A mob Haulwise Data doesn't know: its look is remembered when targeted
+  local saved = { UnitExists, UnitGUID, UnitIsPlayer, UnitCreatureType, UnitCreatureFamily, CreateFrame }
+  UnitExists = function() return true end
+  UnitGUID = function() return "Creature-0-1-2-3-987654-0001" end
+  UnitIsPlayer = function() return false end
+  UnitCreatureType = function() return "Beast", 1 end
+  UnitCreatureFamily = function() return "Bat", 24 end
+  local cf = CreateFrame
+  CreateFrame = function(kind, ...)
+    local f = cf(kind, ...)
+    if kind == "PlayerModel" then f.SetUnit = function() end; f.GetDisplayInfo = function() return 4321 end end
+    return f
+  end
+  fire("PLAYER_TARGET_CHANGED")
+  ok(GP.MobDisplay(987654) == 4321 and GP.MobIcon(987654):find("Pet_Bat"), "a new mob's portrait and icon come from targeting it")
+  UnitExists, UnitGUID, UnitIsPlayer, UnitCreatureType, UnitCreatureFamily, CreateFrame = unpack(saved)
+end
 print("NEW FEATURES PASSED")

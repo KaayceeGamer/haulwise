@@ -383,15 +383,55 @@ local TYPE_ICON = {
 function GP.MobDisplay(npc)
     local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
     local d = e and tonumber(e[10])
-    return d and d > 0 and d or nil
+    if d and d > 0 then return d end
+    -- Mobs Haulwise Data doesn't know (new in WoW Forever): the look you saw when you targeted it.
+    local look = GP.db and GP.db.mobLook and GP.db.mobLook[tonumber(npc) or 0]
+    return look and look.d or nil
 end
 
 function GP.MobIcon(npc)
     local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
-    if not e then return nil end
-    local name = FAMILY_ICON[e[9] or 0] or TYPE_ICON[e[8] or 0]
+    local look = GP.db and GP.db.mobLook and GP.db.mobLook[tonumber(npc) or 0]
+    local family, kind = e and e[9], e and e[8]
+    if look then family, kind = family or look.f, kind or look.t end
+    local name = FAMILY_ICON[family or 0] or TYPE_ICON[kind or 0]
     return name and ("Interface\\Icons\\" .. name) or nil
 end
+
+-- Remember how a mob looks when you target it or point at it: its model (for the portrait),
+-- creature type and beast family (for the icon). Only for mobs Haulwise Data doesn't know.
+local looker
+local function noteLook(unit)
+    if not (UnitExists and UnitExists(unit)) or UnitIsPlayer(unit) then return end
+    local npc = GP.NpcFromGUID(GP.Safe(UnitGUID(unit)))
+    if not npc or not GP.db then return end
+    local known = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[npc]
+    if known and tonumber(known[10] or 0) > 0 then return end
+    GP.db.mobLook = GP.db.mobLook or {}
+    local look = GP.db.mobLook[npc]
+    if look and look.d then return end
+    look = look or {}
+    if UnitCreatureType then
+        local ok, _, typeID = pcall(UnitCreatureType, unit)
+        if ok and type(typeID) == "number" then look.t = typeID end
+    end
+    if UnitCreatureFamily then
+        local ok, _, familyID = pcall(UnitCreatureFamily, unit)
+        if ok and type(familyID) == "number" then look.f = familyID end
+    end
+    if CreateFrame and not looker then
+        local ok, m = pcall(CreateFrame, "PlayerModel", nil, UIParent)
+        if ok and m then looker = m; m:Hide() end
+    end
+    if looker and looker.SetUnit and looker.GetDisplayInfo then
+        local ok = pcall(looker.SetUnit, looker, unit)
+        local ok2, d = pcall(looker.GetDisplayInfo, looker)
+        if ok and ok2 and type(d) == "number" and d > 0 then look.d = d end
+    end
+    if next(look) then GP.db.mobLook[npc] = look end
+end
+GP:On("PLAYER_TARGET_CHANGED", function() noteLook("target") end)
+GP:On("UPDATE_MOUSEOVER_UNIT", function() noteLook("mouseover") end)
 
 -- Mobs with real kills (yours or shared) outside `zone`: what "This zone only" hides.
 function GP:FarmHiddenElsewhere(zone)

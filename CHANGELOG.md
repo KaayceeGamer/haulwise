@@ -6,6 +6,7 @@
 - **Scan AH** says how long the game's wait has left ("Scan AH in 12 min").
 - **Smoother with the window open**: Farm, Zones, Deals and Market keep their lists for a few seconds between redraws (loot, bags and kills redraw often), and work them out again at once when you change a setting, menu or zone.
 - **New icon**: the bag of gold is now on the minimap button, the window, the HUD and the addon list.
+- **Portraits for WoW Forever's new mobs**: mobs Haulwise Data doesn't know (like the ones in Riverglades) get their portrait and icon the first time you target them or point at them, instead of the icon of an item they drop. Until then they show a question mark.
 - **/haul perf**: shows how much memory Haulwise uses and how long each list takes to work out, slowest first, to find what stutters.
 
 ## 0.16.1
