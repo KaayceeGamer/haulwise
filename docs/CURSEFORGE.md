@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.16.0:** every mob gets its own kills-per-hour estimate from how close together it stands; click a gear upgrade at the auction house to buy that exact listing; post cancelled auctions again from the Your auctions panel; Recipes knows how 2,300+ Forever recipes are learned (trainer, vendor, drop, quest) and their exact skill, from Warcraft Wiki; and Haulwise uses less memory.
+**New in 0.16.1:** clearer controls on every tab (small tabs switch what a list shows, menus filter it, one Options menu holds the switches); **Enchant requests**, an estimate of what people ask enchanters for in trade chat and what they offer; Recipes names the vendor that sells each pattern for 759 more recipes; and no more stutter with the Recipes tab open.
 
 ---
 
@@ -25,7 +25,7 @@ Every item is valued at the highest of:
 
 The tooltip shows the whole calculation, and **Best move** says what gets the most for each item: sell on the AH, sell to a vendor, disenchant it, or send it to an alt who can. When disenchanting wins, a **Disenchant** button does the best one for you.
 
-**Leveling Enchanting?** Tick **Disenchant for mats** and gear you can disenchant yourself is marked to disenchant even when selling pays a bit more. Haulwise shows what that costs you, picks the cheapest one first, and leaves alone anything that sells for more than three times its mats.
+**Leveling Enchanting?** Turn on **Disenchant for mats** (Options on the Bags tab) and gear you can disenchant yourself is marked to disenchant even when selling pays a bit more. Haulwise shows what that costs you, picks the cheapest one first, and leaves alone anything that sells for more than three times its mats.
 
 **Gear tooltips** show the best move, what the item disenchants into at your auction house prices, and what **your own disenchants** of it (or items like it) actually gave.
 
@@ -56,11 +56,11 @@ Haulwise measures:
 - Coins, skinning and pickpocket
 - How fast **you** kill each mob
 
-Each mob is shown with its own portrait and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **By zone** to see where to go, or **This zone only** to see what's worth killing right where you are.
+Each mob is shown with its own portrait and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **Zones** to see where to go, or set **Zone** to *Where you are* to see what's worth killing right here.
 
 Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
 
-**Mobs nobody has farmed yet** are ranked too, from estimated drop rates in Classic's loot tables. They're marked *est.* and *~*, and real kills (yours and shared) take over as they come in. Mob tooltips show the estimated gold per hour as well. Turn estimates off with **Estimates** on the Farm tab.
+**Mobs nobody has farmed yet** are ranked too, from estimated drop rates in Classic's loot tables. They're marked *est.* and *~*, and real kills (yours and shared) take over as they come in. Mob tooltips show the estimated gold per hour as well. Turn estimates off under **Options** on the Farm tab.
 
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin, **how many sell per day** and 7-day trend.
@@ -72,7 +72,8 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
-- Show **one profession at a time** with the Profession button.
+- **Enchant requests** (an estimate): in a city, Haulwise counts what people ask enchanters for in trade chat, per enchant, how often per hour you're listening, the gold they name and whether you know it. Many ask by whisper and others answer first, so it's marked as an estimate everywhere. Nothing about who asked is saved.
+- Show **one profession at a time** with the Profession menu.
 
 ### 📈 Deals and Market
 - **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays). Never more than sells in about three days, and nothing nobody has been buying.
