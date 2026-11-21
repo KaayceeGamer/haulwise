@@ -997,4 +997,21 @@ do
   GP.UsePawn, GP.PawnVisibleScales = up, vs
 end
 
+-- Recipes to learn whose result has no AH price: "no AH price", not minus hundreds of gold
+do
+  GP:Char().recipes.nosale = { n = "Test Bound Belt", prof = "Tailoring", out = 7999, oq = 1, r = "2589:2", learned = false }
+  GP.db.settings.recipesShowAll = true
+  local row
+  for _, r in ipairs(GP:RecipeRows()) do if r.name == "Test Bound Belt" then row = r end end
+  ok(row and row.noSale and row.profit == nil and row.payback == nil, "no AH price for the result: no profit, no payback")
+  local rows = GP:RecipeRows()
+  local seen, okOrder = false, true
+  for _, r in ipairs(rows) do
+    if r.name == "Test Bound Belt" then seen = true elseif seen and r.profit and #(r.missing or {}) == 0 then okOrder = false end
+  end
+  ok(seen and okOrder, "and it's ranked below every recipe with a real profit")
+  GP:Char().recipes.nosale = nil
+  GP.db.settings.recipesShowAll = false
+end
+
 print("NEW FEATURES PASSED")

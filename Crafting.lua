@@ -271,6 +271,9 @@ function GP:RecipeRows()
         if not rec.learned then
             local r = self:EvalRecipe(key, rec, farmed)
             r.kind = "recipe"
+            -- Nobody sells the result on the AH (bound gear, or not scanned): "profit" would just be
+            -- minus the reagents, hundreds of gold for epics. Say there's no price instead.
+            if not r.priced then r.noSale, r.reagentCost, r.profit = true, r.cost, nil end
             rows[#rows + 1] = r
             byName[(rec.n or ""):lower()] = r
         end
@@ -358,12 +361,34 @@ function GP:RecipeSkill(r)
     local t = tooltipSkill(r.itemID)
     if t then return t, true end
     if r.out then
-        local info = GP.LinkInfo(select(2, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(r.out)) or ("item:" .. r.out))
+        local link = select(2, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(r.out))
+        if not link then
+            -- Not loaded yet: ask the game, and look again when it answers.
+            if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, r.out) end
+            GP.recipeInfoPending = true
+            return nil
+        end
+        local info = GP.LinkInfo(link)
         if info.minLevel and info.minLevel > 1 and (info.classID == 2 or info.classID == 4) then
             return math.min(300, math.max(1, info.minLevel * 5)), false
         end
+        -- Bags and other non-gear: from the item level, roughly (Runecloth Bag 55 -> ~245).
+        local ilvl = select(4, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(r.out))
+        if ilvl and ilvl > 6 and info.classID ~= 0 then
+            return math.min(300, math.max(1, ilvl * 5 - 30)), false
+        end
     end
 end
+
+-- Recipes whose result wasn't loaded: redraw once the game has sent the items.
+GP:On("GET_ITEM_INFO_RECEIVED", function()
+    if not GP.recipeInfoPending or GP.recipeRedrawQueued then return end
+    GP.recipeRedrawQueued = true
+    C_Timer.After(1, function()
+        GP.recipeRedrawQueued, GP.recipeInfoPending = false, false
+        if GP.RefreshUI then GP:RefreshUI() end
+    end)
+end)
 
 -- Best value per unit of a reagent if you craft it instead of selling it raw (for the Farm tab).
 -- What one of an item costs you to craft (cheapest recipe you know that makes it), or nil.

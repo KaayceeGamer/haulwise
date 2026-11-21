@@ -489,7 +489,7 @@ TAB.recipes = {
             prof = grey(r.prof and L[r.prof] or ""),
             skill = r.skill and ((not r.myRank and "|cffffffff") or (r.skill <= r.myRank and "|cff5fd35f")
                 or (r.skill <= r.myRank + 30 and "|cffffd040") or "|cffff6b5b") .. (r.skillExact and "" or "~") .. r.skill .. "|r" or grey("?"),
-            profit = (r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true) or grey(L["unknown"]),
+            profit = (r.noSale and grey(L["no AH price"])) or ((r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true)) or grey(L["unknown"]),
             get = get, pay = pay or grey("–"),
         }
     end,
@@ -533,6 +533,10 @@ TAB.recipes = {
         if r.src then t:AddLine(r.src, 0.85, 0.85, 0.85, true) end
         if r.learnCost then t:AddDoubleLine(L["Cheapest way to learn it"], Coins(r.learnCost)) end
         if r.profit then t:AddDoubleLine(L["Profit per craft"], Coins(r.profit)) end
+        if r.noSale then
+            if r.reagentCost and r.reagentCost > 0 then t:AddDoubleLine(L["Reagents cost"], Coins(r.reagentCost)) end
+            t:AddLine(L["Nobody sells the result on your AH (it may bind when made), so there's no profit to show."], 0.6, 0.6, 0.6, true)
+        end
         if r.buyPrice then t:AddDoubleLine(L["Recipe on AH"], Coins(r.buyPrice)) end
         if r.kind == "ahonly" then t:AddLine(L["Open this profession's window so Haulwise can price what the recipe makes."], 1, 0.6, 0.3, true) end
         t:AddLine(" ")
