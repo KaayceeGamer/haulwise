@@ -118,7 +118,8 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tool
     if not unit then return end
     local npc = GP.NpcFromGUID(UnitGUID(unit))
     local m = npc and GP:MergedMobs()[npc]
-    if not m or (m.kills < 10 and not m.est) then return end
+    -- From the first kill: with few, the line says how rough it still is.
+    if not m or (m.kills < 1 and not m.est) then return end
     local r = GP:Evaluate(npc, m)
     if r.estOnly then
         -- Nobody has shared kills of it yet: Classic's loot tables, said plainly.
