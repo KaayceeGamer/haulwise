@@ -879,7 +879,17 @@ TAB.gear_ah = {
             b.forMe and "you" or ("|cffff9944" .. (b.alt or "?") .. "|r"), b.gain * 100, Coins(b.price, true),
             grey(L["·  scanned "] .. ago(time() - d.t) .. L["  ·  click a row to find it"]))
     end,
-    empty = L["No gear upgrades found on the auction house.\n\nOpen the auction house and press Scan AH. Haulwise checks every piece of gear for sale against what you and your alts wear (log in on each alt once), and ranks them by how much upgrade each gold buys."],
+    empty = function()
+        local text = L["No gear upgrades found on the auction house.\n\nOpen the auction house and press Scan AH. Haulwise checks every piece of gear for sale against what you and your alts wear (log in on each alt once), and ranks them by how much upgrade each gold buys."]
+        local d = GP.db.ahUpgrades
+        if d and d.listings and d.listings > 0 then
+            text = text .. "\n\n" .. string.format(L["Last scan: checked %d of %d gear listings."], d.checked or 0, d.listings)
+            if (d.unloaded or 0) > 0 then
+                text = text .. " " .. string.format(L["The game didn't send the stats of %d: scan again later and more get checked."], d.unloaded)
+            end
+        end
+        return text
+    end,
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)
         t:SetHyperlink(r.link)

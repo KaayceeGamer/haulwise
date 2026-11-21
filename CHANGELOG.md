@@ -4,6 +4,7 @@
 - **Fix**: Lua error on the Gear tab with Pawn in use (Gear.lua:67, "attempt to call a nil value").
 - **Recipes**: a recipe whose result nobody sells on your AH (bound gear like Embroidered Belt of the Archmage) shows "no AH price" instead of a loss of hundreds of gold, and is ranked below recipes with a real profit. Its tooltip still says what the reagents cost.
 - **Recipes**: skill "?" for items the game hadn't loaded yet: Haulwise now asks for them and fills in the skill (bags estimated from their item level), so the "far above my skill" filter works on them too.
+- **Gear on the AH**: most gear on the auction house isn't in the game's item cache, and gear without stats can't be compared. Haulwise gave up after one retry; now it keeps asking every 3 seconds while more arrives (up to 30 seconds), so far more listings get checked. The empty page says how many were checked.
 - The session box is wider, so "loot + sales" no longer runs into the THIS SESSION label.
 
 ## 0.15.2

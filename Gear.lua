@@ -371,10 +371,12 @@ function GP:FindAHUpgrades(gear, done)
     for link, g in pairs(gear) do links[#links + 1] = { link = link, id = g.id, price = g.price } end
     local whoList = ahWhoList()
     local found, retry, i = {}, {}, 0
+    local checked, rounds = 0, 0
     pawnItems = {}
     local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
 
     local function check(l)
+        checked = checked + 1
         for _, who in ipairs(whoList) do
             local r = self:CompareGear(l.link, who)
             if r and r.gain >= MIN_GAIN and not (r.atLevel and r.atLevel > (who.level or 1) + LEVEL_AHEAD) then
@@ -403,7 +405,7 @@ function GP:FindAHUpgrades(gear, done)
             perKey[k] = (perKey[k] or 0) + 1
             if perKey[k] <= PER_SLOT and #rows < 200 then rows[#rows + 1] = r end
         end
-        self.db.ahUpgrades = { t = time(), rows = rows }
+        self.db.ahUpgrades = { t = time(), rows = rows, listings = #links, checked = checked, unloaded = #retry }
         if #rows > 0 then
             self.Print(string.format(L["Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear → On the AH."], #rows))
         end
@@ -411,9 +413,25 @@ function GP:FindAHUpgrades(gear, done)
         if self.RefreshUI then self:RefreshUI() end
     end
 
+    -- Most gear on the AH isn't in the game's item cache yet, and without it there are no stats
+    -- to compare. Ask for it and look again every 3 seconds while more keeps arriving (up to 10
+    -- rounds), instead of giving up after one try.
     local function retryPass()
-        for _, l in ipairs(retry) do check(l) end
-        finishUp()
+        rounds = rounds + 1
+        local still = {}
+        for _, l in ipairs(retry) do
+            if get(l.link) then check(l) else still[#still + 1] = l end
+        end
+        local progress = #still < #retry
+        retry = still
+        if #retry > 0 and rounds < 10 and (progress or rounds < 3) then
+            for k = 1, math.min(#retry, 300) do
+                if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, retry[k].id) end
+            end
+            C_Timer.After(3, retryPass)
+        else
+            finishUp()
+        end
     end
 
     local function step()
