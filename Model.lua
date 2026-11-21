@@ -341,7 +341,8 @@ function GP:Rank(zone)
             local tooHigh = s.levelWindow and m.minL and m.minL > level + 2
             -- Mobs nobody has killed, far below you: the estimate assumes ~40 kills an hour and
             -- would put level 1 kobolds on top for a level 38. Ones with real kills still show.
-            local tooLow = s.levelWindow and m.kills == 0 and m.maxL and m.maxL < level - 10
+            -- With one zone picked, show its low mobs anyway: you asked about that zone.
+            local tooLow = s.levelWindow and not zone and m.kills == 0 and m.maxL and m.maxL < level - 10
             if not tooHigh and not tooLow then rows[#rows + 1] = self:Evaluate(npc, m) end
         end
     end

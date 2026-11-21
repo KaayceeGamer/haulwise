@@ -332,7 +332,7 @@ TAB.farm = {
         if zone then
             local hidden = GP:FarmHiddenElsewhere(zone)
             local more = hidden > 0 and ("\n" .. string.format(L["%s with real kills are in other zones."], plural(hidden, "mob"))) or ""
-            return L["Nothing farmed in this zone yet, by you or the players who share.\n\nTurn off |cffffd040This zone only|r to see the best farms everywhere."] .. more
+            return L["Nothing farmed in this zone yet, by you or the players who share.\n\nSet |cffffd040Zone|r to All to see the best farms everywhere."] .. more
         end
         return L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."]
     end,
