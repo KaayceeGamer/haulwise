@@ -1080,4 +1080,31 @@ do
   GP.db.settings.useEstimates = savedEst
 end
 
+-- Buy a gear upgrade from the Gear tab: the exact listing (same suffix), straight to the confirm box
+do
+  local savedAH, savedOpen, savedPopup = C_AuctionHouse, GP.ahOpen, GP._showBuyConfirm
+  local popups, bids = {}, {}
+  C_AuctionHouse = setmetatable({
+    MakeItemKey = function(id) return { itemID = id } end,
+    SendSearchQuery = function() end,
+    GetNumItemSearchResults = function() return 3 end,
+    GetItemSearchResultInfo = function(_, i) return ({
+      { auctionID = 1, buyoutAmount = 2000, quantity = 1, itemLink = "|cff1eff00|Hitem:7020::::::770::|h[Cuffs of the Bear]|h|r" },
+      { auctionID = 2, buyoutAmount = 6000, quantity = 1, itemLink = "|cff1eff00|Hitem:7020::::::766::|h[Cuffs of the Owl]|h|r" },
+      { auctionID = 3, buyoutAmount = 5000, quantity = 1, itemLink = "|cff1eff00|Hitem:7020::::::766::|h[Cuffs of the Owl]|h|r" },
+    })[i] end,
+    PlaceBid = function(id, amount) bids[#bids + 1] = id .. ":" .. amount end,
+  }, { __index = savedAH })
+  GP._showBuyConfirm = function(text, data) popups[#popups + 1] = { text = text, data = data } end
+  GP.ahOpen = true
+  local id, suffix = GP._itemAndSuffix("|cff1eff00|Hitem:7020::::::766::|h[Cuffs of the Owl]|h|r")
+  ok(id == 7020 and suffix == 766, "reads item and suffix from a link")
+  GP:ShopBuy({ id = 7020, buy = 1, link = "|cff1eff00|Hitem:7020::::::766::|h[Cuffs of the Owl]|h|r", usual = 5000, auto = true })
+  fire("ITEM_SEARCH_RESULTS_UPDATED", { itemID = 7020 })
+  ok(#popups == 1 and #bids == 0, "one click: the confirm box opens, nothing bought yet")
+  popups[1].data.go()
+  ok(bids[1] == "3:5000", "buys the cheapest listing with the same suffix (not the cheaper 'of the Bear')")
+  C_AuctionHouse, GP.ahOpen, GP._showBuyConfirm = savedAH, savedOpen, savedPopup
+end
+
 print("NEW FEATURES PASSED")

@@ -90,15 +90,26 @@ local function reagentName(id) return GP.ItemInfo(id) or ("item " .. id) end
 
 function GP:ShopBuyState(id) return buying and buying.id == id and buying or nil end
 
--- Step 1: ask the AH for the item's listings.
-function GP:ShopSearch(id, qty)
+-- The item and its random suffix ("of the Owl") from a link: gear with another suffix has other stats.
+local function itemAndSuffix(link)
+    local s = link and link:match("item:([%-%d:]+)")
+    if not s then return nil end
+    local parts = {}
+    for v in (s .. ":"):gmatch("([^:]*):") do parts[#parts + 1] = v end
+    return tonumber(parts[1]), tonumber(parts[7]) or 0
+end
+GP._itemAndSuffix = itemAndSuffix
+
+-- Step 1: ask the AH for the item's listings. `g` (optional): link = only that exact item (same
+-- suffix), auto = open the confirm box as soon as the listings are in (one click to buy gear).
+function GP:ShopSearch(id, qty, g)
     if not self.ahOpen or not (C_AuctionHouse and C_AuctionHouse.SendSearchQuery) then
         self.Print(L["Open the auction house, then press Buy again."])
         return
     end
     local okK, key = pcall(C_AuctionHouse.MakeItemKey, id)
     if not okK or not key then return end
-    buying = { id = id, qty = qty, key = key, stage = "search" }
+    buying = { id = id, qty = qty, key = key, stage = "search", g = g, link = g and g.link, auto = g and g.auto }
     local order = Enum and Enum.AuctionHouseSortOrder and Enum.AuctionHouseSortOrder.Price or 0
     pcall(C_AuctionHouse.SendSearchQuery, key, { { sortOrder = order, reverseSort = false } }, true)
     self:RefreshShopping()
@@ -126,9 +137,15 @@ local function readItem(key)
     local b = buying
     local okN, n = pcall(C_AuctionHouse.GetNumItemSearchResults, key)
     local best
+    local wantID, wantSuffix = itemAndSuffix(b.link)
     for i = 1, (okN and n) or 0 do
         local ok, r = pcall(C_AuctionHouse.GetItemSearchResultInfo, key, i)
-        if ok and r and r.buyoutAmount and r.auctionID and not r.containsOwnerItem then
+        local sameItem = true
+        if ok and r and wantID and r.itemLink then
+            local id2, suffix2 = itemAndSuffix(r.itemLink)
+            sameItem = id2 == wantID and suffix2 == wantSuffix
+        end
+        if ok and r and sameItem and r.buyoutAmount and r.auctionID and not r.containsOwnerItem then
             local q = math.max(1, r.quantity or 1)
             local u = r.buyoutAmount / q
             -- The cheapest per unit among listings no bigger than what you still need.
@@ -147,7 +164,17 @@ GP:On("COMMODITY_SEARCH_RESULTS_UPDATED", function(itemID)
     if buying and buying.stage == "search" and itemID == buying.id then readCommodity(itemID); GP:RefreshShopping() end
 end)
 GP:On("ITEM_SEARCH_RESULTS_UPDATED", function(itemKey)
-    if buying and buying.stage == "search" and itemKey and itemKey.itemID == buying.id then readItem(buying.key); GP:RefreshShopping() end
+    if buying and buying.stage == "search" and itemKey and itemKey.itemID == buying.id then
+        readItem(buying.key)
+        GP:RefreshShopping()
+        -- Gear from the Gear tab: straight to the confirm box.
+        if buying.auto and buying.stage == "ready" then
+            GP:ShopBuy(buying.g)
+        elseif buying.auto and buying.stage == "none" then
+            GP.Print(string.format(L["%s isn't listed any more."], reagentName(buying.id)))
+            buying = nil
+        end
+    end
 end)
 
 -- Step 3: your click, then the confirm box. Its Buy button does the purchase.
@@ -208,7 +235,7 @@ end
 
 function GP:ShopBuy(g)
     local b = buying
-    if not (b and b.id == g.id and b.stage == "ready") then return self:ShopSearch(g.id, g.buy) end
+    if not (b and b.id == g.id and b.stage == "ready") then return self:ShopSearch(g.id, g.buy, g) end
     local expected = g.usual and g.usual * b.got or nil
     if b.commodity then
         b.stage = "confirm"
@@ -224,7 +251,8 @@ function GP:ShopBuy(g)
         GP._showBuyConfirm(confirmText(b, expected), {
             go = function()
                 local ok = pcall(C_AuctionHouse.PlaceBid, b.auctionID, b.buyout)
-                if not ok then GP.Print(L["Couldn't buy it. Use the auction house's own Buy button."]) end
+                if not ok then GP.Print(L["Couldn't buy it. Use the auction house's own Buy button."])
+                elseif b.g and b.g.onBought then pcall(b.g.onBought) end
                 buying = nil
                 GP:RefreshShopping()
             end,

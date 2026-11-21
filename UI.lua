@@ -878,7 +878,7 @@ TAB.gear_ah = {
         if not b then return L["No gear upgrades for sale"] .. ((S().ahUpgradeMax or 0) > 0 and L[" under your max price."] or ".") .. "  " .. grey(L["Scanned "] .. ago(time() - d.t) .. ".") end
         return string.format(L["Best buy:  %s for %s  |cff5fd35f+%.0f%%|r for %s   %s"], itemName(b.id),
             b.forMe and "you" or ("|cffff9944" .. (b.alt or "?") .. "|r"), b.gain * 100, Coins(b.price, true),
-            grey(L["·  scanned "] .. ago(time() - d.t) .. L["  ·  click a row to find it"]))
+            grey(L["·  scanned "] .. ago(time() - d.t) .. L["  ·  click a row to buy it"]))
     end,
     empty = function()
         local text = L["No gear upgrades found on the auction house.\n\nOpen the auction house and press Scan AH. Haulwise checks every piece of gear for sale against what you and your alts wear (log in on each alt once), and ranks them by how much upgrade each gold buys."]
@@ -891,7 +891,20 @@ TAB.gear_ah = {
         end
         return text
     end,
-    click = function(r) GP:SearchAH(r.id) end,
+    -- At the AH: find this exact listing (same suffix) and open the confirm box. Elsewhere: search.
+    click = function(r)
+        if GP.ahOpen then
+            GP:ShopBuy({ id = r.id, buy = 1, link = r.link, usual = r.price, auto = true, onBought = function()
+                -- Bought: off the list (from now on it's in your bags, where the Upgrade Advisor sees it).
+                local d = GP.db.ahUpgrades
+                for i = #(d and d.rows or {}), 1, -1 do if d.rows[i].link == r.link then table.remove(d.rows, i) end end
+                GP:RefreshUI()
+            end })
+        else
+            GP:SearchAH(r.id)
+            GP.Print(L["Open the auction house, then click it again to buy it."])
+        end
+    end,
     tooltip = function(t, r)
         t:SetHyperlink(r.link)
         t:AddLine(" ")
@@ -904,7 +917,7 @@ TAB.gear_ah = {
             t:AddDoubleLine("  " .. d[1], string.format("%s → %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
                 0.75, 0.75, 0.75, 1, 1, 1)
         end
-        t:AddLine(L["Click: search for it on the AH. The listing may be gone since your scan."], 0.6, 0.6, 0.6, true)
+        t:AddLine(L["Click at the AH: finds this exact listing and asks you to confirm the price. Nothing is bought without your click."], 0.6, 0.6, 0.6, true)
     end,
     toggles = {
         viewToggle("gear", "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."]),
