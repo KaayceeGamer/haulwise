@@ -469,13 +469,18 @@ function GP:RecheckAHUpgrades(force)
     local whoBy = {}
     for _, w in ipairs(ahWhoList()) do whoBy[w.me and "me" or w.name] = w end
     local keep = {}
+    local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
     for _, r in ipairs(d.rows) do
         local who = whoBy[r.forMe and "me" or r.alt]
-        if who then
+        -- After a /reload or login the game hasn't loaded the item yet, so it can't be compared:
+        -- keep the row as it was and ask for the item, instead of dropping it.
+        if who and not (r.link and get(r.link)) then
+            if C_Item and C_Item.RequestLoadItemDataByID and r.id then pcall(C_Item.RequestLoadItemDataByID, r.id) end
+            keep[#keep + 1] = r
+        elseif who then
             local c = self:CompareGear(r.link, who)
             if c and c.gain >= MIN_GAIN then
                 r.gain, r.slot, r.slotName, r.replaces, r.atLevel = c.gain, c.slot, c.slotName, c.replaces, c.atLevel
-                local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
                 r.replacesName = c.replaces and (get(c.replaces)) or r.replacesName
                 r.perGold = c.gain / math.max(r.price / 10000, 0.01)
                 keep[#keep + 1] = r

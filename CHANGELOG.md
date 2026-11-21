@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.15.4
+- **Gear on the AH**: after a /reload or login, upgrades whose items the game hadn't loaded yet were dropped from the list (15 became 2). They stay now, and are checked again once loaded.
 - **Scan AH** lights up again by itself when the game's 15-minute wait is over; it stayed grey until something else redrew the window.
 
 ## 0.15.3

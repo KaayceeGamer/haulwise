@@ -1039,4 +1039,13 @@ do
   GP.ahOpen, GP.db.priceScanTime = savedOpen, savedT
 end
 
+-- After a reload the AH upgrades aren't loaded yet: keep them instead of dropping them
+do
+  local saved = GP.db.ahUpgrades
+  GP.db.ahUpgrades = { t = time(), rows = { { id = 7999, link = "|cff1eff00|Hitem:7999::|h[Unloaded Robe]|h|r", price = 5000, gain = 0.5, forMe = true, perGold = 1 } } }
+  GP:RecheckAHUpgrades(true)
+  ok(#GP.db.ahUpgrades.rows == 1, "an upgrade the game hasn't loaded yet stays on the list")
+  GP.db.ahUpgrades = saved
+end
+
 print("NEW FEATURES PASSED")
