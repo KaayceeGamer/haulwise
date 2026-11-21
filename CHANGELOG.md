@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.15.5
-- **Farm**: mobs have an icon for what they are (a wolf, a spider, a raptor, a humanoid, an elemental...) instead of the icon of their main loot. From the CMaNGOS creature data in Haulwise Data.
+- **Farm**: mobs show their own portrait, drawn by the game from the mob's model, instead of the icon of their main loot. Where the game can't draw one, an icon for what the mob is (a wolf, a spider, a humanoid, an elemental...). From the CMaNGOS creature data in Haulwise Data.
 
 ## 0.15.4
 - **Gear on the AH**: after a /reload or login, upgrades whose items the game hadn't loaded yet were dropped from the list (15 became 2). They stay now, and are checked again once loaded.

@@ -231,7 +231,8 @@ TAB.farm = {
         local earner = top and (itemName(top.id) .. grey(string.format(" %d%%", share * 100))) or grey("coins")
         if top and top.craft and not top.crafted then earner = earner .. L[" |cff88ccffcraft↑|r"] end
         return {
-            name = r.name, icon = GP.MobIcon(r.npc) or (top and GP.ItemIcon(top.id)) or 133784, zone = grey(GP.ZoneName(r.zone)), lvl = lv,
+            name = r.name, icon = GP.MobIcon(r.npc) or (top and GP.ItemIcon(top.id)) or 133784, portrait = GP.MobDisplay(r.npc),
+            zone = grey(GP.ZoneName(r.zone)), lvl = lv,
             kills = r.estOnly and grey(L["est."]) or (confColor(r.kills) .. r.kills .. "|r"),
             kph = r.measured and tostring(math.floor(r.kph + 0.5)) or grey("~" .. math.floor(r.kph + 0.5)),
             perKill = Coins(r.perKill), est = ((r.kills < 10 or r.estOnly) and grey("~") or "") .. Coins(r.est, true),
@@ -1652,7 +1653,19 @@ function GP:DrawRows()
             local cells = t.cells(r)
             for c, col in ipairs(t.cols) do row.cells[c]:SetText(cells[col.key] or "") end
             if t.cols[1].icon then
-                row.icon:SetTexture(cells.icon or 134400)
+                -- A mob's real portrait, drawn by the game from its model, when there is one.
+                local drawn = false
+                if cells.portrait and row.portrait == cells.portrait then
+                    drawn = true   -- already drawn on this row: portraits cost a render each
+                elseif cells.portrait and SetPortraitTextureFromCreatureDisplayID then
+                    drawn = pcall(SetPortraitTextureFromCreatureDisplayID, row.icon, cells.portrait)
+                    if drawn then row.icon:SetTexCoord(0, 1, 0, 1); row.portrait = cells.portrait end
+                end
+                if not drawn then
+                    row.portrait = nil
+                    row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                    row.icon:SetTexture(cells.icon or 134400)
+                end
                 row.icon:Show()
             else
                 row.icon:Hide()

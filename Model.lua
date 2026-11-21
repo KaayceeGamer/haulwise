@@ -364,6 +364,13 @@ local TYPE_ICON = {
     [4] = "Spell_Frost_SummonWaterElemental", [5] = "Spell_Nature_Earthquake", [6] = "Spell_Shadow_RaiseDead",
     [7] = "INV_Misc_Head_Human_01", [8] = "Spell_Nature_Polymorph", [9] = "INV_Misc_Gear_01",
 }
+-- The mob's model (creature display id) for a real portrait, from Haulwise Data.
+function GP.MobDisplay(npc)
+    local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
+    local d = e and tonumber(e[10])
+    return d and d > 0 and d or nil
+end
+
 function GP.MobIcon(npc)
     local e = type(HaulwiseData) == "table" and HaulwiseData.estimates and HaulwiseData.estimates[tonumber(npc) or 0]
     if not e then return nil end
