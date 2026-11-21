@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.15:** buy straight from the shopping list: one click finds the cheapest listings, the next buys exactly what you need after you confirm the total. It warns when a reagent is dear today and names the alt who already has it. Session gold per hour counts your AH sales, Gear finds far more upgrades on the AH, and Farm shows each mob's own portrait. **0.14:** auction house prices shared per realm, so values work before your first scan, and things you use again and again (like the Cozy Sleeping Bag) are never offered to throw away. **0.13:** Farm ranks every mob, also ones nobody has farmed yet, with estimated drop rates from Classic's loot tables until real kills take over. Quest items say who to bring them to. **0.12:** item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and which mobs drop it. **0.11:** zones that add up across every language, and farm numbers that say how sure they are. **0.10:** your auctions (undercut or not), a craft queue, and prices for Waylaid Crates and Craftsman's Writs. **0.9:** how fast things sell, and a log of your auction sales.
+**New in 0.15.5:** Farm shows each mob's own portrait, drawn by the game. Also new in 0.15: buy straight from the shopping list (one click finds the cheapest listings, the next buys exactly what you need), session gold per hour counts your AH sales, and Gear finds far more upgrades on the AH.
 
 ---
 
