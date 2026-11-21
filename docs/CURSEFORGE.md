@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.15.5:** Farm shows each mob's own portrait, drawn by the game. Also new in 0.15: buy straight from the shopping list (one click finds the cheapest listings, the next buys exactly what you need), session gold per hour counts your AH sales, and Gear finds far more upgrades on the AH.
+**New in 0.15.5:** Farm shows each mob's own portrait, drawn by the game from its model, instead of the icon of its loot.
 
 ---
 
