@@ -1910,9 +1910,21 @@ function GP:RefreshUI()
     self:DrawRows()
 end
 
+local scanWake
 function GP:RefreshScanButton()
     if not (f and f.scan) then return end
     local canScan = self:CanScan()
+    -- Greyed out while the game's 15-minute wait runs: light it up again by itself when it ends
+    -- (nothing else redraws the button just because time passed).
+    local wait = (GP.SCAN_THROTTLE or 900) - (time() - (self.db.priceScanTime or 0))
+    if not canScan and wait > 0 and not scanWake then
+        scanWake = true
+        local due = time() + wait
+        C_Timer.After(wait + 1, function()
+            scanWake = nil
+            if time() >= due then GP:RefreshScanButton() end
+        end)
+    end
     f.scan.label:SetTextColor(canScan and GOLD[1] or 0.5, canScan and GOLD[2] or 0.5, canScan and GOLD[3] or 0.5)
     local p = self.scanProgress
     f.scan:SetLabel(not p and L["Scan AH"] or (p == 0 and L["Waiting for AH..."] or string.format(L["Scanning %d%%"], math.floor(p * 100))))

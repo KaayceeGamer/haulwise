@@ -321,6 +321,7 @@ function GP:ScanStatus()
     end
 end
 
+GP.SCAN_THROTTLE = THROTTLE
 function GP:CanScan()
     if not (C_AuctionHouse and C_AuctionHouse.ReplicateItems) then return false, L["no AH API"] end
     if not self.ahOpen then return false, L["open the auction house first"] end

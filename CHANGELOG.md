@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.15.4
+- **Scan AH** lights up again by itself when the game's 15-minute wait is over; it stayed grey until something else redrew the window.
+
 ## 0.15.3
 - **Fix**: Lua error on the Gear tab with Pawn in use (Gear.lua:67, "attempt to call a nil value").
 - **Recipes**: a recipe whose result nobody sells on your AH (bound gear like Embroidered Belt of the Archmage) shows "no AH price" instead of a loss of hundreds of gold, and is ranked below recipes with a real profit. Its tooltip still says what the reagents cost.

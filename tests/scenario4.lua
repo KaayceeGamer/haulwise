@@ -1027,4 +1027,16 @@ do
   GP.db.ahUpgrades = saved
 end
 
+-- Scan AH button: lights up again by itself when the 15 minutes are up
+do
+  local savedOpen, savedT = GP.ahOpen, GP.db.priceScanTime
+  GP.ahOpen, GP.db.priceScanTime = true, time() - 60
+  local okR = pcall(GP.RefreshScanButton, GP)
+  ok(okR and not GP:CanScan(), "scan button waits (and schedules its own wake-up) without looping")
+  GP.db.priceScanTime = time() - 16 * 60
+  local can, why = GP:CanScan()
+  ok(can or not tostring(why):find("min"), "after 15 minutes the wait is over (" .. tostring(why) .. ")")
+  GP.ahOpen, GP.db.priceScanTime = savedOpen, savedT
+end
+
 print("NEW FEATURES PASSED")
