@@ -417,6 +417,7 @@ function GP:GoToRecipe(r)
         if s.kind == "Trainer" then return self:FindTrainer(r.prof) end
     end
     if r.src and r.src:lower():find("trainer") then return self:FindTrainer(r.prof) end
+    if r.wikiTrainer then return self:FindTrainer(r.prof) end
     return false
 end
 

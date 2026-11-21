@@ -316,12 +316,26 @@ function GP:RecipeRows()
                 end
                 if (ds.world or 0) > 0 then r.sources[#r.sources + 1] = { kind = "World", fromData = true } end
             end
+            -- Warcraft Wiki: how it's learned (when nothing better is known) and its exact skill.
+            local w = GP.WikiRecipe and GP.WikiRecipe(r.name)
+            if w then
+                local kinds = {}
+                for _, s in ipairs(r.sources) do kinds[s.kind] = true end
+                local wantKind = ({ T = "Trainer", V = "Vendor", D = "Drop" })[w.how]
+                if w.how and not (wantKind and kinds[wantKind]) and not (w.how == "D" and kinds.World) then
+                    r.sources[#r.sources + 1] = { kind = "Wiki", how = w.how }
+                end
+                r.wikiSkill = w.skill
+                if w.how == "T" then r.wikiTrainer = true end
+            end
             if cheapest and (not r.buyPrice or cheapest < r.buyPrice) then r.learnCost = cheapest else r.learnCost = r.buyPrice end
         else
             r.learnCost = r.buyPrice
         end
         if r.learnCost and r.profit and r.profit > 0 and #(r.missing or {}) == 0 then r.payback = math.ceil(r.learnCost / r.profit) end
         r.skill, r.skillExact = self:RecipeSkill(r)
+        -- The wiki's skill beats a guess from the item's level.
+        if r.wikiSkill and not r.skillExact then r.skill, r.skillExact = r.wikiSkill, true end
         local p = self:MyProfessions()[r.prof or ""]
         r.myRank = p and p.rank
     end

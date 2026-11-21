@@ -132,6 +132,19 @@ end
 
 -- All known ways to get a recipe: { { kind, text, cost, detail }, ... } cheapest first, and the
 -- cheapest known cost to get it (or nil).
+-- How a recipe is learned and the skill it needs, from Warcraft Wiki (Haulwise Data):
+-- { skill = 165, how = "T"|"V"|"D"|"Q"|"A"|"R"|"C"|nil, new = true } or nil.
+function GP.WikiRecipe(name)
+    local t = type(HaulwiseData) == "table" and HaulwiseData.wikiRecipes
+    local e = t and name and t[name:lower()]
+    if not e then return nil end
+    local skill, how, new = e:match("^(%d+):(%a?):(%d)$")
+    if not skill then return nil end
+    return { skill = tonumber(skill), how = how ~= "" and how or nil, new = new == "1" }
+end
+local HOW = { T = "Trainer", V = "Vendor", D = "Drop", Q = "Quest", A = "Automatic", R = "Reputation", C = "Discovery" }
+GP.WIKI_HOW = HOW
+
 function GP:RecipeSources(recipeName, itemID)
     local key = GP.RecipeKey(recipeName)
     local out, cheapest = {}, nil
@@ -204,6 +217,8 @@ function GP.SourceShort(s)
         return string.format(L["|cffc48cffDrop|r %s |cff8a8880%.1f%%|r"], s.who or "?", (s.chance or 0) * 100)
     elseif s.kind == "World" then
         return L["|cffc48cffWorld drop|r"]
+    elseif s.kind == "Wiki" then
+        return string.format(L["%s |cff8a8880(wiki)|r"], L[GP.WIKI_HOW[s.how] or "?"])
     elseif s.kind == "AH" then
         return L["|cff88ccffAH|r "] .. GP.Coins(s.cost or 0, true)
     end
@@ -222,6 +237,10 @@ function GP.SourceLong(s)
         return string.format(L["Drop: %s"], s.who or "?"), string.format(L["%.1f%% of %d kills"], (s.chance or 0) * 100, s.kills or 0)
     elseif s.kind == "World" then
         return L["World drop: any mob around its level"], ""
+    elseif s.kind == "Wiki" then
+        local what = ({ T = L["from a trainer"], V = L["sold by a vendor"], D = L["a drop from mobs"], Q = L["a quest reward"],
+                        A = L["learned with the skill"], R = L["for reputation"], C = L["found while crafting"] })[s.how] or "?"
+        return string.format(L["Usually %s"], what), L["Warcraft Wiki"]
     elseif s.kind == "AH" then
         return L["Auction house"], GP.Coins(s.cost or 0)
     end

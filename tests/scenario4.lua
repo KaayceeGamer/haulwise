@@ -1137,4 +1137,29 @@ do
   C_AuctionHouse, GP._showBuyConfirm, ItemLocation, GP.SellAdvice = savedAH, savedPopup, savedLoc, savedAdvice
 end
 
+-- Warcraft Wiki: how a recipe is learned and its exact skill
+do
+  HaulwiseData = HaulwiseData or {}
+  local saved = HaulwiseData.wikiRecipes
+  HaulwiseData.wikiRecipes = { ["test wiki robe"] = "165:V:1", ["test trainer belt"] = "120:T:0", ["test unknown cap"] = "190::1" }
+  local w = GP.WikiRecipe("Test Wiki Robe")
+  ok(w and w.skill == 165 and w.how == "V" and w.new, "reads a wiki row")
+  ok(GP.WikiRecipe("Test Unknown Cap").how == nil and GP.WikiRecipe("Nope") == nil, "unknown source: nil")
+  GP:Char().recipes.wiki1 = { n = "Test Wiki Robe", prof = "Tailoring", out = 7999, oq = 1, r = "2589:2", learned = false }
+  GP:Char().recipes.wiki2 = { n = "Test Trainer Belt", prof = "Tailoring", out = 7998, oq = 1, r = "2589:1", learned = false }
+  GP.db.settings.recipesShowAll = true
+  local rows = {}
+  for _, r in ipairs(GP:RecipeRows()) do rows[r.name] = r end
+  local robe, belt = rows["Test Wiki Robe"], rows["Test Trainer Belt"]
+  local hasWiki = false
+  for _, src in ipairs(robe and robe.sources or {}) do if src.kind == "Wiki" and src.how == "V" then hasWiki = true end end
+  ok(hasWiki and robe.skill == 165 and robe.skillExact, "a recipe gets the wiki's source and exact skill")
+  ok(belt and belt.wikiTrainer, "a trainer recipe from the wiki: the click goes to a trainer")
+  local short = GP.SourceShort({ kind = "Wiki", how = "V" })
+  ok(short:find("wiki"), "shown as from the wiki")
+  GP:Char().recipes.wiki1, GP:Char().recipes.wiki2 = nil, nil
+  GP.db.settings.recipesShowAll = false
+  HaulwiseData.wikiRecipes = saved
+end
+
 print("NEW FEATURES PASSED")

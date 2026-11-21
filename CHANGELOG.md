@@ -6,6 +6,7 @@
 - **Post cancelled auctions again**: after Cancel in *Your auctions*, the item waits in the panel ("in your mailbox" until it's back), then Post puts it up again at the price the sell helper picks, after you confirm quantity, price and deposit.
 - **Less memory**: no price history or sell speed for gear (each piece is its own listing, so trends meant little; it was 62% of both), 21 days of history instead of 28, and the bundled community text is freed once read.
 - **Recipes**: "how to get it" also lists where the pattern drops (and world drops) from Haulwise Data, and the tooltip no longer promises a trainer waypoint for a pattern you can only buy or find: a click searches the AH for it.
+- **How to learn a recipe, from Warcraft Wiki**: Haulwise Data now knows for 2,300+ Forever recipes whether they come from a trainer, a vendor, a drop or a quest, and the exact skill they need (no more "~" guesses). Recipes shows it as "Vendor (wiki)" when you haven't seen the source yourself, and a click takes you to a trainer only when the recipe is taught by one. Thanks to the Warcraft Wiki editors (CC BY-SA 4.0).
 - **Website**: lists the realms that share prices, with how many players and how fresh.
 
 ## 0.15.5

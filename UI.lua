@@ -543,7 +543,7 @@ TAB.recipes = {
         t:AddLine(" ")
         -- Say what a click really does (the same order as GP:GoToRecipe).
         local dest = GP:RecipeDestination(r)
-        local byTrainer = r.src and r.src:lower():find("trainer")
+        local byTrainer = (r.src and r.src:lower():find("trainer")) or r.wikiTrainer
         for _, s in ipairs(r.sources or {}) do if s.kind == "Trainer" then byTrainer = true end end
         if dest then
             t:AddLine(string.format(L["Click: waypoint to %s (%s)"], dest.name, GP.MapName(dest.map)), 0.6, 0.6, 0.6, true)

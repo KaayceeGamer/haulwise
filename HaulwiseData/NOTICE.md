@@ -22,7 +22,20 @@ are kept, with Forever's names, levels and zones; drops under 0.5% are left out.
 CMaNGOS team and everyone who contributed to the Classic DB. World of Warcraft content is a
 trademark and copyright of Blizzard Entertainment.
 
-Haulwise and Haulwise Data are not affiliated with or endorsed by the Questie or CMaNGOS teams.
+`Drops.lua` also holds, per mob, its creature type, beast family and model (CMaNGOS) and an
+estimated kills per hour worked out from its spawns (QuestieDB).
+
+`WikiRecipes.lua` holds how each WoW Forever recipe is learned (trainer, vendor, drop, quest...)
+and the skill it needs, adapted from the "Forever ... recipes/patterns/plans/formulas/schematics"
+pages of **Warcraft Wiki** (https://warcraft.wiki.gg), whose text is licensed under
+**CC BY-SA 4.0** (https://creativecommons.org/licenses/by-sa/4.0/). Only the name, skill, new-in-
+Forever and source-type columns are kept; the page revisions used are listed in the file. Built
+with `tools/build-wiki-recipes.py`. CC BY-SA 4.0 material may be adapted under the GPLv3
+(https://creativecommons.org/share-your-work/licensing-considerations/compatible-licenses/).
+Thanks to the Warcraft Wiki editors.
+
+Haulwise and Haulwise Data are not affiliated with or endorsed by the Questie or CMaNGOS teams
+or Warcraft Wiki.
 
 ## Licence
 

@@ -178,6 +178,8 @@ Trainer and recipe vendor positions, the quests that need each item, and where i
 
 The estimated drop rates for mobs nobody has farmed yet come from the [CMaNGOS Classic database](https://github.com/cmangos/classic-db), licensed under GPLv3. Thanks to the CMaNGOS team.
 
-Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie or CMaNGOS teams.
+How each recipe is learned (trainer, vendor, drop, quest) comes from [Warcraft Wiki](https://warcraft.wiki.gg), licensed under CC BY-SA 4.0. Thanks to the wiki's editors.
+
+Haulwise Data is GPLv3; Haulwise itself is MIT. Neither is affiliated with the Questie or CMaNGOS teams or Warcraft Wiki.
 
 *Haulwise is a fan project and isn't affiliated with Blizzard Entertainment.*

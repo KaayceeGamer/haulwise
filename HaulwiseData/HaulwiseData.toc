@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Haulwise Data
-## Notes: Trainers and recipe vendors with their positions, the quests that need each item, and where items drop and who sells them, for Haulwise. Estimated drop rates for mobs nobody has shared yet. Data from QuestieDB and the CMaNGOS Classic DB (both GPLv3).
+## Notes: Trainers and recipe vendors with their positions, the quests that need each item, and where items drop and who sells them, for Haulwise. Estimated drop rates for mobs nobody has shared yet. How each recipe is learned, from Warcraft Wiki (CC BY-SA 4.0). Data from QuestieDB and the CMaNGOS Classic DB (both GPLv3).
 ## Version: @project-version@
 ## Author: KaayceeGamer
 ## X-License: GPL-3.0
@@ -9,3 +9,4 @@
 
 Data.lua
 Drops.lua
+WikiRecipes.lua
