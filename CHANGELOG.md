@@ -5,6 +5,7 @@
 - **Buy gear upgrades from the Gear tab**: at the auction house, click an upgrade on *On the AH* and Haulwise finds that exact listing (same "of the Owl" suffix, not a cheaper one with other stats) and asks you to confirm the price. Bought upgrades leave the list.
 - **Post cancelled auctions again**: after Cancel in *Your auctions*, the item waits in the panel ("in your mailbox" until it's back), then Post puts it up again at the price the sell helper picks, after you confirm quantity, price and deposit.
 - **Less memory**: no price history or sell speed for gear (each piece is its own listing, so trends meant little; it was 62% of both), 21 days of history instead of 28, and the bundled community text is freed once read.
+- **Recipes**: "how to get it" also lists where the pattern drops (and world drops) from Haulwise Data, and the tooltip no longer promises a trainer waypoint for a pattern you can only buy or find: a click searches the AH for it.
 - **Website**: lists the realms that share prices, with how many players and how fresh.
 
 ## 0.15.5

@@ -198,8 +198,12 @@ function GP.SourceShort(s)
         return string.format(L["|cffffd040Trainer|r %s%s"], GP.Coins(s.cost or 0, true), s.skill and (L["|cff8a8880 · skill "] .. s.skill .. "|r") or "")
     elseif s.kind == "Vendor" then
         return string.format(L["|cff5fd35fVendor|r %s |cff8a8880%s%s|r"], s.cost and GP.Coins(s.cost, true) or "", s.who or "?", s.limited and L[" (limited)"] or "")
+    elseif s.kind == "Drop" and not s.chance then
+        return string.format(L["|cffc48cffDrop|r %s"], s.who or "?")
     elseif s.kind == "Drop" then
         return string.format(L["|cffc48cffDrop|r %s |cff8a8880%.1f%%|r"], s.who or "?", (s.chance or 0) * 100)
+    elseif s.kind == "World" then
+        return L["|cffc48cffWorld drop|r"]
     elseif s.kind == "AH" then
         return L["|cff88ccffAH|r "] .. GP.Coins(s.cost or 0, true)
     end
@@ -212,8 +216,12 @@ function GP.SourceLong(s)
             GP.Coins(s.cost or 0) .. (s.skill and (L["  (skill "] .. s.skill .. ")") or "")
     elseif s.kind == "Vendor" then
         return string.format(L["Vendor: %s, %s%s"], s.who or "?", s.zone or "?", s.limited and L["  (limited stock)"] or ""), s.cost and GP.Coins(s.cost) or ""
+    elseif s.kind == "Drop" and not s.chance then
+        return string.format(L["Drop: %s"], s.who or "?"), s.zone or ""
     elseif s.kind == "Drop" then
         return string.format(L["Drop: %s"], s.who or "?"), string.format(L["%.1f%% of %d kills"], (s.chance or 0) * 100, s.kills or 0)
+    elseif s.kind == "World" then
+        return L["World drop: any mob around its level"], ""
     elseif s.kind == "AH" then
         return L["Auction house"], GP.Coins(s.cost or 0)
     end

@@ -541,11 +541,16 @@ TAB.recipes = {
         if r.buyPrice then t:AddDoubleLine(L["Recipe on AH"], Coins(r.buyPrice)) end
         if r.kind == "ahonly" then t:AddLine(L["Open this profession's window so Haulwise can price what the recipe makes."], 1, 0.6, 0.3, true) end
         t:AddLine(" ")
+        -- Say what a click really does (the same order as GP:GoToRecipe).
         local dest = GP:RecipeDestination(r)
+        local byTrainer = r.src and r.src:lower():find("trainer")
+        for _, s in ipairs(r.sources or {}) do if s.kind == "Trainer" then byTrainer = true end end
         if dest then
             t:AddLine(string.format(L["Click: waypoint to %s (%s)"], dest.name, GP.MapName(dest.map)), 0.6, 0.6, 0.6, true)
-        elseif r.prof then
+        elseif byTrainer and r.prof then
             t:AddLine(string.format(L["Click: waypoint to the nearest %s trainer"], L[r.prof]), 0.6, 0.6, 0.6, true)
+        elseif r.itemID then
+            t:AddLine(L["Click: search the AH for the recipe."], 0.6, 0.6, 0.6, true)
         end
         t:AddLine(L["Shift-click: search the AH"], 0.6, 0.6, 0.6)
     end,

@@ -305,6 +305,17 @@ function GP:RecipeRows()
         if self.RecipeSources then
             local srcs, cheapest, itemID = self:RecipeSources(r.name, r.itemID)
             r.sources, r.itemID = srcs, r.itemID or itemID
+            -- The pattern item's drops and vendors from Haulwise Data, for ones you haven't seen.
+            local ds = r.itemID and self.ItemSourcesFromData and self:ItemSourcesFromData(r.itemID)
+            if ds then
+                local have = {}
+                for _, s in ipairs(r.sources) do if s.who then have[s.who] = true end end
+                for i, d in ipairs(ds.drops or {}) do
+                    if i > 3 then break end
+                    if not have[d.name] then r.sources[#r.sources + 1] = { kind = "Drop", who = d.name, zone = d.zone, fromData = true } end
+                end
+                if (ds.world or 0) > 0 then r.sources[#r.sources + 1] = { kind = "World", fromData = true } end
+            end
             if cheapest and (not r.buyPrice or cheapest < r.buyPrice) then r.learnCost = cheapest else r.learnCost = r.buyPrice end
         else
             r.learnCost = r.buyPrice
