@@ -25,13 +25,17 @@ GP.ahOpen = false
 local scanning = false
 
 -- Items the game hasn't loaded yet come back without a name. Ask for them, remember names the AH
--- scan gave us, and redraw once the game has sent them.
-local waitingNames = false
+-- scan gave us, and redraw once the game has sent them. Each item is asked for once a session:
+-- one the game never sends (removed from the game) must not keep the window redrawing.
+local waitingNames = {}
 local function itemInfo(id)
     local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
     local name, _, quality, _, _, _, _, _, _, icon, sellPrice, classID, subclassID, bindType = get(id)
     if not name then
-        if C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id); waitingNames = true end
+        if waitingNames[id] == nil and C_Item and C_Item.RequestLoadItemDataByID then
+            waitingNames[id] = true
+            C_Item.RequestLoadItemDataByID(id)
+        end
         name = GP.db and GP.db.names and GP.db.names[id]
     end
     return name, quality, icon, sellPrice, bindType, classID, subclassID
@@ -483,10 +487,16 @@ function GP:SearchAH(id)
     end
 end
 
-GP:On("GET_ITEM_INFO_RECEIVED", function()
-    if not waitingNames then return end
-    waitingNames = false
-    C_Timer.After(0.5, function() if GP.RefreshUI then GP:RefreshUI() end end)
+local namesRedrawQueued = false
+GP:On("GET_ITEM_INFO_RECEIVED", function(itemID)
+    if not waitingNames[itemID] then return end
+    waitingNames[itemID] = false
+    if namesRedrawQueued then return end
+    namesRedrawQueued = true
+    C_Timer.After(1, function()
+        namesRedrawQueued = false
+        if GP.RefreshUI then GP:RefreshUI() end
+    end)
 end)
 
 GP:On("AUCTION_HOUSE_SHOW", function() GP.ahOpen = true; if GP.RefreshUI then GP:RefreshUI() end end)

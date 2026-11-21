@@ -1172,4 +1172,22 @@ do
   HaulwiseData.recipeItems, HaulwiseData.recipeVendors = savedI, savedV
 end
 
+do -- Recipes tab: an item the game loads that no recipe waits for must not redraw the window
+  local n, real = 0, GP.RefreshUI
+  GP.RefreshUI = function() n = n + 1 end
+  GP.recipeWaiting = { [424242] = true }
+  local tab = GP.db.settings.tab
+  GP.db.settings.tab = "recipes"
+  GP.recipeRedrawQueued = false
+  fire("GET_ITEM_INFO_RECEIVED", 1111, true)
+  ok(n == 0, "unrelated item info does not redraw the recipes")
+  fire("GET_ITEM_INFO_RECEIVED", 424242, true)
+  ok(n == 1 and GP.recipeWaiting[424242] == false, "a waited-for recipe item redraws once")
+  fire("GET_ITEM_INFO_RECEIVED", 424242, true)
+  ok(n == 1, "and not again")
+  local a = GP:RecipeRowsCached()
+  ok(GP:RecipeRowsCached() == a, "recipe rows are kept between redraws")
+  GP.RefreshUI, GP.db.settings.tab = real, tab
+end
+
 print("NEW FEATURES PASSED")

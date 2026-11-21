@@ -192,6 +192,7 @@ end
 
 -- Returns ok, message.
 function GP:ImportString(str)
+    self.recipeRowsCache = nil
     local ok, result = pcall(function()
         local uid, src = self:ParseExport(str)
         if uid == self.db.uid then error(L["that is your own data"]) end

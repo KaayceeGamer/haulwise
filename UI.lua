@@ -472,7 +472,7 @@ TAB.recipes = {
         { key = "get", title = L["How to get it"], w = 290 },
         { key = "pay", title = L["Pays back"], w = 110, align = "RIGHT" },
     },
-    rows = function() return byProf(GP:RecipeRows()) end,
+    rows = function() return byProf(GP:RecipeRowsCached()) end,
     bar = function(r) return (#(r.missing or {}) == 0 and r.profit) or 0 end,
     cells = function(r)
         local parts = {}

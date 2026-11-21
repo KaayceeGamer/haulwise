@@ -86,7 +86,7 @@ function GP.UnpackReagents(s)
 end
 
 local index -- [reagentID] = { recipeKey, ... }, rebuilt when recipes change
-local function invalidate() index = nil end
+local function invalidate() index = nil; GP.recipeRowsCache = nil end
 GP.InvalidateCraftIndex = invalidate
 
 -- Reading the profession window -------------------------------------------------------
@@ -265,7 +265,27 @@ local function stripPrefix(name)
     return (name or ""):gsub("^[^:]+:%s*", ""):lower()
 end
 
+-- Recipes are costly to work out (sources, vendors, drops for every one), so the window keeps
+-- the rows for 20 seconds; a profession scan, an AH scan, a vendor or a setting starts over.
+function GP:RecipeRowsCached()
+    local s = self.db.settings
+    local key = tostring(s.recipesShowAll) .. "|" .. tostring(self.db.priceScanTime)
+    local c = self.recipeRowsCache
+    if c and c.key == key and GetTime() - c.t < 20 then return c.rows end
+    local rows = self:RecipeRows()
+    self.recipeRowsCache = { key = key, t = GetTime(), rows = rows }
+    return rows
+end
+
 function GP:RecipeRows()
+    return self:WithMergedMobs(function() return self:RecipeRowsUncached() end)
+end
+
+for _, ev in ipairs({ "MERCHANT_SHOW", "MERCHANT_CLOSED", "TRAINER_SHOW", "TRAINER_CLOSED" }) do
+    GP:On(ev, function() GP.recipeRowsCache = nil end)
+end
+
+function GP:RecipeRowsUncached()
     local rows, byName, farmed = {}, {}, farmedItems()
     for key, rec in pairs(self:Char().recipes) do
         if not rec.learned then
@@ -388,9 +408,12 @@ function GP:RecipeSkill(r)
     if r.out then
         local link = select(2, ((C_Item and C_Item.GetItemInfo) or GetItemInfo)(r.out))
         if not link then
-            -- Not loaded yet: ask the game, and look again when it answers.
-            if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, r.out) end
-            GP.recipeInfoPending = true
+            -- Not loaded yet: ask the game once per item, and look again when that item arrives.
+            GP.recipeWaiting = GP.recipeWaiting or {}
+            if GP.recipeWaiting[r.out] == nil then
+                GP.recipeWaiting[r.out] = true
+                if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, r.out) end
+            end
             return nil
         end
         local info = GP.LinkInfo(link)
@@ -405,13 +428,19 @@ function GP:RecipeSkill(r)
     end
 end
 
--- Recipes whose result wasn't loaded: redraw once the game has sent the items.
-GP:On("GET_ITEM_INFO_RECEIVED", function()
-    if not GP.recipeInfoPending or GP.recipeRedrawQueued then return end
+-- Recipes whose result wasn't loaded: redraw once one of *those* items has arrived (the event
+-- fires for every item the game loads, all the time), at most every 3 seconds, and only while
+-- the Recipes tab is on screen.
+GP:On("GET_ITEM_INFO_RECEIVED", function(itemID)
+    local w = GP.recipeWaiting
+    if not (w and w[itemID]) then return end
+    w[itemID] = false   -- asked and answered: never asked again this session
+    if GP.recipeRedrawQueued then return end
     GP.recipeRedrawQueued = true
-    C_Timer.After(1, function()
-        GP.recipeRedrawQueued, GP.recipeInfoPending = false, false
-        if GP.RefreshUI then GP:RefreshUI() end
+    C_Timer.After(3, function()
+        GP.recipeRedrawQueued = false
+        GP.recipeRowsCache = nil
+        if GP.db and GP.db.settings.tab == "recipes" and GP.RefreshUI then GP:RefreshUI() end
     end)
 end)
 

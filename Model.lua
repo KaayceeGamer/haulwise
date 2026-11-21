@@ -137,6 +137,7 @@ end
 
 -- Own data plus anything imported from friends.
 function GP:MergedMobs()
+    if self.mergedHeld then return self.mergedHeld end
     local out = {}
     local function add(npc, m, own)
         local o = out[npc]
@@ -423,14 +424,42 @@ function GP:ZoneRows()
 end
 
 -- Best sources for one item, for the item tooltip.
+-- Work that asks about many items at once (the Recipes tab) holds one merged table and an
+-- item -> mobs index for the whole run, instead of rebuilding every mob once per item.
+function GP:WithMergedMobs(fn)
+    if self.mergedHeld then return fn() end
+    self.mergedHeld = self:MergedMobs()
+    local idx = {}
+    for npc, m in pairs(self.mergedHeld) do
+        if m.kills > 0 then
+            for id in pairs(m.items) do
+                local l = idx[id]
+                if not l then l = {}; idx[id] = l end
+                l[#l + 1] = npc
+            end
+        end
+    end
+    self.mergedItemIndex = idx
+    local ok, a = pcall(fn)
+    self.mergedHeld, self.mergedItemIndex = nil, nil
+    if not ok then error(a, 0) end
+    return a
+end
+
 function GP:SourcesFor(itemID, max)
     local out = {}
-    for npc, m in pairs(self:MergedMobs()) do
+    local function add(npc, m)
         local e = m.items[itemID]
         if e and m.kills > 0 then
             out[#out + 1] = { name = m.name or (L["NPC #"] .. npc), chance = e.k / m.kills, kills = m.kills,
                               lo = (GP.Wilson(e.k, m.kills)) }
         end
+    end
+    if self.mergedItemIndex then
+        local merged = self.mergedHeld
+        for _, npc in ipairs(self.mergedItemIndex[itemID] or {}) do add(npc, merged[npc]) end
+    else
+        for npc, m in pairs(self:MergedMobs()) do add(npc, m) end
     end
     table.sort(out, function(a, b) return a.lo > b.lo end)
     for i = #out, (max or 3) + 1, -1 do out[i] = nil end
