@@ -136,6 +136,12 @@
   .get-option h3 { margin: 0 0 6px; font: 700 22px/1.3 var(--serif); }
   .get-option p { margin: 0 0 12px; }
   .realm-pick[hidden] { display: none; }
+  .realm-list-title { font-weight: 700; margin: 16px 0 6px; }
+  .realm-list { list-style: none; margin: 0 0 8px; padding: 0; }
+  .realm-list li { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 6px 0; border-top: 1px solid var(--rim); }
+  .realm-list li:first-child { border-top: 0; }
+  .realm-list .who { font-weight: 700; }
+  .realm-list .meta { color: var(--muted); }
   .realm-pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
   .realm-pick label { font-weight: 700; }
   .realm-pick select { font: inherit; padding: 8px 10px; border-radius: 8px; min-width: 240px; }
@@ -228,6 +234,11 @@
           <label for="realm">Realm and faction</label>
           <select id="realm"></select>
           <button class="quiet" id="copy-prices">Copy prices for this realm</button>
+        </div>
+        <div id="realm-list-wrap" hidden>
+          <p class="realm-list-title">Realms sharing prices</p>
+          <ul class="realm-list" id="realm-list"></ul>
+          <p class="muted">Don't see yours? Scan the auction house and share your data: your realm shows up within the hour.</p>
         </div>
         <p class="muted" id="realm-none">No realm has prices yet. Scan the auction house in game and share your data above, and yours is the first.</p>
         <div class="msg" id="pricemsg" role="status"></div>
@@ -414,6 +425,25 @@
       }
       $("realm-pick").hidden = false;
       $("realm-none").hidden = true;
+      // The list on show: who shares, how many, how fresh. Seeing your own realm helps you share too.
+      const ul = $("realm-list");
+      ul.innerHTML = "";
+      const today = Math.floor(Date.now() / 86400000);
+      const sorted = [...list].sort((a, b) => Number(b.players) - Number(a.players) || Number(b.items) - Number(a.items));
+      for (const r of sorted) {
+        const li = document.createElement("li");
+        const who = document.createElement("span");
+        who.className = "who";
+        who.textContent = `${r.realm} (${facName[r.fac] || r.fac})`;
+        const meta = document.createElement("span");
+        meta.className = "meta";
+        const age = today - Number(r.day);
+        const when = age <= 0 ? "updated today" : age === 1 ? "updated yesterday" : `updated ${age} days ago`;
+        meta.textContent = `${n(r.players)} ${Number(r.players) === 1 ? "player" : "players"} · ${n(r.items)} items · ${when}`;
+        li.append(who, meta);
+        ul.appendChild(li);
+      }
+      $("realm-list-wrap").hidden = false;
     } catch {}
   }
   $("copy-prices").addEventListener("click", async () => {
