@@ -151,8 +151,37 @@ local function current()
     if v and TAB[tab .. "_" .. v] then return tab .. "_" .. v end
     return tab
 end
--- Profession filter (Craft, Skill up, Recipes): one button that cycles All -> each profession.
--- Kept per character, since each has its own professions.
+-- The controls under the main tabs ------------------------------------------------------------
+-- Each tab says what it needs, and they always sit in the same places:
+--   views    the lists a tab can show, as small tabs on the left (Farm: Mobs | Zones)
+--   pickers  "Profession: All" style menus: pick one of a few choices
+--   options  one Options menu with the switches that change what the list counts or shows
+--   actions  buttons that do something, on the right
+--   heroAction  a button in the hero line, for the one thing the line is about
+-- Settings that change what Haulwise does elsewhere (popups, the mailbox) live in the settings
+-- window, not here.
+
+local VIEWS = {
+    farm = { { nil, L["Mobs"], L["Every mob, ranked by gold per hour."] },
+             { "zones", L["Zones"], L["Rank zones instead of single mobs: the best gold per hour in each zone."] } },
+    craft = { { nil, L["Best profit"], L["What's profitable to craft and sell on the auction house."] },
+              { "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."] },
+              { "enchants", L["Enchant requests"], L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] } },
+    gear = { { nil, L["Your gear"], L["Gear in your bags that's an upgrade for you or one of your alts."] },
+             { "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."] } },
+    market = { { nil, L["Prices"], L["How prices are moving on your auction house, from your scans."] },
+               { "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."] } },
+}
+local function setView(tab, view)
+    S().views = S().views or {}
+    S().views[tab] = view
+    GP.scrollToTop = true
+end
+
+-- An Options switch: { label, setting, tip, shown-when }.
+local function option(label, key, tipText, shown) return { label, key, tipText, shown } end
+
+-- Profession filter (Craft, Skill up, Recipes). Kept per character, since each has its own.
 local function profFilter() return GP:Char().profFilter end
 local function byProf(rows)
     local p = profFilter()
@@ -161,58 +190,92 @@ local function byProf(rows)
     for _, r in ipairs(rows) do if r.prof == p then out[#out + 1] = r end end
     return out
 end
-local function profToggle()
-    return { kind = "cycle",
-        label = function()
-            local p = profFilter()
-            return L["Profession: "] .. (p and L[p] or L["All"])
-        end,
-        click = function()
+local function profPicker()
+    return {
+        label = function() local p = profFilter(); return L["Profession: "] .. (p and L[p] or L["All"]) end,
+        items = function()
             local list = {}
             for name in pairs(GP:MyProfessions()) do if GP.RECIPE_SUBCLASS[name] then list[#list + 1] = name end end
             table.sort(list)
-            local cur, idx = profFilter(), 0
-            for i, n in ipairs(list) do if n == cur then idx = i end end
-            GP:Char().profFilter = list[idx + 1] -- after the last one: back to All
-            GP.scrollToTop = true
+            local cur = profFilter()
+            local out = { { text = L["All"], value = false, checked = cur == nil } }
+            for _, n in ipairs(list) do out[#out + 1] = { text = L[n], value = n, checked = cur == n } end
+            return out
         end,
-        tip = function() return L["Show one profession, or all of them. Click to switch."] end }
+        pick = function(v) GP:Char().profFilter = v or nil; GP.scrollToTop = true end,
+        tip = L["Show one profession, or all of them."],
+    }
 end
 
-local function trainerButton()
-    return { kind = "cycle",
-        label = function() return L["Find trainer"] end,
-        click = function() GP:FindTrainer(profFilter()) end,
-        tip = function()
-            return L["Set a waypoint to the nearest trainer for your profession (the one picked with Profession, or the one that needs training). It looks for a trainer that teaches your next rank."]
-        end }
+local function trainerAction()
+    return { label = L["Find trainer"], click = function() GP:FindTrainer(profFilter()) end,
+             tip = L["Set a waypoint to the nearest trainer for your profession (the one picked with Profession, or the one that needs training). It looks for a trainer that teaches your next rank."] }
+end
+local function shoppingAction()
+    return { label = L["Shopping list"], click = function() GP:ToggleShopping() end,
+             tip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."] }
 end
 
-local function pawnToggle()
-    return { L["Use Pawn"], nil, L["Compare gear with your Pawn scales instead of Haulwise's own stat weights."],
-        function() return GP.PawnLoaded() end,
-        get = function() return GP.db.settings.usePawn end,
-        set = function(on)
-            GP.db.settings.usePawn = on
-            if on then GP:Char().specOverride = nil end
-            GP:ScanUpgrades()
-            GP:RecheckAHUpgrades(true)
-        end }
+local function rankPicker()
+    return {
+        label = function() return L["Rank by: "] .. (S().sortBy == "est" and L["Expected"] or L["Safe"]) end,
+        items = function()
+            return { { text = L["Safe"], value = "safe", checked = S().sortBy ~= "est",
+                       tip = L["Ranks by the low end of each drop chance, so a lucky streak can't put a mob on top."] },
+                     { text = L["Expected"], value = "est", checked = S().sortBy == "est", tip = L["Ranks by the average."] } }
+        end,
+        pick = function(v) S().sortBy = v end,
+        tip = L["Safe ranks by the low end of each drop chance, so a lucky streak can't put a mob on top. Expected ranks by the average."],
+    }
 end
 
-local function viewToggle(tab, view, label, tipText)
-    return { label, nil, tipText,
-        get = function() return S().views and S().views[tab] == view end,
-        set = function(on)
-            S().views = S().views or {}
-            S().views[tab] = on and view or nil
-            GP.scrollToTop = true
-        end }
+local function zonePicker()
+    return {
+        label = function()
+            local z = S().farmZone
+            return L["Zone: "] .. (z == nil and L["All"] or (z == "here" and L["Where you are"]) or GP.ZoneName(z))
+        end,
+        items = function()
+            local z = S().farmZone
+            local out = { { text = L["All zones"], value = false, checked = z == nil },
+                          { text = L["Where you are"], value = "here", checked = z == "here" } }
+            if z and z ~= "here" then out[#out + 1] = { text = GP.ZoneName(z), value = z, checked = true } end
+            return out
+        end,
+        pick = function(v) S().farmZone = v or nil; GP.scrollToTop = true end,
+        tip = L["Only show mobs from one zone: the zone you're in, or the one you clicked in Zones."],
+    }
 end
 
-local ENCHANT_TIP = L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."]
-local function enchantsToggle()
-    return viewToggle("craft", "enchants", L["Enchant requests"], ENCHANT_TIP)
+local function weightsPicker()
+    return {
+        label = function()
+            local label = GP:WeightsLabel()
+            if #label > 26 then label = label:sub(1, 25) .. "…" end
+            return L["Weights: "] .. label
+        end,
+        items = function() return GP:WeightChoices() end,
+        pick = function(v) GP:SetWeights(v) end,
+        tip = L["How gear is judged: Pawn's scales, or Haulwise's own stat weights for one of your specs."],
+    }
+end
+
+local function stepsPicker(prefix, key, steps, default, anyLabel, tipText)
+    return {
+        label = function()
+            local m = S()[key] or default
+            return prefix .. ((m == 0 and anyLabel) or Coins(m, true))
+        end,
+        items = function()
+            local m, out = S()[key] or default, {}
+            for _, v in ipairs(steps) do
+                out[#out + 1] = { text = (v == 0 and anyLabel) or Coins(v, true), value = v, checked = v == m }
+            end
+            return out
+        end,
+        pick = function(v) S()[key] = v end,
+        tip = tipText,
+    }
 end
 
 TAB.farm = {
@@ -255,7 +318,7 @@ TAB.farm = {
         for _, r in ipairs(rows) do if not r.estOnly then realHere = true; break end end
         if hidden > 0 and (b.estOnly or not realHere) then
             -- Only guesses here, while real data waits elsewhere: say how to see it.
-            text = text .. "  " .. string.format(L["|cff5fd35f%s in other zones: untick This zone only|r"], plural(hidden, "mob"))
+            text = text .. "  " .. string.format(L["|cff5fd35f%s in other zones: set Zone to All|r"], plural(hidden, "mob"))
         elseif b.estOnly then
             text = text .. "  " .. grey(L["estimate: nobody has farmed it yet"])
         elseif b.kills < 30 then
@@ -273,18 +336,6 @@ TAB.farm = {
         end
         return L["No kills recorded yet.\n\nGo farm and loot what you kill. Every mob you loot shows up here, with its real drop chances, how fast you kill it and what it's worth at your auction house."]
     end,
-    toggles = {
-        viewToggle("farm", "zones", L["By zone"], L["Rank zones instead of single mobs: the best gold per hour in each zone."]),
-        { L["This zone only"], nil, L["Only show mobs from one zone: the zone you're in, or the one you clicked in By zone."],
-          get = function() return S().farmZone ~= nil end,
-          set = function(on) S().farmZone = on and "here" or nil; GP.scrollToTop = true end },
-        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."] },
-        { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."] },
-        { L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."] },
-        { L["Skinning/gathering"], "includeGather", L["Count skinning, mining and herbing off corpses."], function() return GP:PlayerHasGathering() end },
-        { L["Pickpocket"], "includePickpocket", L["Add the coins and items you pickpocket."], function() return GP:PlayerIsRogue() end },
-        { L["Value as crafted"], "valueAsCrafted", L["Value drops at what they're worth after you craft them (e.g. cooked), when that's more than selling raw."] },
-    },
     tooltip = function(t, r)
         t:AddLine(r.name, GOLD[1], GOLD[2], GOLD[3])
         t:AddDoubleLine(L["Where"], GP.ZoneName(r.zone), 0.7, 0.7, 0.7, 1, 1, 1)
@@ -325,6 +376,15 @@ TAB.farm = {
             t:AddLine(L["Few kills so far: drop chances can still move a lot. Every kill anyone shares makes this surer."], 1, 0.45, 0.4, true)
         end
     end,
+    pickers = { rankPicker(), zonePicker() },
+    options = {
+        option(L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."]),
+        option(L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."]),
+        option(L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."]),
+        option(L["Skinning/gathering"], "includeGather", L["Count skinning, mining and herbing off corpses."], function() return GP:PlayerHasGathering() end),
+        option(L["Pickpocket"], "includePickpocket", L["Add the coins and items you pickpocket."], function() return GP:PlayerIsRogue() end),
+        option(L["Value as crafted"], "valueAsCrafted", L["Value drops at what they're worth after you craft them (e.g. cooked), when that's more than selling raw."]),
+    },
 }
 
 -- Sells/day as a short cell: "~12", "<1", or an orange 0 when nothing sold in the scans.
@@ -374,20 +434,6 @@ TAB.craft = {
     click = function(r)
         if IsShiftKeyDown and IsShiftKeyDown() then GP:SearchAH(r.out) else GP:AddToShopping(r.key, 1) end
     end,
-    toggles = {
-        viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
-        profToggle(),
-        enchantsToggle(),
-        trainerButton(),
-        { kind = "cycle", label = function() return L["Queue best 5"] end,
-          click = function() GP:QueueBest(5) end,
-          tip = function() return L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] end },
-    },
-    extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
-    extraButton = function(b)
-        b:SetLabel(L["Shopping list"])
-        b:SetScript("OnClick", function() GP:ToggleShopping() end)
-    end,
     tooltip = function(t, r)
         t:SetItemByID(r.out)
         t:AddLine(" ")
@@ -402,6 +448,13 @@ TAB.craft = {
         if r.listed then t:AddDoubleLine(L["On the AH now"], tostring(r.listed), 0.7, 0.7, 0.7) end
         if #r.missing > 0 then t:AddLine(L["Visit a vendor or scan the AH to price the missing reagents."], 1, 0.6, 0.3, true) end
     end,
+    pickers = { profPicker() },
+    actions = {
+        trainerAction(),
+        { label = L["Queue best 5"], click = function() GP:QueueBest(5) end,
+          tip = L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] },
+        shoppingAction(),
+    },
 }
 
 local MIN_STEPS = { 1000, 2000, 5000, 10000, 50000 }
@@ -440,19 +493,6 @@ TAB.deals = {
     end,
     empty = L["No deals right now.\n\nScan the auction house (button at the bottom). Deals are listings 30%+ below an item's usual price, and vendor flips: items listed for less than a vendor pays.\n\nThe usual price of rare items (recipes, single listings) needs 3 days of scans, so those show up from day 3."],
     click = function(r) GP:SearchAH(r.id) end,
-    toggles = { { L["Include gear"], "dealsGear", L["Weapons and armor have random stats per listing, so prices jump around. Off by default."] } },
-    extraTip = L["Hide deals that make less than this."],
-    extraButton = function(b)
-        local m = S().minProfit or 2000
-        b:SetLabel(L["Min profit: "] .. Coins(m, true))
-        b:SetScript("OnClick", function()
-            local cur = S().minProfit or 2000
-            local nxt = MIN_STEPS[1]
-            for i, v in ipairs(MIN_STEPS) do if v == cur then nxt = MIN_STEPS[i % #MIN_STEPS + 1] end end
-            S().minProfit = nxt
-            GP:RefreshUI()
-        end)
-    end,
     tooltip = function(t, r)
         t:SetItemByID(r.id)
         t:AddLine(" ")
@@ -467,6 +507,8 @@ TAB.deals = {
             t:AddLine(L["Based on one scan only: check the price yourself before buying."], 1, 0.6, 0.3, true)
         end
     end,
+    pickers = { stepsPicker(L["Min profit: "], "minProfit", MIN_STEPS, 2000, nil, L["Hide deals that make less than this."]) },
+    options = { option(L["Include gear"], "dealsGear", L["Weapons and armor have random stats per listing, so prices jump around. Off by default."]) },
 }
 
 TAB.recipes = {
@@ -514,10 +556,6 @@ TAB.recipes = {
             grey(L["Visit trainers and vendors to see where to get them, and scan the AH to see what they earn."]))
     end,
     empty = L["No recipes to suggest yet.\n\nOpen your profession windows once and scan the AH. Recipes you don't know yet are ranked by profit per craft and how fast they pay for themselves."],
-    toggles = {
-        profToggle(),
-        { L["Show recipes far above my skill"], "recipesShowAll", L["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."] },
-    },
     click = function(r)
         if IsShiftKeyDown and IsShiftKeyDown() then
             if r.itemID then GP:SearchAH(r.itemID) end
@@ -566,6 +604,8 @@ TAB.recipes = {
         end
         t:AddLine(L["Shift-click: search the AH"], 0.6, 0.6, 0.6)
     end,
+    pickers = { profPicker() },
+    options = { option(L["Show recipes far above my skill"], "recipesShowAll", L["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."]) },
 }
 
 TAB.market = {
@@ -596,7 +636,6 @@ TAB.market = {
         end
         return grey(string.format(L["Weekday pattern: scan on %d more days to see which day your AH is cheapest."], need or 14))
     end,
-    toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
     -- How far along the scans are. A trend compares the last 3 days with 6-13 days ago (see
     -- GP:Trend), so what counts is how old your oldest scan is, not how many days you scanned.
     empty = function()
@@ -658,7 +697,6 @@ TAB.market_sales = {
     end,
     empty = L["No sales logged yet.\n\nWhen an auction sells, the gold comes by mail. Open a mailbox and Haulwise logs every sale from the invoices: what sold, for how much after the AH cut, and when."],
     click = function(r) if r.id then GP:SearchAH(r.id) end end,
-    toggles = { viewToggle("market", "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."]) },
     tooltip = function(t, r)
         if r.id then t:SetItemByID(r.id) else t:AddLine(r.name or "?") end
         t:AddLine(" ")
@@ -723,16 +761,13 @@ TAB.bags = {
         if r.protect then t:AddLine(L["Never offered for deletion: "] .. L[r.protect], 0.53, 0.8, 1, true) end
         t:AddLine(L["Shift-click: "] .. (GP.db.keep[r.id] and L["stop keeping it"] or L["always keep it"]), 0.6, 0.6, 0.6)
     end,
-    toggles = {
-        { L["Disenchant value"], "useDisenchant", L["Value green, blue and purple gear at what disenchanting it gives, when you or one of your characters can disenchant it."] },
-        { L["Disenchant for mats"], "deForMats", L["Level Enchanting: gear you can disenchant yourself is marked to disenchant (and gets the Disenchant button) even when selling pays more. Off: always the move that makes the most gold."] },
-        { L["Protect reagents"], "protectReagents", L["Never offer items your known recipes use. (Crafting materials, dust, essences, shards, cloth, leather, ore, herbs, gems and recipes are never offered at all.)"] },
+    options = {
+        option(L["Disenchant value"], "useDisenchant", L["Value green, blue and purple gear at what disenchanting it gives, when you or one of your characters can disenchant it."]),
+        option(L["Disenchant for mats"], "deForMats", L["Level Enchanting: gear you can disenchant yourself is marked to disenchant (and gets the Disenchant button) even when selling pays more. Off: always the move that makes the most gold."]),
+        option(L["Protect reagents"], "protectReagents", L["Never offer items your known recipes use. (Crafting materials, dust, essences, shards, cloth, leather, ore, herbs, gems and recipes are never offered at all.)"]),
     },
-    extraTip = L["Delete the cheapest items, one click at a time."],
-    extraButton = function(b)
-        b:SetLabel(L["Make room"])
-        b:SetScript("OnClick", function() GP:ShowMakeRoom() end)
-    end,
+    actions = { { label = L["Make room"], click = function() GP:ShowMakeRoom() end,
+                  tip = L["Pick the cheapest items to throw away or sell, to free bag slots."] } },
 }
 
 TAB.gear = {
@@ -787,27 +822,42 @@ TAB.gear = {
                 0.75, 0.75, 0.75, 1, 1, 1)
         end
     end,
-    toggles = {
-        viewToggle("gear", "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."]),
-        pawnToggle(),
-        { L["Upgrade Advisor"], "upgradeAdvisor", L["Check gear you pick up against what you wear."] },
-        { L["Upgrade popups"], "upgradePopups", L["Show a popup when new loot is an upgrade (once per item)."] },
-        { L["Send to alts at mailbox"], "sendToAltsAtMailbox", L["At a mailbox, list gear that's an upgrade for one of your alts."] },
-    },
-    extraTip = L["Which stat weights to use. With Pawn installed, Haulwise uses the Pawn scales you have switched on for this character. Click to switch to Haulwise's own weights per talent tree, and back."],
-    extraButton = function(b)
-        local label = GP:WeightsLabel()
-        if #label > 22 then label = label:sub(1, 21) .. "…" end
-        b:SetLabel(label)
-        b:SetScript("OnClick", function() GP:CycleSpec() end)
-    end,
+    pickers = { weightsPicker() },
 }
 
 local holdChar, holdLoc
-local function locToggle(label, loc)
-    return { label, "_loc_" .. (loc or "all"), nil,
-             tip = function() return L["Show items in "] .. (loc and L[GP.LOCATION_LABEL[loc]] or L["all places"]) .. "." end,
-             get = function() return holdLoc == loc end, set = function() holdLoc = loc end }
+local function charPicker()
+    return {
+        label = function()
+            return L["Character: "] .. (holdChar and (GP.db.chars[holdChar] and GP.db.chars[holdChar].short or holdChar) or L["All"])
+        end,
+        items = function()
+            local keys = {}
+            local realm = GetRealmName and GetRealmName() or "?"
+            for key, c in pairs(GP.db.chars) do if c.short and c.realm == realm then keys[#keys + 1] = key end end
+            table.sort(keys)
+            local out = { { text = L["All characters"], value = false, checked = holdChar == nil } }
+            for _, k in ipairs(keys) do out[#out + 1] = { text = GP.db.chars[k].short, value = k, checked = holdChar == k } end
+            return out
+        end,
+        pick = function(v) holdChar = v or nil; GP.scrollToTop = true end,
+        tip = L["Show one character, or all of them (same realm and faction)."],
+    }
+end
+local LOCATIONS = { "bags", "bank", "equipped", "mail", "ah" }
+local function locPicker()
+    return {
+        label = function() return L["Where: "] .. (holdLoc and L[GP.LOCATION_LABEL[holdLoc]] or L["All"]) end,
+        items = function()
+            local out = { { text = L["All places"], value = false, checked = holdLoc == nil } }
+            for _, loc in ipairs(LOCATIONS) do
+                out[#out + 1] = { text = L[GP.LOCATION_LABEL[loc]], value = loc, checked = holdLoc == loc }
+            end
+            return out
+        end,
+        pick = function(v) holdLoc = v or nil; GP.scrollToTop = true end,
+        tip = L["Show items in one place: bags, bank, worn, mail or on the auction house."],
+    }
 end
 TAB.holdings = {
     cols = {
@@ -844,25 +894,7 @@ TAB.holdings = {
         t:AddDoubleLine(L["Worth"], r.worn and L["worn, not for sale"] or Coins(r.value))
         if not r.worn and r.sellable < r.count then t:AddLine(L["Only the ones you don't wear are counted."], 0.6, 0.6, 0.6) end
     end,
-    toggles = {
-        locToggle(L["All"], nil), locToggle(L["Bags"], "bags"), locToggle(L["Bank"], "bank"), locToggle(L["Equipped"], "equipped"),
-        locToggle(L["Mail"], "mail"), locToggle(L["Auction"], "ah"),
-    },
-    extraTip = L["Show one character, or all of them (same realm and faction)."],
-    extraButton = function(b)
-        local keys = {}
-        local realm = GetRealmName and GetRealmName() or "?"
-        for key, c in pairs(GP.db.chars) do if c.short and c.realm == realm then keys[#keys + 1] = key end end
-        table.sort(keys)
-        local label = holdChar and (GP.db.chars[holdChar] and GP.db.chars[holdChar].short or holdChar) or L["All characters"]
-        b:SetLabel(label)
-        b:SetScript("OnClick", function()
-            local idx = 0
-            for i, k in ipairs(keys) do if k == holdChar then idx = i end end
-            holdChar = keys[idx + 1]
-            GP:RefreshUI()
-        end)
-    end,
+    pickers = { charPicker(), locPicker() },
 }
 
 -- Gear → On the AH: upgrades for sale, from the last full scan.
@@ -936,21 +968,7 @@ TAB.gear_ah = {
         end
         t:AddLine(L["Click at the AH: finds this exact listing and asks you to confirm the price. Nothing is bought without your click."], 0.6, 0.6, 0.6, true)
     end,
-    toggles = {
-        viewToggle("gear", "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."]),
-        pawnToggle(),
-    },
-    extraTip = L["Hide listings above this price."],
-    extraButton = function(b)
-        local m = S().ahUpgradeMax or 0
-        b:SetLabel(m == 0 and L["Max price: any"] or (L["Max price: "] .. Coins(m, true)))
-        b:SetScript("OnClick", function()
-            local idx = 1
-            for i, v in ipairs(AH_MAX_STEPS) do if v == m then idx = i end end
-            S().ahUpgradeMax = AH_MAX_STEPS[idx % #AH_MAX_STEPS + 1]
-            GP:RefreshUI()
-        end)
-    end,
+    pickers = { weightsPicker(), stepsPicker(L["Max price: "], "ahUpgradeMax", AH_MAX_STEPS, 0, L["any"], L["Hide listings above this price."]) },
 }
 
 -- Craft → Skill up: the cheapest recipes to raise your profession right now.
@@ -1005,20 +1023,8 @@ TAB.craft_skill = {
         t:AddLine(" ")
         t:AddLine(L["Click: add to your shopping list.  Shift-click: search the result on the AH."], 0.6, 0.6, 0.6, true)
     end,
-    toggles = {
-        viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
-        profToggle(),
-        enchantsToggle(),
-        trainerButton(),
-        { kind = "cycle", label = function() return L["Queue best 5"] end,
-          click = function() GP:QueueBest(5) end,
-          tip = function() return L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] end },
-    },
-    extraTip = L["Your shopping list: reagents for the crafts you picked, what you have and where to buy the rest."],
-    extraButton = function(b)
-        b:SetLabel(L["Shopping list"])
-        b:SetScript("OnClick", function() GP:ToggleShopping() end)
-    end,
+    pickers = { profPicker() },
+    actions = { trainerAction(), shoppingAction() },
 }
 
 -- Craft → Enchant requests: what people ask enchanters for in trade chat. An estimate.
@@ -1047,7 +1053,7 @@ TAB.craft_enchants = {
     end,
     hero = function(rows)
         local _, info = GP:EnchantRowsCached()
-        if not GP.db.settings.hearTrade then return grey(L["Listening to trade chat is off. Turn it on with the button below."]) end
+        if not GP.db.settings.hearTrade then return grey(L["Not listening to trade chat. Press Start listening to count requests."]) end
         if info.hours < 0.25 then
             return grey(L["Estimate from trade chat: listening. Spend some time in a city with trade chat, and requests show up here."])
         end
@@ -1078,10 +1084,10 @@ TAB.craft_enchants = {
         t:AddLine(" ")
         t:AddLine(L["An estimate from trade chat, not sales: use it to see what people want."], 1, 0.6, 0.3, true)
     end,
-    toggles = {
-        enchantsToggle(),
-        { L["Listen to trade chat"], "hearTrade", ENCHANT_TIP },
-    },
+    heroAction = function()
+        if S().hearTrade then return L["Stop listening"], function() S().hearTrade = false end end
+        return L["Start listening"], function() S().hearTrade = true end
+    end,
 }
 
 -- Farm → By zone: where to go, not just which mob.
@@ -1132,10 +1138,11 @@ TAB.farm_zones = {
         t:AddLine(" ")
         t:AddLine(L["Click: show only this zone's mobs."], 0.6, 0.6, 0.6)
     end,
-    toggles = {
-        viewToggle("farm", "zones", L["By zone"], L["Rank zones instead of single mobs: the best gold per hour in each zone."]),
-        { L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."] },
-        { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."] },
+    pickers = { rankPicker() },
+    options = {
+        option(L["Hide mobs above my level"], "levelWindow", L["Hide mobs more than 2 levels above you, and mobs nobody has killed yet that are more than 10 levels below you."]),
+        option(L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with the addon) and friends' imports to your own."]),
+        option(L["Estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."]),
     },
 }
 
@@ -1423,7 +1430,7 @@ local function build()
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", 0, 0)
     close:SetScript("OnClick", function() GP.db.settings.winShown = false; f:Hide() end)
-    f:HookScript("OnHide", function() updateDisenchant(false) end)
+    f:HookScript("OnHide", function() updateDisenchant(false); if GP.CloseMenu then GP.CloseMenu() end end)
 
     -- Tabs
     local x = 12
@@ -1447,7 +1454,7 @@ local function build()
         b.fs:SetText(L[t.label])
         local hl = tex(b, "HIGHLIGHT", { 1, 0.82, 0.25, 0.08 })
         hl:SetAllPoints()
-        b:SetScript("OnClick", function() S().tab = t.key; offset = 0; GP:RefreshUI() end)
+        b:SetScript("OnClick", function() GP.CloseMenu(); S().tab = t.key; offset = 0; GP:RefreshUI() end)
         b:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
             GameTooltip:AddLine(L[t.label], GOLD[1], GOLD[2], GOLD[3])
@@ -1478,12 +1485,21 @@ local function build()
     f.hero:SetJustifyH("LEFT")
     f.hero:SetWordWrap(false)
 
-    -- Toggle bar + right-side control
+    -- Control row: views on the left, then pickers and Options; actions on the right.
     f.toggleRow = CreateFrame("Frame", nil, f)
-    f.toggleRow:SetPoint("TOPLEFT", 12, -132)
-    f.toggleRow:SetSize(760, 20)
-    f.extra = flatButton(f, "", 140)
-    f.extra:SetPoint("TOPRIGHT", -12, -131)
+    f.toggleRow:SetPoint("TOPLEFT", 12, -131)
+    f.toggleRow:SetPoint("TOPRIGHT", -12, -131)
+    f.toggleRow:SetHeight(22)
+    f.segBox = CreateFrame("Frame", nil, f.toggleRow, "BackdropTemplate")
+    f.segBox:SetHeight(22)
+    f.segBox:SetBackdrop(FLAT)
+    f.segBox:SetBackdropColor(0.09, 0.08, 0.06, 1)
+    f.segBox:SetBackdropBorderColor(0.42, 0.33, 0.15, 1)
+    f.optionsBtn = flatButton(f.toggleRow, "", 100)
+    f.heroBtn = flatButton(f, "", 100)
+    f.heroBtn:SetHeight(20)
+    f.heroBtn:SetPoint("RIGHT", heroBg, "RIGHT", -4, 0)
+    f.heroBg = heroBg
 
     -- Column headers
     f.headers, f.headerBtns = {}, {}
@@ -1800,42 +1816,265 @@ function GP:DrawRows()
     end
 end
 
-local function buildToggles(t)
-    for _, b in ipairs(toggleBar) do b:Hide() end
-    local x = 0
-    for i, spec in ipairs(t.toggles or {}) do
-        if spec[4] and not spec[4]() then
-            -- Not relevant for this character (e.g. pickpocket on a mage): don't show it.
+-- A small menu under a button: a list to pick one from, or switches to turn on and off.
+-- Items: { text, checked = true/false, radio = true, header = true, tip, click, keepOpen }.
+local menu, catcher
+local function closeMenu()
+    if menu then menu:Hide() end
+    if catcher then catcher:Hide() end
+end
+GP.CloseMenu = closeMenu
+
+local fillMenu
+local function openMenu(anchor, build)
+    if menu and menu:IsShown() and menu.anchor == anchor then closeMenu(); return end
+    if not menu then
+        catcher = CreateFrame("Button", nil, UIParent)
+        catcher:SetAllPoints(UIParent)
+        catcher:SetFrameStrata("FULLSCREEN_DIALOG")
+        catcher:RegisterForClicks("AnyUp")
+        catcher:SetScript("OnClick", closeMenu)
+        menu = CreateFrame("Frame", "HaulwiseMenu", UIParent, "BackdropTemplate")
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetBackdrop(FLAT)
+        menu:SetBackdropColor(0.07, 0.065, 0.05, 0.98)
+        menu:SetBackdropBorderColor(0.42, 0.33, 0.15, 1)
+        menu:EnableMouse(true)
+        menu:SetScript("OnHide", function() catcher:Hide() end)
+        menu.rows = {}
+        tinsert(UISpecialFrames, "HaulwiseMenu")   -- Escape closes it
+    end
+    menu.anchor, menu.build = anchor, build
+    catcher:SetFrameLevel(1)
+    menu:SetFrameLevel(catcher:GetFrameLevel() + 10)
+    local a, u = anchor:GetEffectiveScale(), UIParent:GetEffectiveScale()
+    if a and u and u > 0 then menu:SetScale(a / u) end
+    catcher:Show()
+    menu:Show()
+    fillMenu()
+end
+
+fillMenu = function()
+    local items = menu.build()
+    local w, y = 140, -6
+    for i, item in ipairs(items) do
+        local r = menu.rows[i]
+        if not r then
+            r = CreateFrame("Button", nil, menu)
+            r:SetHeight(20)
+            r.hl = tex(r, "HIGHLIGHT", { 1, 0.82, 0.25, 0.12 })
+            r.hl:SetAllPoints()
+            r.box = CreateFrame("Frame", nil, r, "BackdropTemplate")
+            r.box:SetSize(12, 12)
+            r.box:SetPoint("LEFT", 8, 0)
+            r.box:SetBackdrop(FLAT)
+            r.box:SetBackdropColor(0.1, 0.1, 0.1, 1)
+            r.box:SetBackdropBorderColor(0.5, 0.42, 0.2, 1)
+            r.fill = tex(r.box, "ARTWORK", { GOLD[1], GOLD[2], GOLD[3], 1 })
+            r.fill:SetPoint("TOPLEFT", 3, -3)
+            r.fill:SetPoint("BOTTOMRIGHT", -3, 3)
+            r.fs = r:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+            r.fs:SetPoint("LEFT", 28, 0)
+            r.fs:SetJustifyH("LEFT")
+            menu.rows[i] = r
+        end
+        r.item = item
+        r.fs:SetText(item.text)
+        r.box:SetShown(not item.header)
+        r.fill:SetShown(item.checked and true or false)
+        if item.header then
+            r.fs:SetPoint("LEFT", 8, 0)
+            r.fs:SetTextColor(0.85, 0.7, 0.35)
+            r.hl:SetAlpha(0)
         else
-        local key = spec[2]
-        local b = toggleBar[current() .. i]
-        if not b and spec.kind == "cycle" then
-            b = GP.FlatButton(f.toggleRow, "", 120, 18)
-            b.sync = function()
-                b.label:SetText(spec.label())
-                b:SetWidth(math.max(90, (b.label:GetStringWidth() or 80) + 22))
-                b:SetLabel(spec.label())
-            end
-            b:SetScript("OnClick", function() spec.click(); GP:RefreshUI() end)
-            tip(b, function(tt) tt:AddLine(spec.tip(), 1, 1, 1, true) end)
-            toggleBar[current() .. i] = b
-            toggleBar[#toggleBar + 1] = b
+            r.fs:SetPoint("LEFT", 28, 0)
+            if item.checked then r.fs:SetTextColor(1, 1, 1) else r.fs:SetTextColor(0.78, 0.76, 0.72) end
+            r.hl:SetAlpha(1)
         end
-        if not b then
-            local get = spec.get or function() return S()[key] end
-            local set = spec.set or function(v) S()[key] = v end
-            b = toggle(f.toggleRow, L[spec[1]], get, set, spec.tip and spec.tip() or (spec[3] and L[spec[3]]))
-            toggleBar[current() .. i] = b
-            toggleBar[#toggleBar + 1] = b
+        r:SetScript("OnClick", function(self)
+            local it = self.item
+            if it.header or not it.click then return end
+            it.click()
+            GP:RefreshUI()
+            if it.keepOpen and menu:IsShown() then fillMenu() else closeMenu() end
+        end)
+        r:SetScript("OnEnter", function(self)
+            if not self.item.tip then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(self.item.text, GOLD[1], GOLD[2], GOLD[3])
+            GameTooltip:AddLine(self.item.tip, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        r:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        r:ClearAllPoints()
+        r:SetPoint("TOPLEFT", 4, y)
+        r:SetPoint("TOPRIGHT", -4, y)
+        r:Show()
+        w = math.max(w, (r.fs:GetStringWidth() or 0) + 44)
+        y = y - 20
+    end
+    for i = #items + 1, #menu.rows do menu.rows[i]:Hide() end
+    menu:SetSize(math.min(w, 420), -y + 6)
+    menu:ClearAllPoints()
+    menu:SetPoint("TOPLEFT", menu.anchor, "BOTTOMLEFT", 0, -2)
+end
+
+local ARROW = " |TInterface\\Buttons\\Arrow-Down-Up:10:10:0:-2|t"
+
+-- Buttons for the control row, reused between redraws.
+local ctl = { seg = {}, pick = {}, act = {} }
+
+local function segmentButton(i)
+    local b = ctl.seg[i]
+    if b then return b end
+    b = CreateFrame("Button", nil, f.segBox)
+    b:SetHeight(20)
+    b.on = tex(b, "BACKGROUND", { 1, 0.82, 0.25, 0.16 })
+    b.on:SetAllPoints()
+    b.line = tex(b, "ARTWORK", { GOLD[1], GOLD[2], GOLD[3], 1 })
+    b.line:SetPoint("BOTTOMLEFT")
+    b.line:SetPoint("BOTTOMRIGHT")
+    b.line:SetHeight(2)
+    b.hoverBg = tex(b, "HIGHLIGHT", { 1, 0.82, 0.25, 0.08 })
+    b.hoverBg:SetAllPoints()
+    b.fs = b:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+    b.fs:SetPoint("CENTER", 0, 0)
+    ctl.seg[i] = b
+    return b
+end
+
+local function controlButton(pool, i)
+    local b = pool[i]
+    if b then return b end
+    b = flatButton(f.toggleRow, "", 100)
+    b:SetHeight(22)
+    pool[i] = b
+    return b
+end
+
+local function fitButton(b, text)
+    b:SetLabel(text)
+    b:SetWidth(math.max(70, (b.label:GetStringWidth() or 60) + 24))
+end
+
+local function buildControls(t, mainTab)
+    for _, b in ipairs(ctl.seg) do b:Hide() end
+    for _, b in ipairs(ctl.pick) do b:Hide() end
+    for _, b in ipairs(ctl.act) do b:Hide() end
+    f.segBox:Hide()
+    f.optionsBtn:Hide()
+    local x = 0
+
+    -- Views: which list this tab shows.
+    local views = VIEWS[mainTab]
+    if views then
+        local cur = S().views and S().views[mainTab]
+        if cur and not TAB[mainTab .. "_" .. cur] then cur = nil end
+        local sx = 1
+        for i, v in ipairs(views) do
+            local b = segmentButton(i)
+            local on = v[1] == cur
+            b.fs:SetText(v[2])
+            b.fs:SetTextColor(on and GOLD[1] or 0.7, on and GOLD[2] or 0.68, on and GOLD[3] or 0.62)
+            b.on:SetShown(on)
+            b.line:SetShown(on)
+            b:SetWidth((b.fs:GetStringWidth() or 60) + 26)
+            b:ClearAllPoints()
+            b:SetPoint("LEFT", f.segBox, "LEFT", sx, 0)
+            b:SetScript("OnClick", function() closeMenu(); setView(mainTab, v[1]); GP:RefreshUI() end)
+            tip(b, function(tt) tt:AddLine(v[2], GOLD[1], GOLD[2], GOLD[3]); tt:AddLine(v[3], 1, 1, 1, true) end)
+            b:Show()
+            sx = sx + b:GetWidth()
         end
+        f.segBox:SetWidth(sx + 1)
+        f.segBox:ClearAllPoints()
+        f.segBox:SetPoint("LEFT", f.toggleRow, "LEFT", 0, 0)
+        f.segBox:Show()
+        x = sx + 1 + 16
+    end
+
+    -- Pickers: "Profession: All" and the like, each a small menu.
+    for i, spec in ipairs(t.pickers or {}) do
+        local b = controlButton(ctl.pick, i)
+        fitButton(b, spec.label() .. ARROW)
         b:ClearAllPoints()
         b:SetPoint("LEFT", f.toggleRow, "LEFT", x, 0)
-        b.sync()
+        b:SetScript("OnClick", function(self)
+            openMenu(self, function()
+                local out = {}
+                for _, it in ipairs(spec.items()) do
+                    out[#out + 1] = { text = it.text, checked = it.checked, tip = it.tip,
+                                      click = function() spec.pick(it.value) end }
+                end
+                return out
+            end)
+        end)
+        tip(b, function(tt) tt:AddLine(spec.tip, 1, 1, 1, true) end)
         b:Show()
-        x = x + b:GetWidth() + 14
-        end
+        x = x + b:GetWidth() + 8
+    end
+
+    -- Options: the switches for this list, in one menu.
+    local shown = {}
+    for _, spec in ipairs(t.options or {}) do
+        if not spec[4] or spec[4]() then shown[#shown + 1] = spec end
+    end
+    if #shown > 0 then
+        local b = f.optionsBtn
+        fitButton(b, L["Options"] .. ARROW)
+        b:ClearAllPoints()
+        b:SetPoint("LEFT", f.toggleRow, "LEFT", x, 0)
+        b:SetScript("OnClick", function(self)
+            openMenu(self, function()
+                local out = {}
+                for _, spec in ipairs(shown) do
+                    local key = spec[2]
+                    out[#out + 1] = { text = spec[1], checked = S()[key] and true or false, tip = spec[3], keepOpen = true,
+                                      click = function() S()[key] = not S()[key]; GP.scrollToTop = true end }
+                end
+                return out
+            end)
+        end)
+        tip(b, function(tt)
+            tt:AddLine(L["Options for this list:"], GOLD[1], GOLD[2], GOLD[3])
+            for _, spec in ipairs(shown) do
+                tt:AddDoubleLine("  " .. spec[1], S()[spec[2]] and L["on"] or grey(L["off"]), 0.85, 0.85, 0.85, 1, 1, 1)
+            end
+        end)
+        b:Show()
+    end
+
+    -- Actions: on the right, the first one furthest right.
+    local right, leftmost = f.toggleRow, nil
+    for i, spec in ipairs(t.actions or {}) do
+        local b = controlButton(ctl.act, i)
+        fitButton(b, type(spec.label) == "function" and spec.label() or spec.label)
+        b:ClearAllPoints()
+        if i == 1 then b:SetPoint("RIGHT", f.toggleRow, "RIGHT", 0, 0)
+        else b:SetPoint("RIGHT", right, "LEFT", -6, 0) end
+        b:SetScript("OnClick", function() closeMenu(); spec.click(); GP:RefreshUI() end)
+        tip(b, function(tt) tt:AddLine(spec.tip, 1, 1, 1, true) end)
+        b:Show()
+        right, leftmost = b, b
+    end
+    f.leftAction = leftmost
+
+    -- The hero line's own button, for the one thing that line is about.
+    local label, click
+    if t.heroAction then label, click = t.heroAction() end
+    if label then
+        fitButton(f.heroBtn, label)
+        f.heroBtn:SetScript("OnClick", function() click(); GP:RefreshUI() end)
+        f.heroBtn:Show()
+        f.hero:SetPoint("RIGHT", f.heroBtn, "LEFT", -8, 0)
+    else
+        f.heroBtn:Hide()
+        f.hero:SetPoint("RIGHT", f.heroBg, "RIGHT", -8, 0)
     end
 end
+
+-- For the tests: the control row and the menu.
+GP._ui = { ctl = ctl, frame = function() return f end, menu = function() return menu end }
 
 -- Disenchant button (Bags tab). A secure button can't live inside the window (that would block
 -- opening and closing it in combat), so it sits on UIParent, lined up with the window, and only
@@ -1896,7 +2135,8 @@ updateDisenchant = function(show)
     deButton.target = { bag = cand.bag, slot = cand.slot }
     deButton.label:SetText(L["|cffc48cffDisenchant|r "] .. itemName(cand.id))
     deButton:ClearAllPoints()
-    deButton:SetPoint("RIGHT", f.extra, "LEFT", -6, 0)
+    if f.leftAction then deButton:SetPoint("RIGHT", f.leftAction, "LEFT", -6, 0)
+    else deButton:SetPoint("TOPRIGHT", f, "TOPRIGHT", -12, -131) end
     -- Above the window, or the window takes the clicks.
     deButton:SetFrameStrata(f:GetFrameStrata())
     deButton:SetFrameLevel(f:GetFrameLevel() + 50)
@@ -1912,7 +2152,6 @@ function GP:RefreshUI()
     if not f or not f:IsShown() then updateDisenchant(false); return end
     local key = current()
     local t = TAB[key]
-    updateDisenchant(key == "bags")
 
     for _, b in ipairs(tabButtons) do
         local on = b.key == S().tab
@@ -1922,21 +2161,8 @@ function GP:RefreshUI()
         b.ic:SetDesaturated(not on)
     end
 
-    buildToggles(t)
-    if key == "farm" or key == "farm_zones" then
-        f.extra:SetLabel(S().sortBy == "safe" and L["Rank: Safe"] or L["Rank: Expected"])
-        f.extra:SetScript("OnClick", function() S().sortBy = S().sortBy == "safe" and "est" or "safe"; GP:RefreshUI() end)
-        tip(f.extra, function(tt)
-            tt:AddLine(L["Safe ranks by the low end of each drop chance, so a lucky streak can't put a mob on top. Expected ranks by the average."], 1, 1, 1, true)
-        end)
-        f.extra:Show()
-    elseif t.extraButton then
-        t.extraButton(f.extra)
-        tip(f.extra, function(tt) tt:AddLine(L[t.extraTip or ""], 1, 1, 1, true) end)
-        f.extra:Show()
-    else
-        f.extra:Hide()
-    end
+    buildControls(t, S().tab)
+    updateDisenchant(key == "bags")
 
     data = t.rows()
     GP:ApplySort(t, data)

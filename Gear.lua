@@ -84,6 +84,29 @@ end
 
 function GP.PawnLoaded() return pawnReady() and true or false end
 
+-- The Weights menu on the Gear tab: Pawn's scales (when Pawn is there) and each of your
+-- class's specs with Haulwise's own weights.
+function GP:WeightChoices()
+    local _, classFile = UnitClass("player")
+    local pawn = self:UsePawn()
+    local out = {}
+    if pawnReady() then out[#out + 1] = { value = "pawn", text = L["Pawn scales"], checked = pawn } end
+    local cur = self:CurrentSpec()
+    for _, t in ipairs(treesFor(classFile)) do
+        out[#out + 1] = { value = t[1], text = L[t[1]] .. " (Haulwise)", checked = not pawn and cur == t[1] }
+    end
+    return out
+end
+
+function GP:SetWeights(v)
+    local c, s = self:Char(), self.db.settings
+    if v == "pawn" then s.usePawn, c.specOverride = true, nil
+    else s.usePawn, c.specOverride = false, v end
+    c.spec = self:CurrentSpec()
+    self:ScanUpgrades()
+    if self.RecheckAHUpgrades then self:RecheckAHUpgrades(true) end
+end
+
 function GP:UsePawn()
     return self.db.settings.usePawn and pawnReady() and true or false
 end

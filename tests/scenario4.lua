@@ -152,6 +152,47 @@ for _, v in ipairs({ { "gear", "ah" }, { "craft", "skill" }, { "farm", "zones" }
   GP.db.settings.views[v[1]] = nil
 end
 ok(true, "AH, skill-up, zone and bag views draw and sort")
+-- Every control on every tab and view: pickers, Options and their menus, actions, the views.
+do
+  local real = { ToggleShopping = GP.ToggleShopping, ShowMakeRoom = GP.ShowMakeRoom, FindTrainer = GP.FindTrainer, QueueBest = GP.QueueBest }
+  GP.ToggleShopping, GP.ShowMakeRoom, GP.FindTrainer, GP.QueueBest = function() end, function() end, function() end, function() end
+  local saved = {}
+  for k, v in pairs(GP.db.settings) do if type(v) ~= "table" then saved[k] = v end end
+  local clicked, menus = 0, 0
+  local function click(b) if b and b.shown and b.scripts.OnClick then b.scripts.OnClick(b); clicked = clicked + 1 end end
+  for _, tv in ipairs({ { "farm" }, { "farm", "zones" }, { "bags" }, { "gear" }, { "gear", "ah" }, { "craft" }, { "craft", "skill" },
+                        { "craft", "enchants" }, { "deals" }, { "recipes" }, { "market" }, { "market", "sales" }, { "holdings" } }) do
+    GP.db.settings.tab = tv[1]
+    GP.db.settings.views[tv[1]] = tv[2]
+    GP:RefreshUI()
+    local ui = GP._ui
+    local f = ui.frame()
+    local buttons = {}
+    for _, b in ipairs(ui.ctl.pick) do buttons[#buttons + 1] = b end
+    buttons[#buttons + 1] = f.optionsBtn
+    for _, b in ipairs(buttons) do
+      if b.shown then
+        click(b)
+        local m = ui.menu()
+        ok(m and m.shown, tv[1] .. (tv[2] and ("/" .. tv[2]) or "") .. ": a menu opens")
+        menus = menus + 1
+        for _, r in ipairs(m.rows) do
+          if r.shown and m.shown then click(r) end
+        end
+        GP.CloseMenu()
+        GP:RefreshUI()
+      end
+    end
+    for _, b in ipairs(ui.ctl.act) do click(b) end
+    click(f.heroBtn); click(f.heroBtn)
+    for _, b in ipairs(ui.ctl.seg) do click(b) end
+    GP.db.settings.views[tv[1]] = nil
+  end
+  ok(menus >= 10 and clicked > 40, "every picker, option, action and view can be clicked (" .. menus .. " menus)")
+  for k, v in pairs(saved) do GP.db.settings[k] = v end
+  for k, fn in pairs(real) do GP[k] = fn end
+  GP:Char().profFilter = nil
+end
 -- Only one popup at a time ---------------------------------------------------------------------
 W.items[17056] = { name = "Light Feather", sell = 7, k = 15, sk = 1 }
 W.bags = { [0] = { size = 3, slots = { { id = 17056, count = 2 }, { id = 4865 }, { id = 2589, count = 20 } } } }

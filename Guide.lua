@@ -35,13 +35,13 @@ local function guideSections() return {
         D .. L["Deleting can't be undone. If the game asks you to confirm, the item stays on your cursor until you do."] .. E,
     } },
     { L["Gear: upgrades for you and your alts"], {
-        L["New gear is scored and compared with what you wear. With Pawn installed, Haulwise uses your Pawn scales; otherwise its own weights per talent tree (button in the Gear tab)."],
+        L["New gear is scored and compared with what you wear. With Pawn installed, Haulwise uses your Pawn scales; otherwise its own weights per talent tree (Weights menu in the Gear tab)."],
         L["Bind-on-Equip gear is also checked for your alts. At a mailbox, Send to alts lists it: click to attach. Haulwise never presses Send."],
-        G .. L["On the AH"] .. E .. L[" (Gear tab) every full AH scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Set a max price with the button on the right."],
+        G .. L["On the AH"] .. E .. L[" (Gear tab) every full AH scan checks all gear for sale against you and your alts, ranked by how much upgrade each gold buys. Max price hides dearer listings."],
     } },
     { L["Farm: where to make gold"], {
         L["Every mob you kill and loot is counted: real drop chances, coins, skinning and pickpocket, and how fast you kill it. Rows are mobs, ranked by gold per hour."],
-        G .. L["By zone"] .. E .. L[" ranks zones by the best gold per hour there. Click a zone to see its mobs. "] .. G .. L["This zone only"] .. E .. L[" shows just the zone you're in."],
+        G .. L["Zones"] .. E .. L[" ranks zones by the best gold per hour there. Click a zone to see its mobs. "] .. G .. L["Zone"] .. E .. L[" limits the list to where you are."],
         G .. L["Safe"] .. E .. L[" ranks by the low end of each drop chance, so a lucky streak can't put a mob on top. "] .. G .. L["Expected"] .. E .. L[" uses the average."],
         D .. L["Kills count only while you're solo (group loot skews drop rates) unless you turn that on in Settings."] .. E,
     } },
@@ -66,11 +66,13 @@ local function guideSections() return {
     { L["Commands and tips"], {
         W .. "/haul" .. E .. L[" window   "] .. W .. L["/haul hud"] .. E .. L[" HUD   "] .. W .. L["/haul room"] .. E .. L[" make room   "] .. W .. L["/haul settings"] .. E .. "   " .. W .. L["/haul guide"] .. E .. "   " .. W .. L["/haul feedback"] .. E .. L[" bugs and ideas"],
         W .. L["/haul export"] .. E .. " / " .. W .. "import" .. E .. L[" share data   "] .. W .. L["/haul reset"] .. E .. L[" window positions and sizes"],
+        L["Under the tabs: the small tabs on the left switch what the list shows, menus like Profession narrow it down, Options holds the switches for that list, and the buttons on the right do something."],
         L["Click any column title to sort. Drag a window's corner to resize it. Ctrl + mouse wheel scales it."],
     } },
 } end
 
 local function newsLines() return {
+    L["Clearer controls: small tabs switch what a list shows, menus filter it, and Options holds the switches. Popups and mailbox settings moved to Settings."],
     L["Craft → Enchant requests: what people ask an enchanter for in trade chat, and what they offer. An estimate, not sales."],
     L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],
     L["Every mob gets its own kills-per-hour estimate from how close together it stands."],

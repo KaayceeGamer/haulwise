@@ -197,6 +197,7 @@ local function build()
     y = y - 22
     add(check(panel, L["Used for in tooltips"], 18, y, "tooltipUses", L["Item tooltips show the quests and crafts that use an item, who sells it and what drops it."]))
     add(check(panel, L["Mats to crafters"], 200, y + 44, "matsToCrafters", L["At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."]))
+    add(check(panel, L["Enchant requests"], 200, y + 22, "hearTrade", L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."]))
 
     -- Four buttons of the same width across the bottom, so nothing overlaps.
     local BW, GAP = 86, 6
