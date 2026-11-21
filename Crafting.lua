@@ -103,6 +103,9 @@ local function readModern(char)
     for _, rid in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
         local info = C_TradeSkillUI.GetRecipeInfo(rid)
         local sch = C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(rid, false)
+        if info and info.learned and prof == "Enchanting" and not (sch and sch.outputItemID) then
+            GP:NoteKnownEnchant(info.name)
+        end
         if info and sch and sch.outputItemID then
             local reagents = {}
             for _, slot in ipairs(sch.reagentSlotSchematics or {}) do
@@ -151,6 +154,8 @@ local function readClassic(char)
                     n = name, prof = prof, out = out, oq = ((lo or 1) + (hi or lo or 1)) / 2,
                     r = packReagents(reagents), learned = true, d = CLASSIC_DIFFICULTY[kind],
                 }
+            elseif prof == "Enchanting" then
+                GP:NoteKnownEnchant(name)
             end
         end
     end

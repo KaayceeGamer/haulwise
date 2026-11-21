@@ -71,6 +71,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Craft → Enchant requests: what people ask an enchanter for in trade chat, and what they offer. An estimate, not sales."],
     L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],
     L["Every mob gets its own kills-per-hour estimate from how close together it stands."],
     L["Gear tab: click an upgrade at the auction house to buy that exact listing."],

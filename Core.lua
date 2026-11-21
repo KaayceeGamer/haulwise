@@ -39,6 +39,7 @@ local DEFAULTS = {
     sizes = {},         -- [frameName] = { width, height }
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
+    enchantDemand = {}, -- ["Realm|A"] = { list = { {time, enchant, gold offered} }, listen = {[day] = seconds}, supply = {[day] = n} }
     shared = {},        -- [sourceId] = { label, time, mobs }
     names = {},
     speed = {},         -- [itemID] = "sold:days:day": units seen selling over the last 7 days of scans
@@ -76,6 +77,7 @@ local DEFAULTS = {
         sellHelper = true,
         tooltipDisenchant = true,
         tooltipUses = true,       -- item tooltips: quests and crafts that use it, who sells it, what drops it
+        hearTrade = true,         -- count enchant requests in trade chat (an estimate, nothing about who is saved)
         recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet

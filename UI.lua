@@ -210,6 +210,11 @@ local function viewToggle(tab, view, label, tipText)
         end }
 end
 
+local ENCHANT_TIP = L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."]
+local function enchantsToggle()
+    return viewToggle("craft", "enchants", L["Enchant requests"], ENCHANT_TIP)
+end
+
 TAB.farm = {
     cols = {
         { key = "name", title = L["Mob"], w = 196, icon = true },
@@ -372,6 +377,7 @@ TAB.craft = {
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
+        enchantsToggle(),
         trainerButton(),
         { kind = "cycle", label = function() return L["Queue best 5"] end,
           click = function() GP:QueueBest(5) end,
@@ -1002,6 +1008,7 @@ TAB.craft_skill = {
     toggles = {
         viewToggle("craft", "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."]),
         profToggle(),
+        enchantsToggle(),
         trainerButton(),
         { kind = "cycle", label = function() return L["Queue best 5"] end,
           click = function() GP:QueueBest(5) end,
@@ -1012,6 +1019,69 @@ TAB.craft_skill = {
         b:SetLabel(L["Shopping list"])
         b:SetScript("OnClick", function() GP:ToggleShopping() end)
     end,
+}
+
+-- Craft → Enchant requests: what people ask enchanters for in trade chat. An estimate.
+TAB.craft_enchants = {
+    cols = {
+        { key = "name", title = L["Enchant asked for"], w = 250, icon = true },
+        { key = "n", title = L["Asked (7 d)"], w = 80, align = "RIGHT" },
+        { key = "perHour", title = L["~ per hour"], w = 80, align = "RIGHT" },
+        { key = "offer", title = L["~ offered"], w = 90, align = "RIGHT" },
+        { key = "gold", title = L["~ gold/hour"], w = 110, align = "RIGHT", bar = true },
+        { key = "skill", title = L["Skill"], w = 56, align = "RIGHT" },
+        { key = "known", title = L["You know it"], w = 90, align = "CENTER" },
+    },
+    rows = function() return (GP:EnchantRowsCached()) end,
+    bar = function(r) return r.perHourGold or 0 end,
+    cells = function(r)
+        return {
+            name = r.vague and grey(r.label) or r.label, icon = "Interface\\Icons\\Trade_Engraving",
+            n = tostring(r.n),
+            perHour = r.perHour and grey("~") .. string.format(r.perHour < 10 and "%.1f" or "%.0f", r.perHour) or grey("–"),
+            offer = r.offer and grey("~") .. Coins(r.offer, true) or grey(L["not said"]),
+            gold = r.perHourGold and grey("~") .. Coins(r.perHourGold, true) or grey("–"),
+            skill = r.skill and tostring(r.skill) or grey("–"),
+            known = r.vague and grey("–") or (r.known and "|cff5fd35f" .. L["yes"] .. "|r" or grey(L["no"])),
+        }
+    end,
+    hero = function(rows)
+        local _, info = GP:EnchantRowsCached()
+        if not GP.db.settings.hearTrade then return grey(L["Listening to trade chat is off. Turn it on with the button below."]) end
+        if info.hours < 0.25 then
+            return grey(L["Estimate from trade chat: listening. Spend some time in a city with trade chat, and requests show up here."])
+        end
+        return string.format(L["|cffffd040Estimate|r from trade chat:  %s asked for in %.1f hours of trade (7 days)  ·  %s advertising"],
+            plural(info.total, "enchant"), info.hours, plural(info.supply, "enchanter"))
+    end,
+    empty = L["No enchant requests heard yet.\n\nWhile you're in a city, Haulwise counts the messages in trade chat that ask for an enchanter, per enchant, and how long you've listened. After a few hours you'll see what people want and what they offer for it.\n\nIt's an estimate: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."],
+    click = function() end,
+    tooltip = function(t, r)
+        t:AddLine(r.label, GOLD[1], GOLD[2], GOLD[3])
+        t:AddDoubleLine(L["Asked for, last 7 days"], tostring(r.n), 0.7, 0.7, 0.7, 1, 1, 1)
+        if r.perHour then t:AddDoubleLine(L["Per hour you were in trade chat"], string.format("~%.1f", r.perHour), 0.7, 0.7, 0.7, 1, 1, 1) end
+        if r.offer then
+            t:AddDoubleLine(L["Gold offered in chat (middle)"], Coins(r.offer) .. grey(" (" .. plural(#r.offers, "offer") .. ")"), 0.7, 0.7, 0.7, 1, 1, 1)
+        else
+            t:AddLine(L["Nobody named a price: most pay a tip, and you're usually given the mats."], 0.7, 0.7, 0.7, true)
+        end
+        if #(r.names or {}) > 0 then
+            t:AddLine(" ")
+            t:AddLine(L["Counts any of these (chat rarely says which rank):"], 0.8, 0.8, 0.8)
+            local known = {}
+            for _, c in pairs(GP.db.chars or {}) do for n in pairs(c.enchants or {}) do known[n] = true end end
+            for _, n in ipairs(r.names) do
+                local name = n:gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end)
+                t:AddLine("  " .. (known[n] and "|cff5fd35f" or "|cffaaaaaa") .. name .. "|r")
+            end
+        end
+        t:AddLine(" ")
+        t:AddLine(L["An estimate from trade chat, not sales: use it to see what people want."], 1, 0.6, 0.3, true)
+    end,
+    toggles = {
+        enchantsToggle(),
+        { L["Listen to trade chat"], "hearTrade", ENCHANT_TIP },
+    },
 }
 
 -- Farm → By zone: where to go, not just which mob.
@@ -1099,6 +1169,11 @@ TAB.craft_skill.sort = {
     name = function(r) return nm(r.out) end, prof = function(r) return r.prof end, color = function(r) return r.d end,
     chance = function(r) return r.chance end, cost = function(r) return r.priced and r.cost or nil end,
     back = function(r) return r.back end, point = function(r) return r.perPoint end,
+}
+TAB.craft_enchants.sort = {
+    name = function(r) return r.label:lower() end, n = function(r) return r.n end, perHour = function(r) return r.perHour end,
+    offer = function(r) return r.offer end, gold = function(r) return r.perHourGold end, skill = function(r) return r.skill end,
+    known = function(r) return r.known and 1 or 0 end,
 }
 TAB.farm_zones.sort = {
     name = function(r) return GP.ZoneName(r.zone):lower() end, lvl = function(r) return r.minL end, mobs = function(r) return r.mobs end,

@@ -1190,4 +1190,46 @@ do -- Recipes tab: an item the game loads that no recipe waits for must not redr
   GP.RefreshUI, GP.db.settings.tab = real, tab
 end
 
+do -- Enchant requests in trade chat: an estimate, counted per enchant
+  local saved = HaulwiseData.wikiRecipes
+  HaulwiseData.wikiRecipes = saved or {}
+  local w = HaulwiseData.wikiRecipes
+  w["enchant weapon - crusader"] = w["enchant weapon - crusader"] or "300:D:0"
+  w["enchant 2h weapon - grand crusader"] = w["enchant 2h weapon - grand crusader"] or "300:D:1"
+  w["enchant boots - minor agility"] = w["enchant boots - minor agility"] or "125:T:0"
+  w["enchant boots - greater agility"] = w["enchant boots - greater agility"] or "295:D:0"
+  w["enchant bracer - superior stamina"] = w["enchant bracer - superior stamina"] or "245:T:0"
+  local R = GP.ReadEnchantMessage
+  local k, f, g = R("LF enchanter for crusader, tip 10g")
+  ok(k == "demand" and f[1] == "weapon|crusader" and g == 100000, "a crusader request with a 10g tip")
+  k, f = R("WTB +7 agi boots enchant")
+  ok(k == "demand" and f[1] == "boots|agility", "agility on boots, rank not said")
+  k, f = R("LF ench 2h crusader")
+  ok(f and f[1] == "2h weapon|crusader", "2h crusader")
+  k = R("Enchanter LFW, your mats, tips appreciated")
+  ok(k == "supply", "an enchanter advertising is not a request")
+  ok(R("WTS [Formula: Enchant Weapon - Crusader]") == nil, "selling the formula is not a request")
+  k, f = R("anyone enchant bracers?")
+  ok(k == "demand" and f[1] == "bracer|?", "bracers, which one not said")
+  k, f = R("LF |cffffd000|Henchant:20034|h[Enchanting: Enchant Weapon - Crusader]|h|r")
+  ok(f and f[1] == "weapon|crusader", "an enchant link")
+  ok(R("selling copper ore") == nil, "other trade chat is ignored")
+  ok(R("WTB strange dust for enchanting") == nil, "buying enchanting mats is not a request")
+
+  GP.db.enchantDemand = {}
+  local t0 = 1800000000
+  GP:HearTrade("WTS copper", "A", t0)
+  GP:HearTrade("LF enchanter crusader 5g", "B", t0 + 200)
+  GP:HearTrade("LF enchanter crusader pls", "B", t0 + 400)   -- same player again: once
+  GP:HearTrade("lf crusader enchant", "C", t0 + 600)
+  GP:HearTrade("Enchanter LFW", "D", t0 + 800)
+  GP:HearTrade("WTS linen", "F", t0 + 1000)
+  GP:HearTrade("LF enchanter crusader", "E", t0 + 5000)       -- after a long gap: not time listened
+  local rows, info = GP:EnchantDemand(7, t0 + 5100)
+  ok(#rows == 1 and rows[1].n == 3 and rows[1].offer == 50000, "three players asked for crusader, one offered 5g")
+  ok(math.abs(info.hours - 1000 / 3600) < 0.01 and info.supply == 1, "listening time and enchanters advertising")
+  ok(rows[1].perHour and rows[1].perHourGold, "an estimate per hour")
+  HaulwiseData.wikiRecipes = saved
+end
+
 print("NEW FEATURES PASSED")

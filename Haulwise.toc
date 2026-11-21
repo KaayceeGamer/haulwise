@@ -25,6 +25,7 @@ Disenchant.lua
 Model.lua
 Zones.lua
 Crafting.lua
+Enchants.lua
 Market.lua
 Sources.lua
 Navigate.lua
