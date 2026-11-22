@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.17.0"
+GP.VERSION = "0.18.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 
@@ -39,6 +39,7 @@ local DEFAULTS = {
     sizes = {},         -- [frameName] = { width, height }
     sources = {},       -- [recipe name] = { trainer = { [npc] = {...} }, vendor = { [npc] = {...} } }
     recipeItems = {},   -- [recipe name] = itemID of the pattern/recipe item
+    sessions = {},      -- saved farm sessions, newest first (see Sessions.lua)
     mobLook = {},       -- [npcID] = { d = display id, t = creature type, f = beast family }: mobs Haulwise Data lacks
     enchantDemand = {}, -- ["Realm|A"] = { list = { {time, enchant, gold offered} }, listen = {[day] = seconds}, supply = {[day] = n} }
     shared = {},        -- [sourceId] = { label, time, mobs }
@@ -79,6 +80,7 @@ local DEFAULTS = {
         tooltipDisenchant = true,
         tooltipUses = true,       -- item tooltips: quests and crafts that use it, who sells it, what drops it
         hearTrade = true,         -- count enchant requests in trade chat (an estimate, nothing about who is saved)
+        useTSM = true,            -- use TradeSkillMaster's prices (DBMarket) when installed, after your own fresh scan
         recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
         matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
         views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
@@ -244,7 +246,7 @@ GP:On("ADDON_LOADED", function(name)
     if GP.LOCALES[lang] then setmetatable(GP.LOCALE_STRINGS, { __index = GP.LOCALES[lang] }) end
     GP.langReady = true
     GP:LoadBundledCommunity()
-    GP.session = GP.NewSession()
+    GP.session = GP.RestoreSession and GP:RestoreSession() or GP.NewSession()
     if GP.ApplyFonts then GP.ApplyFonts() end
     if GP.OnLoaded then GP:OnLoaded() end
     if not GP.db.introShown then
@@ -259,14 +261,17 @@ end)
 -- carried when it started (for "gold change", which also counts vendors, quests and spending).
 function GP.NewSession()
     local money = GetMoney and GetMoney() or 0
-    return { start = time(), value = 0, money = 0, kills = 0, sales = 0, salesN = 0, gold0 = money }
+    local t = time()
+    return { start = t, since = t, secs = 0, value = 0, money = 0, kills = 0, sales = 0, salesN = 0, gold0 = money,
+             mobs = {}, items = {}, zones = {} }
 end
 
 -- Earned this session (loot + sales), and per hour.
 function GP.SessionEarned()
     local s = GP.session
     local total = (s.value or 0) + (s.sales or 0)
-    local mins = math.max(1, (time() - s.start) / 60)
+    local secs = GP.SessionSeconds and GP.SessionSeconds(s) or (time() - s.start)
+    local mins = math.max(1, secs / 60)
     return total, total / mins * 60, mins
 end
 
@@ -285,7 +290,7 @@ SlashCmdList.HAULWISE = function(msg)
         s.trackInGroup = (arg == "on")
         GP.Print(L["Recording in groups: "] .. (s.trackInGroup and L["on"] or L["off"]))
     elseif cmd == "session" then
-        GP.session = GP.NewSession()
+        GP:StartNewSession()
         GP.Print(L["Session reset."])
     elseif cmd == "feedback" or cmd == "bug" then
         GP:ShowFeedback()

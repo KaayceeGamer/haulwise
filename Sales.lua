@@ -119,7 +119,7 @@ end
 GP:On("MAIL_INBOX_UPDATE", function()
     local ok, added, gold = pcall(GP.ReadSales, GP)
     if ok and added > 0 then
-        if GP.session then GP.session.sales, GP.session.salesN = (GP.session.sales or 0) + gold, (GP.session.salesN or 0) + added end
+        if GP.session and GP.session.since then GP.session.sales, GP.session.salesN = (GP.session.sales or 0) + gold, (GP.session.salesN or 0) + added end
         GP.Print(string.format(L["Logged %s: %s. See the Market tab, Your sales."], GP.Plural(added, "sale"), GP.Coins(gold, true)))
         if GP.RefreshUI then GP:RefreshUI() end
     end

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.0
+- **Pause your session**: click the session box at the top (or the session line on the HUD) to pause. While paused the clock stops and loot stays out of your gold per hour, so a mailbox run or a vendor trip doesn't drag it down. What you loot still counts for drop rates.
+- **Dungeons get their own session**: entering a dungeon or raid sets your open-world session aside; leaving saves the dungeon run and picks the open-world session up where it was.
+- **Saved sessions**: Farm has a new view, *Sessions*: every farm run with where, who, how long, what it earned, gold per hour and the mobs you killed most. A session is saved when you start a new one, leave a dungeon, or come back after 30 minutes away; a /reload carries on the same session. Right-click one to delete it.
+- **TSM prices**: with TradeSkillMaster installed, Haulwise uses its market value (from the TSM desktop app) when your own scan is more than 3 days old. Turn it off in Settings.
+
 ## 0.17.0
 - **Farm: estimates and real kills apart**: a new *Show* menu picks all mobs, only farmed ones (real kills, yours or shared) or only estimates. Under *Safe*, a mob nobody has killed counts its loot-table items for half, so mobs with real kills aren't buried under guesses. When the top row is a guess, the hero line also names the best farmed mob. A picked zone (*Where you are*) shows its low mobs too, instead of an empty list.
 - **Settings window**: sections on the left (Look, Bags and loot, Gear, Farming, Auction house and mail, Tooltips), and every switch says what it does right under it, no hovering needed. *Use Pawn* is now in the Weights menu on the Gear tab.

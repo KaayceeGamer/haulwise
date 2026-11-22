@@ -178,8 +178,9 @@ function GP.AddValueLines(t, unit, src, d, count)
     t:AddDoubleLine(L["|cffffd040Haulwise|r value"], GP.Coins(unit * count) .. " " .. GP.SourceTag(src, d))
     t:AddDoubleLine(L["  Vendor"], GP.Coins((d.vendor or 0) * count), 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     if d.ah then
-        local age = d.ahAge and (d.ahAge < 86400 and L["today"] or string.format(L["%dd old"], math.floor(d.ahAge / 86400))) or "?"
-        local from = (d.ahFrom == "realm" and L[", shared for your realm"]) or (d.ahFrom == "all" and L[", all realms: rough guess"]) or ""
+        local age = d.ahAge and (d.ahAge < 86400 and L["today"] or string.format(L["%dd old"], math.floor(d.ahAge / 86400))) or (d.ahFrom == "TSM" and "" or "?")
+        local from = (d.ahFrom == "realm" and L[", shared for your realm"]) or (d.ahFrom == "all" and L[", all realms: rough guess"])
+            or (d.ahFrom == "TSM" and L["from TSM"]) or ""
         t:AddDoubleLine(L["  Auction (after cut)"], GP.Coins(d.ah * count) .. " " .. GP.AgeColor(d.ahAge) .. age .. from .. "|r", 0.7, 0.7, 0.7, 0.8, 0.8, 0.8)
     end
     if d.deOutcomes then

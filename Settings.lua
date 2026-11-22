@@ -82,6 +82,7 @@ local function sections(s)
         } },
         { L["Auction house and mail"], {
             { L["Price help when selling"], "sellHelper", L["Next to the AH sell frame: a suggested price from the live listings and your scans, and a warning when a vendor pays more. You still press Post yourself."] },
+            { L["TSM prices"], "useTSM", L["With TradeSkillMaster installed: use its market value (from the TSM desktop app) when your own scan is more than 3 days old. Prices shared for your realm and your fresh scans still come first."] },
             { L["Mats to crafters"], "matsToCrafters", L["At a mailbox: offer to send crafting mats in your bags to the alt whose recipes use them."] },
             { L["Enchant requests"], "hearTrade", L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] },
         } },

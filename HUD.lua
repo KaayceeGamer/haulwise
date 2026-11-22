@@ -51,6 +51,18 @@ local function build()
     hud.lock:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     hud.session = line(hud, -34)
+    -- Click the session line to pause or resume it.
+    local sb = CreateFrame("Button", nil, hud)
+    sb:SetPoint("TOPLEFT", 8, -30)
+    sb:SetPoint("TOPRIGHT", -8, -30)
+    sb:SetHeight(16)
+    sb:SetScript("OnClick", function() GP:ToggleSessionPause() end)
+    sb:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GP.SessionTooltip(GameTooltip, L["Click to pause or resume."])
+        GameTooltip:Show()
+    end)
+    sb:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Worth block: hover for the full breakdown.
     hud.worth = CreateFrame("Button", nil, hud)
@@ -129,7 +141,7 @@ function GP:RefreshHUD(sessionOnly)
     local s = self.session
     local total, perHour = GP.SessionEarned()
     hud.session:SetText(string.format(L["Session  %s|cff8a8880/h   %s · %d kills|r"],
-        GP.Coins(perHour, true), GP.Coins(total, true), s.kills))
+        GP.Coins(perHour, true), GP.Coins(total, true), s.kills) .. (GP.SessionPaused() and ("  |cffff9944" .. L["paused"] .. "|r") or ""))
     if sessionOnly then return end
 
     local locked = self.db.settings.hudLocked

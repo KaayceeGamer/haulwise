@@ -160,7 +160,7 @@ do
   for k, v in pairs(GP.db.settings) do if type(v) ~= "table" then saved[k] = v end end
   local clicked, menus = 0, 0
   local function click(b) if b and b.shown and b.scripts.OnClick then b.scripts.OnClick(b); clicked = clicked + 1 end end
-  for _, tv in ipairs({ { "farm" }, { "farm", "zones" }, { "bags" }, { "gear" }, { "gear", "ah" }, { "craft" }, { "craft", "skill" },
+  for _, tv in ipairs({ { "farm" }, { "farm", "zones" }, { "farm", "sessions" }, { "bags" }, { "gear" }, { "gear", "ah" }, { "craft" }, { "craft", "skill" },
                         { "craft", "enchants" }, { "deals" }, { "recipes" }, { "market" }, { "market", "sales" }, { "holdings" } }) do
     GP.db.settings.tab = tv[1]
     GP.db.settings.views[tv[1]] = tv[2]
@@ -1001,7 +1001,7 @@ end
 do
   local saved = GP.session
   GP.session = GP.NewSession()
-  GP.session.start = time() - 1800
+  GP.session.start = time() - 1800; GP.session.since = time() - 1800
   GP.session.value, GP.session.sales, GP.session.salesN = 5000, 17000, 5
   local total, perHour = GP.SessionEarned()
   ok(total == 22000 and math.abs(perHour - 44000) < 1, "session: loot + sales, per hour")
@@ -1321,5 +1321,37 @@ do -- A mob Haulwise Data doesn't know: its look is remembered when targeted
   ok(GP.MobDisplay(987654) == 4321 and GP.MobIcon(987654):find("Pet_Bat"), "a new mob's portrait comes from its NPC number, its icon from targeting it")
   UnitExists, UnitGUID, UnitIsPlayer, UnitCreatureType, UnitCreatureFamily, CreateFrame = unpack(saved)
   GP._ResetLooks()
+end
+do -- TSM: its market value fills in when your own scan is old or missing
+  TSM_API = { GetCustomPriceValue = function(src, item) if src == "DBMarket" and item == "i:777001" then return 12345 end end }
+  local p, _, _, from = GP:Price(777001)
+  ok(p == 12345 and from == "TSM", "TSM's DBMarket price is used for an item you haven't scanned")
+  GP.db.settings.useTSM = false
+  ok(GP:Price(777001) == nil, "and not when TSM prices are turned off")
+  GP.db.settings.useTSM = true
+  TSM_API = nil
+end
+do -- Sessions: pause keeps loot out, a session is saved, a /reload carries it on
+  GP.db.sessions = {}
+  GP.session = GP.NewSession()
+  GP.session.start = time() - 600
+  GP.session.since = time() - 600
+  GP:SessionLoot(5000, 1000, { [2589] = 3 })
+  GP:SessionKill(1234, "#1434")
+  GP:PauseSession()
+  GP:SessionLoot(99999, 0, nil)
+  ok(GP.session.value == 5000 and GP.SessionPaused(), "loot while paused stays out of the session")
+  local secs = GP.SessionSeconds()
+  ok(secs >= 590 and secs <= 610, "a paused session's clock stops (" .. secs .. " s)")
+  GP:ResumeSession()
+  fire("PLAYER_LOGOUT")
+  ok(GP.db.currentSession and GP.db.currentSession.wasRunning, "logout keeps the running session")
+  GP.session = GP:RestoreSession()
+  ok(GP.session.value == 5000 and not GP.SessionPaused(), "and a /reload carries it on, still running")
+  ok(GP:StartNewSession() and #GP.db.sessions == 1, "New session saves the old one")
+  local r = GP:SessionRows()[1]
+  ok(r.earned == 5000 and r.kills == 1 and r.perHour > 0 and r.where ~= "?", "a saved session: earned, kills, gold per hour, where")
+  GP:DeleteSession(1)
+  ok(#GP.db.sessions == 0, "and it can be deleted")
 end
 print("NEW FEATURES PASSED")

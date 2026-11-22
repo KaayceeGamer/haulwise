@@ -163,7 +163,8 @@ end
 
 local VIEWS = {
     farm = { { nil, L["Mobs"], L["Every mob, ranked by gold per hour."] },
-             { "zones", L["Zones"], L["Rank zones instead of single mobs: the best gold per hour in each zone."] } },
+             { "zones", L["Zones"], L["Rank zones instead of single mobs: the best gold per hour in each zone."] },
+             { "sessions", L["Sessions"], L["Your saved farm sessions: where, how long, and what each earned per hour."] } },
     craft = { { nil, L["Best profit"], L["What's profitable to craft and sell on the auction house."] },
               { "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."] },
               { "enchants", L["Enchant requests"], L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] } },
@@ -1176,6 +1177,84 @@ TAB.farm_zones = {
     },
 }
 
+-- Farm → Sessions: your saved farm runs, newest first.
+local function sessionActions()
+    return {
+        { label = function() return GP.SessionPaused() and L["Resume"] or L["Pause"] end,
+          click = function() GP:ToggleSessionPause() end,
+          tip = L["While paused, the clock stops and loot stays out of this session (it still counts for drop rates)."] },
+        { label = L["New session"], click = function()
+            if GP:StartNewSession() then GP.Print(L["Session saved. A new one has started."]) end
+          end, tip = L["Save this session (when it's 3 minutes or more) and start a new one."] },
+    }
+end
+TAB.farm_sessions = {
+    cols = {
+        { key = "t", title = L["When"], w = 110, icon = true },
+        { key = "where", title = L["Where"], w = 170 },
+        { key = "char", title = L["Who"], w = 90 },
+        { key = "secs", title = L["Time"], w = 70, align = "RIGHT" },
+        { key = "earned", title = L["Earned"], w = 110, align = "RIGHT" },
+        { key = "perHour", title = L["Gold/h"], w = 120, align = "RIGHT", bar = true },
+        { key = "kills", title = L["Kills"], w = 60, align = "RIGHT" },
+        { key = "best", title = L["Most killed"], w = 170 },
+    },
+    rows = function() return GP:SessionRows() end,
+    bar = function(r) return r.perHour end,
+    cells = function(r)
+        local m = r.best and GP:MergedMobs()[r.best]
+        local h, mm = math.floor(r.secs / 3600), math.floor(r.secs % 3600 / 60)
+        return {
+            t = date("%d %b  %H:%M", r.t), icon = r.rec.inst and "Interface\\Icons\\INV_Misc_Key_03" or "Interface\\Icons\\INV_Misc_Map_01",
+            where = r.where, char = grey(r.char),
+            secs = h > 0 and string.format("%d:%02d", h, mm) or string.format(L["%d min"], mm),
+            earned = Coins(r.earned, true), perHour = Coins(r.perHour, true), kills = tostring(r.kills),
+            best = r.best and ((m and m.name) or (L["NPC #"] .. r.best)) .. grey(" x" .. r.rec.mobs[1][2]) or grey("–"),
+        }
+    end,
+    hero = function(rows)
+        local _, perHour, mins = GP.SessionEarned()
+        local now = string.format(L["This session: %s/h for %d min"], Coins(perHour, true), mins)
+        if GP.SessionPaused() then now = now .. "  |cffff9944" .. L["(paused)"] .. "|r" end
+        if #rows == 0 then return now end
+        local best = rows[1]
+        for _, r in ipairs(rows) do if r.perHour > best.perHour then best = r end end
+        return now .. grey("   ·   ") .. string.format(L["best saved: |cffffffff%s|r/h in %s"], Coins(best.perHour, true), best.where)
+    end,
+    empty = L["No saved sessions yet.\n\nA session is saved when you start a new one (click the session box at the top, or New session here), when you leave a dungeon, or when you come back after 30 minutes away. Sessions under 3 minutes aren't saved."],
+    click = function() end,
+    tooltip = function(t, r)
+        t:AddLine(r.where .. grey("  " .. date("%d %b %H:%M", r.t)), GOLD[1], GOLD[2], GOLD[3])
+        t:AddDoubleLine(L["Loot from kills (worth)"], Coins(r.rec.value or 0), 0.7, 0.7, 0.7, 1, 1, 1)
+        if (r.rec.sales or 0) > 0 then t:AddDoubleLine(L["AH sales collected"], Coins(r.rec.sales), 0.7, 0.7, 0.7, 1, 1, 1) end
+        if r.rec.mobs and #r.rec.mobs > 0 then
+            t:AddLine(" ")
+            t:AddLine(L["Most killed"], 0.8, 0.8, 0.8)
+            local merged = GP:MergedMobs()
+            for _, e in ipairs(r.rec.mobs) do
+                local m = merged[e[1]]
+                t:AddDoubleLine("  " .. ((m and m.name) or (L["NPC #"] .. e[1])), "x" .. e[2], 1, 1, 1, 0.8, 0.8, 0.8)
+            end
+        end
+        if r.rec.items and #r.rec.items > 0 then
+            t:AddLine(" ")
+            t:AddLine(L["Best loot"], 0.8, 0.8, 0.8)
+            for _, e in ipairs(r.rec.items) do
+                t:AddDoubleLine("  " .. (GP.ItemInfo(e[1]) or ("#" .. e[1])), "x" .. e[2], 1, 1, 1, 0.8, 0.8, 0.8)
+            end
+        end
+        t:AddLine(" ")
+        t:AddLine(L["Right-click to delete this session."], 0.6, 0.6, 0.6)
+    end,
+    rightClick = function(r) GP:DeleteSession(r.i) end,
+    actions = sessionActions(),
+}
+TAB.farm_sessions.sort = {
+    t = function(r) return r.t end, where = function(r) return r.where end, char = function(r) return r.char end,
+    secs = function(r) return r.secs end, earned = function(r) return r.earned end, perHour = function(r) return r.perHour end,
+    kills = function(r) return r.kills end, best = function(r) return r.best or 0 end,
+}
+
 -- Sorting by column ---------------------------------------------------------------------------
 -- Each tab says how to get a sortable value per column. Missing values always go last.
 local function nm(id) return ((GP.ItemInfo(id)) or ""):lower() end
@@ -1329,9 +1408,15 @@ local function makeRow(parent, i)
         end
     end)
     row:SetScript("OnLeave", function(self) self.hoverBg:Hide(); GameTooltip:Hide() end)
-    row:SetScript("OnClick", function(self)
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row:SetScript("OnClick", function(self, button)
         local t = TAB[current()]
-        if self.data and t.click then t.click(self.data) end
+        if not self.data then return end
+        if button == "RightButton" then
+            if t.rightClick then t.rightClick(self.data); GP:RefreshUI() end
+            return
+        end
+        if t.click then t.click(self.data) end
     end)
     return row
 end
@@ -1449,7 +1534,25 @@ local function build()
     sessLabel:SetPoint("LEFT", 10, 0)
     sessLabel:SetText(L["THIS\nSESSION"])
     sessLabel:SetJustifyH("LEFT")
+    f.sessLabel = sessLabel
     pill:EnableMouse(true)
+    -- Click: pause or resume, start a new session, or see the saved ones.
+    pill:SetScript("OnMouseUp", function(self)
+        GameTooltip:Hide()
+        GP.OpenMenu(self, function()
+            local paused = GP.SessionPaused()
+            return {
+                { text = paused and L["Resume"] or L["Pause"], click = function() GP:ToggleSessionPause() end,
+                  tip = L["While paused, the clock stops and loot stays out of this session (it still counts for drop rates)."] },
+                { text = L["New session"], click = function()
+                    if GP:StartNewSession() then GP.Print(L["Session saved. A new one has started."]) end
+                  end, tip = L["Save this session (when it's 3 minutes or more) and start a new one."] },
+                { text = L["Your sessions"], click = function()
+                    S().tab = "farm"; setView("farm", "sessions")
+                  end, tip = L["Your saved sessions on the Farm tab."] },
+            }
+        end)
+    end)
     pill:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
         GP.SessionTooltip(GameTooltip)
@@ -1764,6 +1867,8 @@ function GP:DrawSession()
     local s = self.session
     local total, perHour, mins = GP.SessionEarned()
     f.sessTop:SetText(Coins(perHour, true) .. L[" |cffaaaaaa/ hour|r"])
+    f.sessLabel:SetText(GP.SessionPaused() and L["|cffff9944PAUSED|r\n|cff8a8880click to resume|r"]
+        or (s.instance and ("|cff8a8880" .. L["IN"] .. "|r\n" .. s.instance) or L["THIS\nSESSION"]))
     if (s.sales or 0) > 0 then
         f.sessBottom:SetText(string.format(L["loot %s + sales %s  ·  %d min"], Coins(s.value, true), Coins(s.sales, true), mins))
     else
@@ -1772,7 +1877,7 @@ function GP:DrawSession()
 end
 
 -- The session box's tooltip: where this session's gold came from.
-function GP.SessionTooltip(t)
+function GP.SessionTooltip(t, clickHint)
     local s = GP.session
     local total, perHour, mins = GP.SessionEarned()
     t:AddLine(L["This session"], 1, 0.82, 0.25)
@@ -1784,7 +1889,8 @@ function GP.SessionTooltip(t)
         t:AddDoubleLine(L["Gold in your bags"], (d < 0 and "|cffff6b5b-" or "|cff5fd35f+") .. GP.Coins(math.abs(d)) .. "|r", 0.7, 0.7, 0.7, 1, 1, 1)
     end
     t:AddDoubleLine(L["Kills"], tostring(s.kills or 0), 0.7, 0.7, 0.7, 1, 1, 1)
-    t:AddLine(string.format(L["%d min. Sales count when you open the mailbox. Gold in your bags also counts vendors, quests and what you spent. /haul session starts over."], mins), 0.6, 0.6, 0.6, true)
+    t:AddLine(string.format(L["%d min. Sales count when you open the mailbox. Gold in your bags also counts vendors, quests and what you spent."], mins), 0.6, 0.6, 0.6, true)
+    t:AddLine(clickHint or L["Click: pause, start a new session, or see your saved ones."], 0.6, 0.6, 0.6, true)
 end
 
 function GP:DrawRows()
@@ -1854,6 +1960,7 @@ local function closeMenu()
     if catcher then catcher:Hide() end
 end
 GP.CloseMenu = closeMenu
+GP.OpenMenu = function(anchor, build) return GP._openMenu(anchor, build) end
 
 local fillMenu
 local function openMenu(anchor, build)
@@ -1883,6 +1990,8 @@ local function openMenu(anchor, build)
     menu:Show()
     fillMenu()
 end
+
+GP._openMenu = openMenu
 
 fillMenu = function()
     local items = menu.build()
@@ -2256,6 +2365,8 @@ function GP:RefreshUI()
         local n = 0
         for _ in pairs(realm.items or {}) do n = n + 1 end
         priceText = string.format(L["|cffffffff%d|r prices shared for your realm  ·  %s"], n, date("%d %b", (realm.day or 0) * 86400 + 43200))
+    elseif GP.TSMPrice and TSM_API and S().useTSM ~= false then
+        priceText = L["Prices from TSM"]
     elseif Auctionator and Auctionator.API then
         priceText = L["Prices from Auctionator"]
     elseif self:CommunityInfo() and self:CommunityInfo().allPrices then

@@ -252,6 +252,16 @@ end
 -- players shared for your realm (when fresher), your older scan, Auctionator, and last the median
 -- over all realms (see SharedPrices.lua).
 local OWN_FRESH = 3 * 86400
+-- TradeSkillMaster's price for an item, when TSM is installed and its desktop app has given it
+-- data for your realm (DBMarket by default). Nil otherwise.
+local function tsmPrice(id)
+    local s = GP.db.settings
+    if s.useTSM == false or not (TSM_API and TSM_API.GetCustomPriceValue) then return nil end
+    local ok, v = pcall(TSM_API.GetCustomPriceValue, s.tsmSource or "DBMarket", "i:" .. id)
+    if ok and type(v) == "number" and v > 0 then return math.floor(v) end
+end
+GP.TSMPrice = tsmPrice
+
 function GP:Price(id)
     local p = self.db.prices[id]
     local ownAge = p and p.p and (time() - (p.t or 0))
@@ -259,6 +269,8 @@ function GP:Price(id)
     local sp, sAge, kind = nil, nil, nil
     if self.SharedPrice then sp, sAge, kind = self:SharedPrice(id, false) end
     if sp and (not ownAge or sAge < ownAge) then return sp, nil, sAge, kind end
+    local tp = tsmPrice(id)
+    if tp then return tp, nil, nil, "TSM" end
     if ownAge then return p.p, p.q, ownAge, "scan" end
     if Auctionator and Auctionator.API and Auctionator.API.v1 and Auctionator.API.v1.GetAuctionPriceByItemID then
         local ok, price = pcall(Auctionator.API.v1.GetAuctionPriceByItemID, "Haulwise", id)

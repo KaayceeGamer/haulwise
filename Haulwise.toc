@@ -19,6 +19,7 @@ Widgets.lua
 DataDisenchant.lua
 DataWeights.lua
 Tracker.lua
+Sessions.lua
 Prices.lua
 Values.lua
 Disenchant.lua

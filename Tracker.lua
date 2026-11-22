@@ -66,7 +66,7 @@ local function addKill(guid, npc, when)
         m.tSeconds = m.tSeconds + (t - m.lastKill)
     end
     m.lastKill = t
-    GP.session.kills = GP.session.kills + 1
+    GP:SessionKill(npc, z)
     if GP.MaybeNudgeShare then GP:MaybeNudgeShare() end
     return m
 end
@@ -211,7 +211,7 @@ local function onLootOpened()
             if isPickpocket(guid) then
                 if not pickpocketed[guid] then
                     pickpocketed[guid] = true
-                    GP.session.value = GP.session.value + value
+                    GP:SessionLoot(value, 0, b.items)
                     if rec then
                         local m = GP:Mob(npc)
                         m.pp = m.pp + 1
@@ -227,7 +227,7 @@ local function onLootOpened()
                 for id in pairs(b.items) do if not seen[id] then new = true end end
                 if (new or isGatherCast()) and not gathered[guid] then
                     gathered[guid] = true
-                    GP.session.value = GP.session.value + value
+                    GP:SessionLoot(value, 0, b.items)
                     if rec then
                         local m = GP:Mob(npc)
                         m.gathered = m.gathered + 1
@@ -250,14 +250,12 @@ local function onLootOpened()
                     bump(m.items, id, qty)
                     corpseItems[guid][id] = true
                 end
-                GP.session.value = GP.session.value + value
-                GP.session.money = GP.session.money + b.money
+                GP:SessionLoot(value, b.money, b.items)
             else
                 status[guid] = "looted"
                 corpseItems[guid] = {}
                 for id in pairs(b.items) do corpseItems[guid][id] = true end
-                GP.session.value = GP.session.value + value
-                GP.session.money = GP.session.money + b.money
+                GP:SessionLoot(value, b.money, b.items)
             end
         end
     end
