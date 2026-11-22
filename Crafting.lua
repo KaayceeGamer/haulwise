@@ -220,6 +220,7 @@ function GP:EvalRecipe(key, rec, farmed)
         margin = cost > 0 and (sell - cost) / cost or nil, listed = listed, priced = ah ~= nil,
         missing = missing, usesFarm = usesFarm, learned = rec.learned, src = rec.src,
         trend = self.Trend and self:Trend(rec.out) or nil,
+        perDay = (self:SellSpeed(rec.out)),
     }
 end
 
@@ -228,12 +229,16 @@ function GP:CraftRows()
     for key, rec in pairs(self:Char().recipes) do
         if rec.learned then
             local r = self:EvalRecipe(key, rec, farmed)
+            -- What it could earn a day: profit per craft times how many sell a day (the whole
+            -- market; you'll share it with other sellers).
+            if r.profit > 0 and r.perDay and #r.missing == 0 then r.profitDay = r.profit * r.perDay / r.outQty end
             if r.priced or r.sell > 0 then rows[#rows + 1] = r end
         end
     end
     table.sort(rows, function(a, b)
         local am, bm = #a.missing > 0, #b.missing > 0
         if am ~= bm then return bm end
+        if (a.profitDay or 0) ~= (b.profitDay or 0) then return (a.profitDay or 0) > (b.profitDay or 0) end
         return a.profit > b.profit
     end)
     return rows

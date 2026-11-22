@@ -51,41 +51,88 @@ end
 
 -- Deals ------------------------------------------------------------------------------------
 
+-- Deals: listings on your AH you can buy for a profit. Five kinds:
+--   flip    listed below what a vendor pays (no risk)
+--   under   30%+ below its usual price, resold at what it really sells for
+--   de      gear listed below what disenchanting it gives (you or an alt can disenchant it)
+--   craft   a mat listed below the most a vendor flip can pay for it (see Craft > Vendor flips)
+-- A resale deal is only counted for as many as sell in about 3 days, and not at all when it
+-- would take more than two weeks to sell.
+local MAX_SELL_DAYS = 14
+
 function GP:Deals()
     local s = self.db.settings
     local rows = {}
+    -- Craft mats: the highest "buy below" per mat among the vendor flips you can craft.
+    local craftLimit = {}
+    if self.VendorFlipRows then
+        for _, r in ipairs(self:VendorFlipRows()) do
+            if r.mat and r.below and r.below > 0 and (not craftLimit[r.mat] or r.below > craftLimit[r.mat].below) then
+                craftLimit[r.mat] = r
+            end
+        end
+    end
     for id, p in pairs(self.db.prices) do
-        if s.dealsGear or not GEAR[p.k or 0] then
-            local cheap = self:Cheapest(id)
-            local vendor = p.s or 0
-            local market, days = self:MarketValue(id)
-            -- At most a quarter of what's listed, and never more than 200: nobody resells 13,000
-            -- arrows at a markup, however cheap they are.
-            local maxUnits = math.max(1, math.min(200, math.floor((p.q or 1) * 0.25)))
-            -- And no more than sells in about 3 days, once the scans show how fast it sells.
-            -- Nothing seen selling in 2+ days of scans: there's no one to resell to.
-            local perDay, speedDays = self:SellSpeed(id)
-            if perDay and (speedDays or 0) >= 1 then maxUnits = math.min(maxUnits, math.ceil(perDay * 3)) end
-            local unsold = perDay == 0 and (speedDays or 0) >= 2
+        local gear = GEAR[p.k or 0]
+        local cheap = self:Cheapest(id)
+        local vendor = p.s or 0
+        local candidates = {}
 
-            -- Vendor flips: listed below what a vendor pays. Zero risk.
-            local fUnits, fCost, fProfit = 0, 0, 0
+        -- Vendor flips: listed below what a vendor pays. Zero risk.
+        local fUnits, fCost, fProfit = 0, 0, 0
+        for _, l in ipairs(cheap) do
+            if vendor > 0 and l.u < vendor then
+                fUnits, fCost, fProfit = fUnits + l.c, fCost + l.u * l.c, fProfit + (vendor - l.u) * l.c
+            end
+        end
+        if fProfit > 0 then candidates[#candidates + 1] = { kind = "flip", units = fUnits, cost = fCost, profit = fProfit, target = vendor } end
+
+        -- Disenchant flips: gear for less than its expected disenchant value (90%, for bad luck).
+        if gear and s.useDisenchant ~= false then
+            local de = self:DisenchantValue(id)
+            if de and de > 0 then
+                local dUnits, dCost, dProfit = 0, 0, 0
+                for _, l in ipairs(cheap) do
+                    if l.u < de * 0.9 and dUnits < 20 then
+                        local take = math.min(l.c, 20 - dUnits)
+                        dUnits, dCost, dProfit = dUnits + take, dCost + l.u * take, dProfit + (de - l.u) * take
+                    end
+                end
+                if dProfit > 0 then candidates[#candidates + 1] = { kind = "de", units = dUnits, cost = dCost, profit = dProfit, target = de } end
+            end
+        end
+
+        -- Craft mats under a vendor flip's limit.
+        local cl = craftLimit[id]
+        if cl then
+            local cUnits, cCost, cProfit = 0, 0, 0
             for _, l in ipairs(cheap) do
-                if vendor > 0 and l.u < vendor then
-                    fUnits, fCost, fProfit = fUnits + l.c, fCost + l.u * l.c, fProfit + (vendor - l.u) * l.c
+                if l.u < cl.below and cUnits < 200 then
+                    local take = math.min(l.c, 200 - cUnits)
+                    cUnits, cCost, cProfit = cUnits + take, cCost + l.u * take, cProfit + (cl.below - l.u) * take
                 end
             end
+            if cProfit > 0 then
+                candidates[#candidates + 1] = { kind = "craft", units = cUnits, cost = cCost, profit = cProfit, target = cl.below,
+                                                craft = cl.out, craftName = cl.name, matQty = cl.matQty }
+            end
+        end
 
-            -- Under market: 30%+ below the item's usual price, capped at a quarter of the
-            -- market so you don't buy more than you can resell.
-            -- One scan of a thin market (a few recipes, one rare pattern) says nothing about the
-            -- usual price: then it takes 3 days of scans, or 20+ units listed, to trust it.
-            -- Gear is never trusted on one scan: the same item comes with different "of the ..."
-            -- stats at very different prices.
-            local trusted = (days or 0) >= 3 or ((p.q or 0) >= 20 and not GEAR[p.k or 0])
-            -- Before 3 days of scans the "usual price" is one scan's middle listing, and a few
-            -- greedy listings can push that far up. Then count on reselling only just under the
-            -- next listing above the cheap ones, and leave out anything that looks too good.
+        -- Under market: resold at what it really sells for.
+        if s.dealsGear or not gear then
+            local market, days, from = self:MarketValue(id)
+            -- TSM's value is one price for every "of the ..." version of a piece of gear: no use.
+            if gear and from == "TSM" then market = nil end
+            -- What it actually sells for (TSM's region sale average) when that's lower.
+            if market and from == "TSM" then
+                local sale = GP.TSMValue and GP.TSMValue("DBRegionSaleAvg", id)
+                if sale and sale < market then market = sale end
+            end
+            local maxUnits = math.max(1, math.min(200, math.floor((p.q or 1) * 0.25)))
+            local perDay, speedDays = self:SellSpeed(id)
+            if perDay and (speedDays or 0) >= 1 then maxUnits = math.min(maxUnits, math.ceil(perDay * 3)) end
+            local unsold = (perDay == 0 and (speedDays or 0) >= 2) or (perDay and perDay > 0 and 1 / perDay > MAX_SELL_DAYS)
+            local trusted = (days or 0) >= 3 or ((p.q or 0) >= 20 and not gear)
             local target = market
             if market and (days or 0) < 3 then
                 for _, l in ipairs(cheap) do
@@ -101,22 +148,25 @@ function GP:Deals()
                         uProfit = uProfit + (target * 0.95 - l.u) * take
                     end
                 end
-                if (days or 0) < 3 and uCost > 0 and uProfit / uCost > 3 then uUnits, uCost, uProfit = 0, 0, 0 end
+                -- Too good to be true on thin evidence: a few scans, or a rare item's TSM value.
+                local roi = uCost > 0 and uProfit / uCost or 0
+                if ((days or 0) < 3 and roi > 3) or (from == "TSM" and roi > 4 and (perDay or 0) < 1) then uUnits, uCost, uProfit = 0, 0, 0 end
             end
+            if uProfit > 0 then
+                local sellDays = perDay and perDay > 0 and uUnits / perDay or nil
+                candidates[#candidates + 1] = { kind = "under", units = uUnits, cost = uCost, profit = uProfit, target = target, days = days,
+                                                from = from, sellDays = sellDays, vendorSafe = fProfit > 0 }
+            end
+        end
 
-            local row
-            if fProfit >= uProfit and fProfit > 0 then
-                row = { id = id, kind = "flip", units = fUnits, cost = fCost, profit = fProfit, target = vendor }
-            elseif uProfit > 0 then
-                row = { id = id, kind = "under", units = uUnits, cost = uCost, profit = uProfit, target = target, days = days,
-                        vendorSafe = fProfit > 0 } -- even if it doesn't resell, a vendor pays more than you paid
-            end
-            if row and row.profit >= (s.minProfit or 0) then
-                row.buy = row.cost / math.max(1, row.units)
-                row.roi = row.cost > 0 and row.profit / row.cost or 0
-                row.isRecipe = p.k == 9
-                rows[#rows + 1] = row
-            end
+        local row
+        for _, c in ipairs(candidates) do if not row or c.profit > row.profit then row = c end end
+        if row and row.profit >= (s.minProfit or 0) then
+            row.id = id
+            row.buy = row.cost / math.max(1, row.units)
+            row.roi = row.cost > 0 and row.profit / row.cost or 0
+            row.isRecipe = p.k == 9
+            rows[#rows + 1] = row
         end
     end
     table.sort(rows, function(a, b) return a.profit > b.profit end)
@@ -179,10 +229,17 @@ function GP:MarketRows()
     end
     local have = holdings(self)
 
+    -- What you deal in, plus anything on the AH that trades for at least 50 silver a day (a big
+    -- mover is only worth showing if it does): checking every one of thousands is what's slow.
     local candidates = {}
     for id in pairs(why) do candidates[id] = true end
     for id in pairs(have) do candidates[id] = true end
-    for id in pairs(self.db.prices) do candidates[id] = true end
+    for id, p in pairs(self.db.prices) do
+        if not candidates[id] and p.p then
+            local per = self:SellSpeed(id)
+            if per and p.p * per >= 5000 then candidates[id] = true end
+        end
+    end
 
     local rows, movers = {}, {}
     for id in pairs(candidates) do

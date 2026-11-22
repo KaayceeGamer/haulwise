@@ -435,7 +435,8 @@ TAB.craft = {
         { key = "profit", title = L["Profit"], w = 112, align = "RIGHT", bar = true },
         { key = "margin", title = L["Margin"], w = 64, align = "RIGHT" },
         { key = "demand", title = L["Sells/day"], w = 64, align = "RIGHT" },
-        { key = "trend", title = L["7 days"], w = 64, align = "RIGHT" },
+        { key = "perDay", title = L["Up to/day"], w = 90, align = "RIGHT" },
+        { key = "trend", title = L["7 days"], w = 56, align = "RIGHT" },
     },
     rows = function() return byProf(GP:CraftRows()) end,
     bar = function(r) return #r.missing > 0 and 0 or r.profit end,
@@ -448,17 +449,19 @@ TAB.craft = {
             sell = Coins(r.sell, true),
             profit = #r.missing > 0 and "|cffff9944?|r" or Coins(r.profit, true),
             margin = #r.missing > 0 and grey("–") or pct(r.margin, true), demand = demandCell(r.out), trend = pct(r.trend, true),
+            perDay = r.profitDay and ("|cff5fd35f+|r" .. Coins(r.profitDay, true)) or grey("–"),
         }
     end,
     hero = function(rows)
         local b, unpriced = nil, 0
         for _, r in ipairs(rows) do
             if #r.missing > 0 then unpriced = unpriced + 1
-            elseif not b or r.profit > b.profit then b = r end
+            elseif not b or (r.profitDay or 0) > (b.profitDay or 0) or ((r.profitDay or 0) == (b.profitDay or 0) and r.profit > b.profit) then b = r end
         end
         local tail = unpriced > 0 and grey(string.format(L["   ·   %d need a reagent price: visit a trade goods vendor or scan the AH"], unpriced)) or ""
         if not b or b.profit <= 0 then return unpriced > 0 and grey(string.format(L["%s a reagent price: visit a trade goods vendor (thread, dyes...) or scan the AH."], plural(unpriced, "recipe needs", "recipes need"))) or nil end
-        return string.format(L["Best craft:  %s   |cff5fd35f+%s|r each%s"], itemName(b.out), Coins(b.profit, true), tail)
+        local daily = b.profitDay and grey("  ·  ") .. string.format(L["up to |cff5fd35f+%s|r a day"], Coins(b.profitDay, true)) or ""
+        return string.format(L["Best craft:  %s   |cff5fd35f+%s|r each%s"], itemName(b.out), Coins(b.profit, true), daily .. tail)
     end,
     empty = L["No recipes yet.\n\nOpen each of your profession windows once. Haulwise reads your recipes and works out what every craft costs and earns at your auction house."],
     click = function(r)
@@ -475,6 +478,10 @@ TAB.craft = {
         end
         t:AddDoubleLine(L["Sells for (after AH cut)"], Coins(r.sell), 0.7, 0.7, 0.7)
         t:AddDoubleLine(L["Profit"], Coins(r.profit), 0.7, 0.7, 0.7)
+        if r.profitDay then
+            t:AddLine(string.format(L["About %s sell a day: up to %s a day if you sold them all. Other sellers share those buyers."],
+                r.perDay >= 1 and tostring(math.floor(r.perDay + 0.5)) or "<1", Coins(r.profitDay)), 0.6, 0.6, 0.6, true)
+        end
         if r.listed then t:AddDoubleLine(L["On the AH now"], tostring(r.listed), 0.7, 0.7, 0.7) end
         if #r.missing > 0 then t:AddLine(L["Visit a vendor or scan the AH to price the missing reagents."], 1, 0.6, 0.3, true) end
     end,
@@ -566,18 +573,22 @@ TAB.deals = {
         { key = "target", title = L["Worth"], w = 96, align = "RIGHT" },
         { key = "profit", title = L["Profit"], w = 112, align = "RIGHT", bar = true },
         { key = "roi", title = "ROI", w = 60, align = "RIGHT" },
-        { key = "basis", title = L["Based on"], w = 96 },
+        { key = "basis", title = L["Sells in"], w = 96 },
     },
     rows = function() return GP:Deals() end,
     bar = function(r) return r.profit end,
     cells = function(r)
         return {
             name = itemName(r.id), icon = GP.ItemIcon(r.id),
-            kind = r.kind == "flip" and L["|cff5fd35fVendor flip|r"] or r.vendorSafe and L["|cff5fd35fBelow vendor|r"]
+            kind = (r.kind == "flip" and L["|cff5fd35fVendor flip|r"]) or (r.kind == "de" and L["|cffc48cffDisenchant|r"])
+                or (r.kind == "craft" and L["|cff88ccffCraft + vendor|r"]) or (r.vendorSafe and L["|cff5fd35fBelow vendor|r"])
                 or (r.isRecipe and L["|cffcc88ffCheap recipe|r"] or L["Below market"]),
             units = tostring(r.units), buy = Coins(r.buy, true), target = Coins(r.target, true),
             profit = Coins(r.profit, true), roi = pct(r.roi),
-            basis = r.kind == "flip" and grey(L["vendor price"]) or (r.days and r.days >= 3 and grey(r.days .. L[" days"]) or L["|cffff99441 scan|r"]),
+            basis = (r.kind == "flip" and grey(L["a vendor, now"])) or (r.kind == "de" and grey(L["disenchant"]))
+                or (r.kind == "craft" and grey(L["craft, vendor"]))
+                or (r.sellDays and (r.sellDays < 1 and L["|cff5fd35f< 1 day|r"] or string.format(L["~%d days"], math.ceil(r.sellDays))))
+                or grey(L["unknown"]),
         }
     end,
     hero = function(rows)
@@ -590,7 +601,7 @@ TAB.deals = {
             or grey(L["Click a row to search the AH."])
         return string.format(L["%s worth |cff5fd35f%s|r in total.  %s"], plural(#rows, "deal"), Coins(sum, true), note)
     end,
-    empty = L["No deals right now.\n\nScan the auction house (button at the bottom). Deals are listings 30%+ below an item's usual price, and vendor flips: items listed for less than a vendor pays.\n\nThe usual price of rare items (recipes, single listings) needs 3 days of scans, so those show up from day 3."],
+    empty = L["No deals right now.\n\nScan the auction house (button at the bottom). Deals are listings 30%+ below what an item usually sells for, items listed for less than a vendor pays, gear for less than its disenchant mats, and mats cheap enough to craft into something a vendor buys for more.\n\nThe usual price of rare items (recipes, single listings) needs 3 days of scans (or TSM), so those show up from day 3."],
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)
         t:SetItemByID(r.id)
@@ -602,8 +613,15 @@ TAB.deals = {
         local v = GP:VendorSell(r.id)
         if v > 0 then t:AddDoubleLine(L["Vendor pays"], Coins(v)) end
         if r.vendorSafe then t:AddLine(L["No risk: a vendor pays more than these cost, even if they don't resell."], 0.4, 0.9, 0.4, true) end
-        if r.kind ~= "flip" and (not r.days or r.days < 3) then
-            t:AddLine(L["Based on one scan only: check the price yourself before buying."], 1, 0.6, 0.3, true)
+        if r.kind == "de" then
+            t:AddLine(string.format(L["Disenchanting one gives about %s in mats at your prices. Haulwise counts it at 90%% of that for bad luck."], Coins(r.target)), 0.77, 0.55, 1, true)
+        elseif r.kind == "craft" then
+            t:AddLine(string.format(L["Craft %s and sell it to a vendor: it pays as long as this mat costs under %s each."], itemName(r.craft), Coins(r.target)), 0.53, 0.8, 1, true)
+        elseif r.kind == "under" then
+            if r.from == "TSM" then t:AddLine(L["Usual price from TSM: what it sells for in your region, or its market value if lower."], 0.6, 0.6, 0.6, true)
+            elseif not r.days or r.days < 3 then t:AddLine(L["Based on one scan only: check the price yourself before buying."], 1, 0.6, 0.3, true) end
+            local speed = GP:SellSpeedText(r.id)
+            if speed then t:AddLine(speed) end
         end
     end,
     pickers = { stepsPicker(L["Min profit: "], "minProfit", MIN_STEPS, 2000, nil, L["Hide deals that make less than this."]) },
@@ -1432,11 +1450,12 @@ TAB.craft.sort = {
     cost = function(r) return priced(r) and r.cost or nil end, sell = function(r) return r.sell end,
     profit = function(r) return priced(r) and r.profit or nil end, margin = function(r) return priced(r) and r.margin or nil end,
     demand = function(r) return (GP:SellSpeed(r.out)) end, trend = function(r) return r.trend end,
+    perDay = function(r) return r.profitDay end,
 }
 TAB.deals.sort = {
     name = function(r) return nm(r.id) end, kind = function(r) return r.kind end, units = function(r) return r.units end,
     buy = function(r) return r.buy end, target = function(r) return r.target end, profit = function(r) return r.profit end,
-    roi = function(r) return r.roi end, basis = function(r) return r.days end,
+    roi = function(r) return r.roi end, basis = function(r) return r.sellDays or (r.kind ~= "under" and 0) or 999 end,
 }
 TAB.recipes.sort = {
     name = function(r) return (r.name or ""):lower() end, prof = function(r) return r.prof end,
@@ -2433,7 +2452,8 @@ cachedRows = function(t, key)
     local c = rowCache[key]
     if c and c.token == token and GetTime() - c.t < t.keepFor then return c.rows end
     local rows = t.rows()
-    rowCache[key] = { token = token, t = GetTime(), rows = rows }
+    -- Only the list on screen is kept: the others would just hold memory.
+    rowCache = { [key] = { token = token, t = GetTime(), rows = rows } }
     return rows
 end
 function GP:ForgetRows() rowCache = {} end

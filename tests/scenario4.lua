@@ -1400,4 +1400,19 @@ do -- Market: price now against the usual one, and what to do about it
   GP.ForgetTSM()
   TSM_API = nil
 end
+do -- Deals: a mat listed under a vendor flip's limit is a "craft" deal
+  local c = GP:Char()
+  local savedRecipes, savedMin = c.recipes, GP.db.settings.minProfit
+  GP.db.settings.minProfit = 0
+  c.recipes = { ["test:flip2"] = { n = "Test Bag", prof = "Tailoring", out = 880011, oq = 1, r = "880012:2", learned = true } }
+  GP.db.prices[880012] = { p = 100, q = 10, t = time(), c = "100.00:10" }
+  GP.db.prices[880011] = { s = 500, t = time() }
+  local found
+  for _, r in ipairs(GP:Deals()) do if r.id == 880012 then found = r end end
+  ok(found and found.kind == "craft" and found.units == 10 and found.profit == 1500 and found.craft == 880011,
+     "10 mats at 100 under a 250 limit: a craft deal worth 1500")
+  c.recipes = savedRecipes
+  GP.db.settings.minProfit = savedMin
+  GP.db.prices[880011], GP.db.prices[880012] = nil, nil
+end
 print("NEW FEATURES PASSED")

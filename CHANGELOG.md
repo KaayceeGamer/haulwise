@@ -3,6 +3,11 @@
 ## 0.18.1
 - **More from TSM**: with TradeSkillMaster and its desktop app, Haulwise now fills in what your own scans can't tell yet. *Sells/day* (Craft, tooltips, the sell helper) uses TSM's sold per day for the region where you haven't scanned enough. Market shows trends right away (TSM's market value against its 60-day price, marked *TSM*) until your own scans cover a week. Deals and the usual price use TSM's market value before you have 3 days of scans.
 - **Market: what to buy and sell now**: every item you have, farm, gather, craft or use, with its price now against its usual price (a week of your scans, or TSM's 60-day price), how many you have, how fast it sells, and a tip: *Sell now* (dearer than usual, and you have some), *Farm now*, *Craft now*, *Stock up* (a reagent cheaper than usual), *Buy*, *Hold* or *Vendor it*. The top line adds up what selling now would bring over the usual price. *Show* picks everything, only what to sell, or only what to buy. Grey and soulbound items are left out.
+- **Deals you can trust**: a resale deal is valued at what the item really sells for (TSM's region sale average when that's lower than its market value), counted only for as many as sell in about 3 days, and left out when it would take more than two weeks to sell. TSM's value isn't used for gear with random stats ("of the Monkey" and "of the Owl" get one price there), and rare items that look too good on TSM's numbers alone are left out. A new *Sells in* column says how long the units take to sell.
+- **Disenchant flips**: Deals finds gear listed for less than its disenchant mats are worth (counted at 90% for bad luck), when you or an alt can disenchant it.
+- **Craft mats under the limit**: a mat listed below what a vendor flip can pay for it shows up in Deals as *Craft + vendor*, with the craft to make.
+- **Craft: up to per day**: a new column with the profit per craft times how many sell a day, and Best profit is sorted by it, so a small profit that sells fast beats a big one nobody buys.
+- **Lighter**: the window keeps only the list on screen between redraws, and Market checks only items worth checking.
 - **Settings: Font and Language are menus** now, instead of buttons you click through.
 - `/haul tsm` shows what TSM returns for a few common items next to Haulwise's own scan.
 
