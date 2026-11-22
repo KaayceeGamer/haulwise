@@ -74,16 +74,16 @@ local DEFAULTS = {
         upgradePopups = true,
         questPick = true,       -- mark the quest reward to pick
         sendToAltsAtMailbox = true,
-        shareReminder = true,
-        ahUpgradeMax = 0,
-        sellHelper = true,
-        tooltipDisenchant = true,
+        shareReminder = true,     -- nudge in chat every 100 kills that aren't shared yet
+        ahUpgradeMax = 0,         -- Gear > On the AH: hide listings above this price (0 = any)
+        sellHelper = true,        -- price panel next to the AH sell frame
+        tooltipDisenchant = true, -- item tooltips: what it disenchants into, and what yours gave
         tooltipUses = true,       -- item tooltips: quests and crafts that use it, who sells it, what drops it
         hearTrade = true,         -- count enchant requests in trade chat (an estimate, nothing about who is saved)
         useTSM = true,            -- use TradeSkillMaster's prices (DBMarket) when installed, after your own fresh scan
-        recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill -- item tooltips: what it disenchants into, and what yours gave      -- price panel next to the AH sell frame
-        matsToCrafters = true,  -- at a mailbox, offer to send crafting mats to the alt who uses them       -- Gear → On the AH: hide listings above this price (0 = any)
-        views = {},             -- [tab] = alternative view ("ah", "skill", "zones")   -- nudge in chat every 100 kills that aren't shared yet
+        recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill
+        matsToCrafters = true,    -- at a mailbox, offer to send crafting mats to the alt who uses them
+        views = {},               -- [tab] = the view shown ("zones", "sessions", "skill", "vendor", "ah", "sales"...)
         hudShown = true,
         minimap = true,         -- the minimap button
         deForMats = false,      -- Bags: disenchant gear for Enchanting mats even when selling pays more

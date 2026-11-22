@@ -918,7 +918,7 @@ TAB.gear = {
         for i, d in ipairs(GP.StatDiff(r.link, r.replaces)) do
             if i > 8 then break end
             local delta = d[3] - d[2]
-            t:AddDoubleLine("  " .. d[1], string.format("%s → %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
+            t:AddDoubleLine("  " .. d[1], string.format("%s > %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
                 0.75, 0.75, 0.75, 1, 1, 1)
         end
     end,
@@ -1063,7 +1063,7 @@ TAB.gear_ah = {
         for i, d in ipairs(GP.StatDiff(r.link, r.replaces)) do
             if i > 8 then break end
             local delta = d[3] - d[2]
-            t:AddDoubleLine("  " .. d[1], string.format("%s → %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
+            t:AddDoubleLine("  " .. d[1], string.format("%s > %s  %s%+d|r", d[2], d[3], delta >= 0 and "|cff5fd35f" or "|cffff6b5b", delta),
                 0.75, 0.75, 0.75, 1, 1, 1)
         end
         t:AddLine(L["Click at the AH: finds this exact listing and asks you to confirm the price. Nothing is bought without your click."], 0.6, 0.6, 0.6, true)

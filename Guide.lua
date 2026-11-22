@@ -71,46 +71,55 @@ local function guideSections() return {
     } },
 } end
 
-local function newsLines() return {
-    L["Pause: click the session box at the top. Farm → Sessions keeps every farm run, and dungeons get their own session."],
-    L["Craft → Vendor flips: crafts a vendor buys for more than the mats cost, and the most to pay for the main mat."],
-    L["WoW Forever's new mobs get their real portraits, and mob tooltips show Haulwise's line from the first kill."],
-    L["Farm: the Show menu splits mobs with real kills from estimates, and estimates count for less under Safe."],
-    L["Settings: sections on the left, and every switch says what it does."],
-    L["Clearer controls: small tabs switch what a list shows, menus filter it, and Options holds the switches. Popups and mailbox settings moved to Settings."],
-    L["Craft → Enchant requests: what people ask an enchanter for in trade chat, and what they offer. An estimate, not sales."],
-    L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],
-    L["Every mob gets its own kills-per-hour estimate from how close together it stands."],
-    L["Gear tab: click an upgrade at the auction house to buy that exact listing."],
-    L["Your auctions: after Cancel, post it again from the panel once it's back in your bags."],
-    L["Farm shows each mob's own portrait, drawn by the game."],
-    L["Gear on the AH finds far more upgrades: it now waits for the game to send the stats of gear you've never seen."],
-    L["Shopping list: press Buy on a reagent to find the cheapest listings, then confirm to buy exactly what you need. It warns when a reagent is dear today, and names the alt who already has it."],
-    L["Shared AH prices: Share data takes your last scan's prices along. On the website, copy the prices for your realm and /haul import them. Until you scan, values come from all realms (a rough guess)."],
-    L["Things you use again and again, like the Cozy Sleeping Bag, toys and mounts, are never offered to sell or throw away."],
-    L["Farm ranks every mob now, also ones nobody has farmed yet: those are estimates from Classic's loot tables, marked est., until real kills take over."],
-    L["Item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and what drops it. Bags keep what a quest in your log needs."],
-    L["Zones are shared by map number now, so players in every language add up in the same zone."],
-    L["Farm tooltips say what a number is based on and how sure it is. Point at a tab to see what it's for."],
-    L["At the auction house: Your auctions shows which of yours are undercut, with a Cancel button to post them again at the right price."],
-    L["Sells/day: Haulwise sees how fast things sell from your scans. It's in tooltips, the sell helper and the Craft tab, and Deals won't tell you to buy more than sells."],
-    L["Market → Your sales: what you sold and earned, logged from the mail invoices."],
-    L["Craft queue: open a profession and your queued crafts show beside it. Click one, press Create. Queue best 5 on the Craft tab fills it."],
-    L["Waylaid Crates: the tooltip prices every way to fill one and what one Merchant's Favor costs. Writs show what the ordered item costs."],
-    L["Find trainer (Craft tab) or /haul trainer: a waypoint to the nearest trainer that teaches your next rank. Uses TomTom when you have it."],
-    L["Recipes: click one for a waypoint to the vendor that sells it. Shift-click searches the AH."],
-    L["Profession button in Craft, Skill up and Recipes: show one profession at a time."],
-    L["Minimap button: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap; hide it in Settings or with /haul minimap."],
-    L["Haulwise speaks German and French. It follows your game's language; pick another in Settings → Language."],
-    L["Disenchanting is noted reliably now, also with auto loot, and a chat line confirms what you got."],
-    L["The bottom line shows how fresh the community data is. Click it to import the newest."],
-    L["Recipes show the skill they need, and hide ones far above yours."],
-    L["/haul feedback now includes Haulwise's last errors, ready to paste into a bug report."],
-    L["Gear tooltips: best move, what it disenchants into, and what your own disenchants gave."],
-    L["Gear → On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold."],
-    L["Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession."],
-    L["Selling at the AH: a price suggestion next to the sell frame, and a warning when a vendor pays more."],
-    L["Share data: the Export button is now Share data (your kills, plus the recipes and vendor prices you've seen). The footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings)."],
+-- What's new, per version, newest first. After an update only the versions you haven't seen show.
+local function newsByVersion() return {
+    { "0.18.0", {
+        L["Pause: click the session box at the top. Farm > Sessions keeps every farm run, and dungeons get their own session."],
+        L["Craft > Vendor flips: crafts a vendor buys for more than the mats cost, and the most to pay for the main mat."],
+    } },
+    { "0.17.0", {
+        L["WoW Forever's new mobs get their real portraits, and mob tooltips show Haulwise's line from the first kill."],
+        L["Farm: the Show menu splits mobs with real kills from estimates, and estimates count for less under Safe."],
+        L["Settings: sections on the left, and every switch says what it does."],
+    } },
+    { "0.16.1", {
+        L["Clearer controls: small tabs switch what a list shows, menus filter it, and Options holds the switches. Popups and mailbox settings moved to Settings."],
+        L["Craft > Enchant requests: what people ask an enchanter for in trade chat, and what they offer. An estimate, not sales."],
+    } },
+    { "0.16.0", {
+        L["Recipes knows how each Forever recipe is learned (trainer, vendor, drop, quest) and its exact skill, from Warcraft Wiki."],
+        L["Every mob gets its own kills-per-hour estimate from how close together it stands."],
+        L["Gear tab: click an upgrade at the auction house to buy that exact listing."],
+        L["Your auctions: after Cancel, post it again from the panel once it's back in your bags."],
+        L["Farm shows each mob's own portrait, drawn by the game."],
+        L["Gear on the AH finds far more upgrades: it now waits for the game to send the stats of gear you've never seen."],
+        L["Shopping list: press Buy on a reagent to find the cheapest listings, then confirm to buy exactly what you need. It warns when a reagent is dear today, and names the alt who already has it."],
+        L["Shared AH prices: Share data takes your last scan's prices along. On the website, copy the prices for your realm and /haul import them. Until you scan, values come from all realms (a rough guess)."],
+        L["Things you use again and again, like the Cozy Sleeping Bag, toys and mounts, are never offered to sell or throw away."],
+        L["Farm ranks every mob now, also ones nobody has farmed yet: those are estimates from Classic's loot tables, marked est., until real kills take over."],
+        L["Item tooltips say what an item is for: the quests that need it, the crafts that use it, who sells it and what drops it. Bags keep what a quest in your log needs."],
+        L["Zones are shared by map number now, so players in every language add up in the same zone."],
+        L["Farm tooltips say what a number is based on and how sure it is. Point at a tab to see what it's for."],
+        L["At the auction house: Your auctions shows which of yours are undercut, with a Cancel button to post them again at the right price."],
+        L["Sells/day: Haulwise sees how fast things sell from your scans. It's in tooltips, the sell helper and the Craft tab, and Deals won't tell you to buy more than sells."],
+        L["Market > Your sales: what you sold and earned, logged from the mail invoices."],
+        L["Craft queue: open a profession and your queued crafts show beside it. Click one, press Create. Queue best 5 on the Craft tab fills it."],
+        L["Waylaid Crates: the tooltip prices every way to fill one and what one Merchant's Favor costs. Writs show what the ordered item costs."],
+        L["Find trainer (Craft tab) or /haul trainer: a waypoint to the nearest trainer that teaches your next rank. Uses TomTom when you have it."],
+        L["Recipes: click one for a waypoint to the vendor that sells it. Shift-click searches the AH."],
+        L["Profession button in Craft, Skill up and Recipes: show one profession at a time."],
+        L["Minimap button: click to open Haulwise, right-click for settings, Shift-click for the HUD. Drag it around the minimap; hide it in Settings or with /haul minimap."],
+        L["Haulwise speaks German and French. It follows your game's language; pick another in Settings > Language."],
+        L["Disenchanting is noted reliably now, also with auto loot, and a chat line confirms what you got."],
+        L["The bottom line shows how fresh the community data is. Click it to import the newest."],
+        L["Recipes show the skill they need, and hide ones far above yours."],
+        L["/haul feedback now includes Haulwise's last errors, ready to paste into a bug report."],
+        L["Gear tooltips: best move, what it disenchants into, and what your own disenchants gave."],
+        L["Gear > On the AH: upgrades for you and your alts for sale on the auction house, ranked by upgrade per gold."],
+        L["Craft: click a recipe to add it to your shopping list. Skill up shows the cheapest way to raise your profession."],
+        L["Selling at the AH: a price suggestion next to the sell frame, and a warning when a vendor pays more."],
+        L["Share data: the Export button is now Share data (your kills, plus the recipes and vendor prices you've seen). The footer counts kills you haven't shared, and a chat reminder comes every 100 (turn it off in Settings)."],
+    } },
 } end
 
 local guide
@@ -157,9 +166,19 @@ function GP:ShowGuide(withNews)
     guide.child:SetWidth(math.max(300, (guide:GetWidth() or 560) - 60))
     local y = 0
     if withNews then
-        y = addText(y, L["What's new in "] .. GP.VERSION, "HaulwiseFontLarge")
-        for _, n in ipairs(newsLines()) do y = addText(y, "•  " .. n, "HaulwiseFont", 6) end
-        y = y - 10
+        local function num(v)
+            local a, b, c = tostring(v or "0"):match("(%d+)%.?(%d*)%.?(%d*)")
+            return (tonumber(a) or 0) * 1e6 + (tonumber(b) or 0) * 1e3 + (tonumber(c) or 0)
+        end
+        local seen = num(type(withNews) == "string" and withNews or "0")
+        for i, g in ipairs(newsByVersion()) do
+            -- The current version always; older ones only if you haven't seen them yet.
+            if i == 1 or num(g[1]) > seen then
+                y = addText(y, L["What's new in "] .. g[1], "HaulwiseFontLarge")
+                for _, n in ipairs(g[2]) do y = addText(y, "•  " .. n, "HaulwiseFont", 6) end
+                y = y - 10
+            end
+        end
     end
     for _, section in ipairs(guideSections()) do
         y = addText(y, section[1], "HaulwiseFontLarge")
@@ -180,7 +199,7 @@ GP:On("PLAYER_ENTERING_WORLD", function()
     if seen == GP.VERSION then return end
     C_Timer.After(4, function()
         if InCombatLockdown and InCombatLockdown() then return end
-        GP:ShowGuide(seen ~= nil)
+        GP:ShowGuide(seen ~= nil and seen)
         GP.db.guideSeen = GP.VERSION
     end)
 end)

@@ -246,7 +246,7 @@ function GP:ShowUpgradePopup(kind, r)
         if d then
             local delta = d[3] - d[2]
             local col = delta > 0 and "|cff5fd35f+" or (delta < 0 and "|cffff6b5b" or "|cffaaaaaa")
-            l:SetText(string.format("%-14s %s  →  %s   %s%s|r", d[1], tostring(d[2]), tostring(d[3]), col, tostring(delta)))
+            l:SetText(string.format("%-14s %s  >  %s   %s%s|r", d[1], tostring(d[2]), tostring(d[3]), col, tostring(delta)))
         else
             l:SetText("")
         end

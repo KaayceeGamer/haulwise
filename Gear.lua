@@ -435,7 +435,7 @@ function GP:FindAHUpgrades(gear, done)
         end
         self.db.ahUpgrades = { t = time(), rows = rows, listings = #links, checked = checked, unloaded = #retry }
         if #rows > 0 then
-            self.Print(string.format(L["Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear → On the AH."], #rows))
+            self.Print(string.format(L["Found |cff5fd35f%d|r gear upgrades on the auction house. See Gear > On the AH."], #rows))
         end
         if done then done(rows) end
         if self.RefreshUI then self:RefreshUI() end
