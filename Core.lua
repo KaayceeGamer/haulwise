@@ -252,7 +252,7 @@ GP:On("ADDON_LOADED", function(name)
     if not GP.db.introShown then
         GP.db.introShown = true
         C_Timer.After(8, function()
-            GP.Print(L["Welcome! Open Haulwise with the chest button on your minimap, |cffffd040Open Haulwise|r on the small box, or /haul. The guide (the i button) explains everything."])
+            GP.Print(L["Welcome! Open Haulwise with the gold bag button on your minimap, |cffffd040Open Haulwise|r on the small box, or /haul. The guide (the i button) explains everything."])
         end)
     end
 end)

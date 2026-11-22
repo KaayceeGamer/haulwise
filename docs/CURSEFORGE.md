@@ -2,16 +2,16 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.17.0:** a **Show** menu on the Farm tab splits mobs with real kills from estimates, and estimates count for less under Safe; real portraits for WoW Forever's new mobs; mob tooltips from the first kill; a settings window with sections where every switch says what it does; smoother redraws with the window open; a new icon; and `/haul perf` to see memory and speed.
+**New in 0.18.0:** **pause** your session (from the session box or the HUD), dungeons get a session of their own, and Farm keeps a history of every farm run under **Sessions**; **Vendor flips** on the Craft tab: crafts a vendor buys for more than the mats cost, with the most you can pay for the main mat; and **TSM prices** when TradeSkillMaster is installed.
 
 ---
 
 ## What you get
 
-Open Haulwise with the **chest button on your minimap**, the **Open Haulwise** button on the HUD, or `/haul`.
+Open Haulwise with the **gold bag button on your minimap**, the **Open Haulwise** button on the HUD, or `/haul`.
 
 ### 💰 The HUD — always on screen until you close it
-- Gold per hour this session
+- Gold per hour this session, with **pause** and **new session** buttons
 - Gold, bag value and your **total worth**. Hover for the full breakdown: vendor value (guaranteed), best value (auction house and disenchanting), bank, gold in the mail, all your characters, and your 10 most valuable items.
 - **Cheapest to throw away**: drag the HUD taller to see more, and Make room deletes with one click.
 - **Sell junk** at vendors
@@ -56,7 +56,7 @@ Haulwise measures:
 - Coins, skinning and pickpocket
 - How fast **you** kill each mob
 
-Each mob is shown with its own portrait (WoW Forever's new mobs too) and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **Zones** to see where to go, or set **Zone** to *Where you are* to see what's worth killing right here.
+Each mob is shown with its own portrait (WoW Forever's new mobs too) and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Your farm runs are kept under **Sessions**: where, how long, gold per hour and what you killed. Pause a session for a mailbox run, and dungeons get their own. Switch to **Zones** to see where to go, or set **Zone** to *Where you are* to see what's worth killing right here.
 
 Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
 
@@ -70,6 +70,7 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
   - Vendor reagents get an arrow to the nearest vendor that sells them.
 - **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
+- **Vendor flips**: crafts a vendor buys for more than their mats cost on the AH, for you and your alts, with the most you can pay for the main mat (*Buy below*).
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
 - **Enchant requests** (an estimate): in a city, Haulwise counts what people ask enchanters for in trade chat, per enchant, how often per hour you're listening, the gold they name and whether you know it. Many ask by whisper and others answer first, so it's marked as an estimate everywhere. Nothing about who asked is saved.
@@ -155,6 +156,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 
 ## Works with
 - **Pawn**: Haulwise uses your Pawn scales.
+- **TradeSkillMaster**: Haulwise uses TSM's market value when your own scan is more than 3 days old.
 - **Auctionator**: Haulwise uses its prices until you scan yourself.
 - **TomTom**: waypoints use TomTom's arrow when it's installed; otherwise the game's own map pin.
 - **QuestieDB**: not needed. Haulwise Data (included) already has its trainers, vendors, quests and drop sources. If you have QuestieDB installed anyway, Haulwise also uses it to find NPCs that Haulwise Data doesn't cover.
