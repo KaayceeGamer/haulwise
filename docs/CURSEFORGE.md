@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.18.0:** **pause** your session (from the session box or the HUD), dungeons get a session of their own, and Farm keeps a history of every farm run under **Sessions**; **Vendor flips** on the Craft tab: crafts a vendor buys for more than the mats cost, with the most you can pay for the main mat; and **TSM prices** when TradeSkillMaster is installed.
+**New in 0.18.1:** **Market** now says what to sell and what to buy right now, for what you have, farm, craft and use; **Deals** you can trust (real sale prices, how long it takes to sell), plus **disenchant flips** and mats cheap enough to craft into a vendor flip; Craft ranks by **profit per day**; and with **TSM** installed, sells per day, trends and usual prices work from day one.
 
 ---
 
@@ -77,8 +77,8 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
 - Show **one profession at a time** with the Profession menu.
 
 ### 📈 Deals and Market
-- **Deals**: listings 30%+ under their usual price, and vendor flips (cheaper than what a vendor pays). Never more than sells in about three days, and nothing nobody has been buying.
-- **Market**: 7-day trends for what you farm, craft and use, with a tip for each: *Sell now*, *Hold* or *Stock up*. After two weeks of scans it also shows which weekday your auction house is cheapest.
+- **Deals**: listings under what they really sell for, items cheaper than a vendor pays, **gear cheaper than its disenchant mats**, and mats cheap enough to craft into something a vendor buys for more. Each says how long it takes to sell, and never more than sells in about three days. *Show* picks one kind.
+- **Market**: for everything you have, farm, gather, craft or use: the price now against its usual price, how many you have, how fast it sells, and what to do: *Sell now*, *Farm now*, *Craft now*, *Stock up*, *Hold*. The top line adds up what selling now brings over the usual price. After two weeks of scans it also shows which weekday your auction house is cheapest.
 - **Your sales**: open a mailbox and Haulwise logs every auction sale from the invoices: what you earned today, this week and this month, per item, after the AH cut.
 - **How fast it sells**: from your scans, Haulwise sees which cheap listings disappear. Tooltips, the sell helper and the Craft tab show *sells ~12 a day*.
 
@@ -156,7 +156,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 
 ## Works with
 - **Pawn**: Haulwise uses your Pawn scales.
-- **TradeSkillMaster**: Haulwise uses TSM's market value when your own scan is more than 3 days old.
+- **TradeSkillMaster**: with its desktop app, Haulwise uses TSM's prices, sales per day and 60-day prices where your own scans don't reach yet, so Market, Deals and Craft work from day one.
 - **Auctionator**: Haulwise uses its prices until you scan yourself.
 - **TomTom**: waypoints use TomTom's arrow when it's installed; otherwise the game's own map pin.
 - **QuestieDB**: not needed. Haulwise Data (included) already has its trainers, vendors, quests and drop sources. If you have QuestieDB installed anyway, Haulwise also uses it to find NPCs that Haulwise Data doesn't cover.
