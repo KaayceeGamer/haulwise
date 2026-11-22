@@ -24,9 +24,17 @@ local lastCast = { id = nil, name = nil, t = 0 }
 
 local function now() return GetTime() end
 
+-- In a group, a corpse you loot still shows everything it dropped, so its items count for drop
+-- rates. What a group can't tell: corpses others looted (they'd look empty) and how fast you
+-- kill alone. Those are only counted solo, or with "Record in groups" on.
+local function grouped() return IsInGroup and IsInGroup() end
 local function recording()
     local s = GP.db.settings
-    return s.trackInGroup or not IsInGroup()
+    return s.trackInGroup or not grouped()
+end
+local function groupSize()
+    local n = GetNumGroupMembers and GetNumGroupMembers() or 1
+    return math.max(1, n or 1)
 end
 
 local function zoneName()
@@ -59,9 +67,10 @@ local function addKill(guid, npc, when)
     m.kills = m.kills + 1
     local z = GP.ZoneKey and GP.ZoneKey() or zoneName()
     m.zones[z] = (m.zones[z] or 0) + 1
-    -- Kill speed: time between kills of the same mob, ignoring breaks over 3 minutes.
+    -- Kill speed: time between kills of the same mob, ignoring breaks over 3 minutes (and groups,
+    -- which kill faster than you would alone).
     local t = time()
-    if m.lastKill and t - m.lastKill > 0 and t - m.lastKill < 180 then
+    if recording() and m.lastKill and t - m.lastKill > 0 and t - m.lastKill < 180 then
         m.tIntervals = m.tIntervals + 1
         m.tSeconds = m.tSeconds + (t - m.lastKill)
     end
@@ -201,11 +210,14 @@ local function onLootOpened()
         end
     end
 
-    local rec = recording()
+    -- Looted corpses count in a group too (see recording()). Coins are split among the group:
+    -- the mob dropped all of them, your session gets your share.
+    local rec = true
+    local share = grouped() and (1 / groupSize()) or 1
     for guid, b in pairs(bySource) do
         local npc = GP.NpcFromGUID(guid)
         if npc then
-            local value = b.money
+            local value = b.money * share
             for id, qty in pairs(b.items) do value = value + qty * (GP:ItemValue(id) or 0) end
 
             if isPickpocket(guid) then
@@ -250,7 +262,7 @@ local function onLootOpened()
                     bump(m.items, id, qty)
                     corpseItems[guid][id] = true
                 end
-                GP:SessionLoot(value, b.money, b.items)
+                GP:SessionLoot(value, math.floor(b.money * share), b.items)
             else
                 status[guid] = "looted"
                 corpseItems[guid] = {}

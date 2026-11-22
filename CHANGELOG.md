@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.18.2
+- **Kills in a group count**: a corpse you loot shows everything it dropped, so in a group it now counts for drop rates, your session's kills and its gold (your share of the coins). Only what a group can't tell stays solo: kill speed (a group kills faster) and corpses others looted (they'd look empty). *Record in groups* in Settings counts those too.
+
 ## 0.18.1
 - **More from TSM**: with TradeSkillMaster and its desktop app, Haulwise now fills in what your own scans can't tell yet. *Sells/day* (Craft, tooltips, the sell helper) uses TSM's sold per day for the region where you haven't scanned enough. Market shows trends right away (TSM's market value against its 60-day price, marked *TSM*) until your own scans cover a week. Deals and the usual price use TSM's market value before you have 3 days of scans.
 - **Market: what to buy and sell now**: every item you have, farm, gather, craft or use, with its price now against its usual price (a week of your scans, or TSM's 60-day price), how many you have, how fast it sells, and a tip: *Sell now* (dearer than usual, and you have some), *Farm now*, *Craft now*, *Stock up* (a reagent cheaper than usual), *Buy*, *Hold* or *Vendor it*. The top line adds up what selling now would bring over the usual price. *Show* picks everything, only what to sell, or only what to buy. Grey and soulbound items are left out.

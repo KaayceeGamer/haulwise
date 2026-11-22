@@ -77,7 +77,7 @@ local function sections(s)
         { L["Farming"], {
             { L["Community data"], "useShared", L["Add everyone's pooled kills (shipped with Haulwise) and friends' imports to your own."] },
             { L["Loot-table estimates"], "useEstimates", L["Also rank mobs nobody has farmed yet, from Classic's loot tables (Haulwise Data). Real kills take over as they come in."] },
-            { L["Record in groups"], "trackInGroup", L["Group loot makes drop rates less accurate, so Haulwise records solo kills only unless this is on."] },
+            { L["Record in groups"], "trackInGroup", L["In a group, the corpses you loot always count. On: kills in a group also count toward kill speed, and corpses others looted count as empty (less accurate)."] },
             { L["Remind me to share"], "shareReminder", L["A chat line every 100 kills you haven't shared yet. Sharing is always manual."] },
         } },
         { L["Auction house and mail"], {

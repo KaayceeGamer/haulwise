@@ -117,13 +117,14 @@ assert(GP.db.mobs[113].pp == 1 and GP.db.mobs[113].ppMoney == 15, "pickpocket no
 assert(GP.db.mobs[113].kills == expectedKills, "pickpocket counted as a kill")
 print("pickpocket ok")
 
--- Group: nothing recorded.
+-- Group: a corpse you loot counts (it shows everything it dropped); its coins are split.
 W.inGroup = true
 local before = GP.db.mobs[113].kills
+local sessMoney = GP.session.money
 kill(113, "Coyote", 10, { { id = MEAT } })
-assert(GP.db.mobs[113].kills == before, "recorded in group")
+assert(GP.db.mobs[113].kills == before + 1, "a looted corpse in a group counts")
 W.inGroup = false
-print("group filter ok")
+print("group loot ok")
 
 -- Export / import round trip as a friend.
 local s = GP:ExportString()

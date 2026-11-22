@@ -73,6 +73,9 @@ local function guideSections() return {
 
 -- What's new, per version, newest first. After an update only the versions you haven't seen show.
 local function newsByVersion() return {
+    { "0.18.2", {
+        L["Kills in a group count now: the corpses you loot add to drop rates and your session."],
+    } },
     { "0.18.1", {
         L["Market says what to sell and buy now; Deals add disenchant flips and craft mats, and say how long things take to sell; Craft ranks by profit per day."],
         L["With TSM installed, Sells/day, Market trends and Deals work right away, from TSM's data, until your own scans take over."],
