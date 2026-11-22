@@ -305,7 +305,8 @@ function GP:VendorFlipRows()
                     r.listed = p and p.q
                 end
                 -- Worth showing: profitable now, or a main mat that could be bought cheaply enough.
-                if r.profit > 0 or (r.below and r.below > 0) then rows[#rows + 1] = r end
+                -- A limit far under today's price (less than 60% of it) never happens: left out.
+                if r.profit > 0 or (r.below and r.below > 0 and r.below >= 0.6 * (r.matNow or 0)) then rows[#rows + 1] = r end
             end
         end
     end

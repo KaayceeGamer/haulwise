@@ -51,15 +51,37 @@ local function build()
     hud.lock:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     hud.session = line(hud, -34)
-    -- Click the session line to pause or resume it.
+    -- Session tools on the right of the session line: pause / resume, and save + start over.
+    hud.newSess = GP.IconButton(hud, "Interface\\TimeManager\\ResetButton", "", 16)
+    hud.newSess:SetPoint("TOPRIGHT", -8, -31)
+    hud.newSess:SetScript("OnClick", function()
+        if GP:StartNewSession() then GP.Print(L["Session saved. A new one has started."]) end
+    end)
+    hud.newSess:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["New session"])
+        GameTooltip:AddLine(L["Save this session (when it's 3 minutes or more) and start a new one."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    hud.pause = GP.IconButton(hud, "Interface\\TimeManager\\PauseButton", "", 16)
+    hud.pause:SetPoint("RIGHT", hud.newSess, "LEFT", -4, 0)
+    hud.pause:SetScript("OnClick", function() GP:ToggleSessionPause() end)
+    hud.pause:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(GP.SessionPaused() and L["Resume"] or L["Pause"])
+        GameTooltip:AddLine(L["While paused, the clock stops and loot stays out of this session (it still counts for drop rates)."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    hud.session:SetPoint("RIGHT", hud.pause, "LEFT", -6, 0)
+    -- Hover the session line for where the gold came from.
     local sb = CreateFrame("Button", nil, hud)
     sb:SetPoint("TOPLEFT", 8, -30)
-    sb:SetPoint("TOPRIGHT", -8, -30)
+    sb:SetPoint("RIGHT", hud.pause, "LEFT", -6, 0)
     sb:SetHeight(16)
     sb:SetScript("OnClick", function() GP:ToggleSessionPause() end)
     sb:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GP.SessionTooltip(GameTooltip, L["Click to pause or resume."])
+        GP.SessionTooltip(GameTooltip, L["Click to pause or resume. The buttons on the right: pause, and save and start a new session."])
         GameTooltip:Show()
     end)
     sb:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -139,9 +161,12 @@ end
 function GP:RefreshHUD(sessionOnly)
     if not hud or not hud:IsShown() then return end
     local s = self.session
-    local total, perHour = GP.SessionEarned()
-    hud.session:SetText(string.format(L["Session  %s|cff8a8880/h   %s · %d kills|r"],
-        GP.Coins(perHour, true), GP.Coins(total, true), s.kills) .. (GP.SessionPaused() and ("  |cffff9944" .. L["paused"] .. "|r") or ""))
+    local total, perHour, mins = GP.SessionEarned()
+    local paused = GP.SessionPaused()
+    hud.session:SetText(string.format(L["Session  %s|cff8a8880/h   %s · %d kills · %d min|r"],
+        GP.Coins(perHour, true), GP.Coins(total, true), s.kills, mins) .. (paused and ("  |cffff9944" .. L["paused"] .. "|r") or ""))
+    hud.pause:SetNormalTexture(paused and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up" or "Interface\\TimeManager\\PauseButton")
+    hud.pause:SetHighlightTexture(paused and "Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up" or "Interface\\TimeManager\\PauseButton")
     if sessionOnly then return end
 
     local locked = self.db.settings.hudLocked
