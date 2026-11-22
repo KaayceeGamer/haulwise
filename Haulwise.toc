@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Haulwise
-## Notes: Your gold, bags and gear in one place: best farms, bag values with smart swaps, upgrade advisor, alts' holdings, crafting, AH deals and trends.
+## Notes: Where to farm, what to sell, what to craft: best farms, bag values with smart swaps, upgrade advisor, alts' holdings, crafting, AH deals and trends.
 ## Version: @project-version@
 ## Author: KaayceeGamer
 ## X-License: MIT
