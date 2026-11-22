@@ -72,6 +72,8 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["Pause: click the session box at the top. Farm → Sessions keeps every farm run, and dungeons get their own session."],
+    L["Craft → Vendor flips: crafts a vendor buys for more than the mats cost, and the most to pay for the main mat."],
     L["WoW Forever's new mobs get their real portraits, and mob tooltips show Haulwise's line from the first kill."],
     L["Farm: the Show menu splits mobs with real kills from estimates, and estimates count for less under Safe."],
     L["Settings: sections on the left, and every switch says what it does."],

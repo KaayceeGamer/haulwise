@@ -144,7 +144,7 @@ GP.db.settings.farmZone = nil
 
 -- Every view draws -------------------------------------------------------------------------------
 GP:ShowUI()
-for _, v in ipairs({ { "gear", "ah" }, { "craft", "skill" }, { "farm", "zones" }, { "bags" } }) do
+for _, v in ipairs({ { "gear", "ah" }, { "craft", "skill" }, { "craft", "vendor" }, { "farm", "zones" }, { "bags" } }) do
   GP.db.settings.tab = v[1]
   GP.db.settings.views[v[1]] = v[2]
   GP:RefreshUI()
@@ -1353,5 +1353,19 @@ do -- Sessions: pause keeps loot out, a session is saved, a /reload carries it o
   ok(r.earned == 5000 and r.kills == 1 and r.perHour > 0 and r.where ~= "?", "a saved session: earned, kills, gold per hour, where")
   GP:DeleteSession(1)
   ok(#GP.db.sessions == 0, "and it can be deleted")
+end
+do -- Vendor flips: a craft a vendor buys for more than its mats cost on the AH
+  local c = GP:Char()
+  local savedRecipes = c.recipes
+  c.recipes = { ["test:flip"] = { n = "Test Bag", prof = "Tailoring", out = 880001, oq = 1, r = "880002:2", learned = true } }
+  GP.db.prices[880002] = { p = 100, q = 40, t = time() }
+  GP.db.prices[880001] = { s = 500, t = time() }
+  GP.db.vendorBuy[880002] = nil
+  local rows = GP:VendorFlipRows()
+  local r = rows[1]
+  ok(r and r.vendor == 500 and r.cost == 200 and r.profit == 300, "vendor pays 500, mats cost 200: +300")
+  ok(r and r.mat == 880002 and r.below == 250 and r.listed == 40, "and the main mat pays up to 250 each")
+  c.recipes = savedRecipes
+  GP.db.prices[880001], GP.db.prices[880002] = nil, nil
 end
 print("NEW FEATURES PASSED")

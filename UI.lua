@@ -167,6 +167,7 @@ local VIEWS = {
              { "sessions", L["Sessions"], L["Your saved farm sessions: where, how long, and what each earned per hour."] } },
     craft = { { nil, L["Best profit"], L["What's profitable to craft and sell on the auction house."] },
               { "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."] },
+              { "vendor", L["Vendor flips"], L["Crafts a vendor buys for more than the mats cost on the AH, and the most you can pay for the main mat."] },
               { "enchants", L["Enchant requests"], L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] } },
     gear = { { nil, L["Your gear"], L["Gear in your bags that's an upgrade for you or one of your alts."] },
              { "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."] } },
@@ -484,6 +485,74 @@ TAB.craft = {
           tip = L["Put your 5 most profitable crafts in the queue, as many as sell in about 2 days. Open the profession and the queue shows beside it."] },
         shoppingAction(),
     },
+}
+
+-- Craft → Vendor flips: buy mats on the AH, craft, sell the result to a vendor.
+TAB.craft_vendor = {
+    cols = {
+        { key = "name", title = L["Recipe"], w = 220, icon = true },
+        { key = "who", title = L["Who"], w = 80 },
+        { key = "vendor", title = L["Vendor pays"], w = 96, align = "RIGHT" },
+        { key = "cost", title = L["Mats now"], w = 96, align = "RIGHT" },
+        { key = "profit", title = L["Profit"], w = 104, align = "RIGHT", bar = true },
+        { key = "mat", title = L["Main mat"], w = 150 },
+        { key = "below", title = L["Buy below"], w = 90, align = "RIGHT" },
+        { key = "matNow", title = L["Now"], w = 80, align = "RIGHT" },
+    },
+    keepFor = 10,
+    rows = function() return byProf(GP:VendorFlipRows()) end,
+    bar = function(r) return math.max(0, r.profit) end,
+    cells = function(r)
+        local name = (r.outQty > 1 and string.format("%s x%g", itemName(r.out), r.outQty) or itemName(r.out))
+        local good = r.profit > 0
+        return {
+            name = name, icon = GP.ItemIcon(r.out), who = grey(r.who),
+            vendor = Coins(r.vendor, true), cost = Coins(r.cost, true),
+            profit = good and ("|cff5fd35f+|r" .. Coins(r.profit, true)) or grey("-" .. Coins(-r.profit, true)),
+            mat = r.mat and (itemName(r.mat) .. grey(" x" .. r.matQty)) or grey(L["vendor mats"]),
+            below = r.below and r.below > 0 and Coins(r.below, true) or grey("–"),
+            matNow = r.matNow and ((r.matNow < (r.below or 0)) and ("|cff5fd35f" .. Coins(r.matNow, true) .. "|r") or Coins(r.matNow, true)) or grey("–"),
+        }
+    end,
+    hero = function(rows)
+        local n, best = 0, nil
+        for _, r in ipairs(rows) do
+            if r.profit > 0 then n = n + 1; if not best or r.profit > best.profit then best = r end end
+        end
+        if not best then
+            return grey(L["No vendor flip pays right now. Buy below shows the most each main mat can cost: watch for cheap listings."])
+        end
+        return string.format(L["%s pay now  ·  best: |cffffffff%s|r  |cff5fd35f+%s|r each"], plural(n, "flip"), itemName(best.out), Coins(best.profit, true))
+    end,
+    empty = L["No vendor flips found.\n\nOpen your profession windows once and scan the AH: Haulwise compares what a vendor pays for each craft with what its mats cost, for you and your alts."],
+    click = function(r)
+        if r.mat and IsShiftKeyDown and IsShiftKeyDown() then GP:SearchAH(r.mat) else GP:AddToShopping(r.key, 1) end
+    end,
+    tooltip = function(t, r)
+        t:SetItemByID(r.out)
+        t:AddLine(" ")
+        t:AddDoubleLine("|cffffd040Haulwise|r", L["Click: add to shopping list  ·  Shift-click: search the main mat"], 1, 1, 1, 0.6, 0.6, 0.6)
+        for _, rg in ipairs(r.reagents) do
+            local unit, where = GP:BuyCost(rg[1])
+            t:AddDoubleLine(string.format("  |T%s:14|t %s x%g", GP.ItemIcon(rg[1]), itemName(rg[1]), rg[2]),
+                unit and (Coins(unit * rg[2]) .. grey(" " .. where)) or L["|cffff9944no price|r"])
+        end
+        t:AddDoubleLine(L["A vendor pays"], Coins(r.vendor), 0.7, 0.7, 0.7)
+        t:AddDoubleLine(L["Profit"], Coins(r.profit), 0.7, 0.7, 0.7)
+        if r.mat and r.below and r.below > 0 then
+            t:AddLine(" ")
+            t:AddLine(string.format(L["Pays as long as %s costs less than %s each (now %s)."], itemName(r.mat), Coins(r.below), Coins(r.matNow)), 1, 1, 1, true)
+            if r.listed then t:AddLine(string.format(L["%d listed at your last scan. Only the cheapest ones may be under the limit."], r.listed), 0.6, 0.6, 0.6, true) end
+        end
+        t:AddLine(L["A vendor always buys: no AH cut, no waiting. Crafted from your own mats counts at what they'd cost you."], 0.6, 0.6, 0.6, true)
+    end,
+    pickers = { profPicker() },
+    actions = { shoppingAction() },
+}
+TAB.craft_vendor.sort = {
+    name = function(r) return itemName(r.out) end, who = function(r) return r.who end, vendor = function(r) return r.vendor end,
+    cost = function(r) return r.cost end, profit = function(r) return r.profit end, mat = function(r) return r.mat and itemName(r.mat) or "" end,
+    below = function(r) return r.below end, matNow = function(r) return r.matNow end,
 }
 
 local MIN_STEPS = { 1000, 2000, 5000, 10000, 50000 }

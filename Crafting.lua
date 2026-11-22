@@ -5,6 +5,7 @@
 -- Recipes tab (is this pattern worth buying or farming?). Reagent costs use the cheapest of
 -- the AH and any vendor you've visited, so thread, salt and vials are priced right.
 local _, GP = ...
+local L = GP.L
 
 local BASIC = (Enum and Enum.CraftingReagentType and Enum.CraftingReagentType.Basic) or 1
 
@@ -235,6 +236,80 @@ function GP:CraftRows()
         if am ~= bm then return bm end
         return a.profit > b.profit
     end)
+    return rows
+end
+
+-- Vendor flips: crafts whose result a vendor buys for more than the mats cost on the AH.
+-- For every recipe you or an alt (same realm and faction) know: what a vendor pays for the
+-- result, what the mats cost now (a mat you can craft yourself counts at the cheaper of buying
+-- it and crafting it), and the most you can pay for the main mat and still come out ahead.
+function GP:VendorFlipRows()
+    local realm = GetRealmName and GetRealmName() or "?"
+    local faction = UnitFactionGroup and UnitFactionGroup("player")
+    local me = self:CharKey()
+    local recipes, byOut = {}, {}
+    for key, c in pairs(self.db.chars or {}) do
+        if key == me or (c.realm == realm and (not c.faction or c.faction == faction)) then
+            for rkey, rec in pairs(c.recipes or {}) do
+                if rec.learned and rec.out then
+                    local who = key == me and L["you"] or (c.short or key)
+                    recipes[#recipes + 1] = { rkey = rkey, rec = rec, who = who, mine = key == me }
+                    if not byOut[rec.out] then byOut[rec.out] = rec end
+                end
+            end
+        end
+    end
+    -- What one unit of a mat costs you: buy it, or craft it from its own mats (one level down).
+    local function matCost(id, depth)
+        local buy, where = self:BuyCost(id)
+        local rec = depth < 2 and byOut[id]
+        if rec then
+            local total, ok = 0, true
+            for _, r in ipairs(GP.UnpackReagents(rec.r)) do
+                local c = matCost(r[1], depth + 1)
+                if not c then ok = false; break end
+                total = total + c * r[2]
+            end
+            if ok then
+                local craft = total / (rec.oq or 1)
+                if not buy or craft < buy then return craft, "craft" end
+            end
+        end
+        return buy, where
+    end
+    local rows, seen = {}, {}
+    for _, e in ipairs(recipes) do
+        local rec = e.rec
+        local vendor = self:VendorSell(rec.out) * (rec.oq or 1)
+        local dedupe = rec.out .. "|" .. (rec.r or "")
+        if vendor > 0 and not (seen[dedupe] and not e.mine) then
+            seen[dedupe] = true
+            local cost, missing, main, mainCost = 0, false, nil, -1
+            local reagents = GP.UnpackReagents(rec.r)
+            for _, r in ipairs(reagents) do
+                local unit, where = matCost(r[1], 0)
+                if not unit then missing = true; break end
+                cost = cost + unit * r[2]
+                -- The main mat: the one bought on the AH that costs the most in this craft.
+                if where == "AH" and unit * r[2] > mainCost then main, mainCost = r, unit * r[2] end
+            end
+            if not missing then
+                local r = { key = e.rkey, name = rec.n, prof = rec.prof, out = rec.out, outQty = rec.oq or 1, who = e.who,
+                            vendor = vendor, cost = cost, profit = vendor - cost, reagents = reagents }
+                if main then
+                    local others = cost - mainCost
+                    r.mat, r.matQty = main[1], main[2]
+                    r.matNow = mainCost / main[2]
+                    r.below = (vendor - others) / main[2]
+                    local p = self.db.prices[main[1]]
+                    r.listed = p and p.q
+                end
+                -- Worth showing: profitable now, or a main mat that could be bought cheaply enough.
+                if r.profit > 0 or (r.below and r.below > 0) then rows[#rows + 1] = r end
+            end
+        end
+    end
+    table.sort(rows, function(a, b) return a.profit > b.profit end)
     return rows
 end
 

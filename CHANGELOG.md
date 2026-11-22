@@ -4,6 +4,7 @@
 - **Pause your session**: click the session box at the top (or the session line on the HUD) to pause. While paused the clock stops and loot stays out of your gold per hour, so a mailbox run or a vendor trip doesn't drag it down. What you loot still counts for drop rates.
 - **Dungeons get their own session**: entering a dungeon or raid sets your open-world session aside; leaving saves the dungeon run and picks the open-world session up where it was.
 - **Saved sessions**: Farm has a new view, *Sessions*: every farm run with where, who, how long, what it earned, gold per hour and the mobs you killed most. A session is saved when you start a new one, leave a dungeon, or come back after 30 minutes away; a /reload carries on the same session. Right-click one to delete it.
+- **Vendor flips**: Craft has a new view for crafts a vendor buys for more than their mats cost on the AH (no AH cut, no waiting). For every recipe you and your alts know: what a vendor pays, what the mats cost now, the profit, and the most you can pay for the main mat (*Buy below*), so you can watch for cheap listings. A mat you can craft yourself counts at the cheaper of buying and crafting it.
 - **TSM prices**: with TradeSkillMaster installed, Haulwise uses its market value (from the TSM desktop app) when your own scan is more than 3 days old. Turn it off in Settings.
 
 ## 0.17.0
