@@ -367,6 +367,7 @@ GP.LOCALES.frFR = {
     ["(sells %s)"] = "(vend %s)",
     ["Performance:"] = "Performances :",
     ["  memory: Haulwise %.1f MB, Haulwise Data %.1f MB, together %.1f MB"] = "  mémoire : Haulwise %.1f Mo, Haulwise Data %.1f Mo, ensemble %.1f Mo",
+    ["  (%.1f MB before Lua swept up its garbage)"] = "  (%.1f Mo avant que Lua ne libère sa mémoire inutilisée)",
     ["  saved: %d mobs, %d prices, %d price histories, %d names, %d sales, %d characters"] = "  enregistré : %d monstres, %d prix, %d historiques de prix, %d noms, %d ventes, %d personnages",
     ["Farm"] = "Farm",
     ["Gear on the AH"] = "Équipement à l'HV",

@@ -367,6 +367,7 @@ GP.LOCALES.deDE = {
     ["(sells %s)"] = "(verkauft %s)",
     ["Performance:"] = "Leistung:",
     ["  memory: Haulwise %.1f MB, Haulwise Data %.1f MB, together %.1f MB"] = "  Speicher: Haulwise %.1f MB, Haulwise Data %.1f MB, zusammen %.1f MB",
+    ["  (%.1f MB before Lua swept up its garbage)"] = "  (%.1f MB, bevor Lua seinen Müll aufgeräumt hat)",
     ["  saved: %d mobs, %d prices, %d price histories, %d names, %d sales, %d characters"] = "  gespeichert: %d Gegner, %d Preise, %d Preisverläufe, %d Namen, %d Verkäufe, %d Charaktere",
     ["Farm"] = "Farmen",
     ["Gear on the AH"] = "Ausrüstung im AH",

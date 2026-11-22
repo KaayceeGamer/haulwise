@@ -27,12 +27,18 @@ local function memory(name)
 end
 
 function GP:Perf()
-    if UpdateAddOnMemoryUsage then pcall(UpdateAddOnMemoryUsage) end
     local P = GP.Print
     P(L["Performance:"])
+    -- Memory as the game counts it includes garbage Lua hasn't swept up yet; sweep first, so
+    -- the number is what Haulwise really keeps.
+    if UpdateAddOnMemoryUsage then pcall(UpdateAddOnMemoryUsage) end
+    local before = memory("Haulwise")
+    if collectgarbage then collectgarbage("collect") end
+    if UpdateAddOnMemoryUsage then pcall(UpdateAddOnMemoryUsage) end
     local a, b = memory("Haulwise"), memory("HaulwiseData")
     if a then
-        P(string.format(L["  memory: Haulwise %.1f MB, Haulwise Data %.1f MB, together %.1f MB"], a / 1024, (b or 0) / 1024, (a + (b or 0)) / 1024))
+        P(string.format(L["  memory: Haulwise %.1f MB, Haulwise Data %.1f MB, together %.1f MB"], a / 1024, (b or 0) / 1024, (a + (b or 0)) / 1024)
+            .. (before and before > a + 512 and string.format(L["  (%.1f MB before Lua swept up its garbage)"], before / 1024) or ""))
     end
     local db = self.db
     P(string.format(L["  saved: %d mobs, %d prices, %d price histories, %d names, %d sales, %d characters"],
