@@ -72,6 +72,7 @@ local function guideSections() return {
 } end
 
 local function newsLines() return {
+    L["WoW Forever's new mobs get their real portraits, and mob tooltips show Haulwise's line from the first kill."],
     L["Farm: the Show menu splits mobs with real kills from estimates, and estimates count for less under Safe."],
     L["Settings: sections on the left, and every switch says what it does."],
     L["Clearer controls: small tabs switch what a list shows, menus filter it, and Options holds the switches. Popups and mailbox settings moved to Settings."],

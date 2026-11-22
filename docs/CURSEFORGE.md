@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.16.1:** clearer controls on every tab (small tabs switch what a list shows, menus filter it, one Options menu holds the switches); **Enchant requests**, an estimate of what people ask enchanters for in trade chat and what they offer; Recipes names the vendor that sells each pattern for 759 more recipes; and no more stutter with the Recipes tab open.
+**New in 0.17.0:** a **Show** menu on the Farm tab splits mobs with real kills from estimates, and estimates count for less under Safe; real portraits for WoW Forever's new mobs; mob tooltips from the first kill; a settings window with sections where every switch says what it does; smoother redraws with the window open; a new icon; and `/haul perf` to see memory and speed.
 
 ---
 
@@ -56,11 +56,11 @@ Haulwise measures:
 - Coins, skinning and pickpocket
 - How fast **you** kill each mob
 
-Each mob is shown with its own portrait and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **Zones** to see where to go, or set **Zone** to *Where you are* to see what's worth killing right here.
+Each mob is shown with its own portrait (WoW Forever's new mobs too) and valued at your own auction house's prices. Rank by **Safe** gold/hour, so a lucky streak can't fool you. Switch to **Zones** to see where to go, or set **Zone** to *Where you are* to see what's worth killing right here.
 
 Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 22 from other players") and a word from *rough guess* to *solid*.
 
-**Mobs nobody has farmed yet** are ranked too, from estimated drop rates in Classic's loot tables. They're marked *est.* and *~*, and real kills (yours and shared) take over as they come in. Mob tooltips show the estimated gold per hour as well. Turn estimates off under **Options** on the Farm tab.
+**Mobs nobody has farmed yet** are ranked too, from estimated drop rates in Classic's loot tables. They're marked *est.* and *~*, and real kills (yours and shared) take over as they come in. Mob tooltips show the estimated gold per hour as well. Under **Safe** an estimate counts for less, so mobs with real kills come first. The **Show** menu on the Farm tab picks all mobs, only farmed ones, or only estimates.
 
 ### 🧵 Craft and Recipes
 - **Craft**: every recipe you know, with reagent cost (auction house or vendor, whichever is cheaper), sale price, profit, margin, **how many sell per day** and 7-day trend.
@@ -150,6 +150,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 | `/haul start` | the start card again |
 | `/haul export` / `import` | share your data / load community data |
 | `/haul reset` | reset window positions and sizes |
+| `/haul perf` | memory and how long each list takes |
 | `/haul feedback` | report a bug or suggest an idea |
 
 ## Works with
