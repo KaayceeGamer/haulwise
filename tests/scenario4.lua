@@ -1415,4 +1415,17 @@ do -- Deals: a mat listed under a vendor flip's limit is a "craft" deal
   GP.db.settings.minProfit = savedMin
   GP.db.prices[880011], GP.db.prices[880012] = nil, nil
 end
+do -- Names: Haulwise Data's name before a name from someone else's shared data
+  HaulwiseData.estimates = HaulwiseData.estimates or {}
+  HaulwiseData.estimates[990001] = { "Skullsplitter Warrior", 39, 40, 1434, 100 }
+  GP.ForgetEstimates()
+  GP.db.shared.testde = { label = "de", mobs = { [990001] = { name = "Krieger der Skullsplitter", kills = 3, money = 30, items = {}, zones = {} },
+                                                 [990002] = { name = "Nur geteilt", kills = 2, money = 10, items = {}, zones = {} } } }
+  local merged = GP:MergedMobs()
+  ok(merged[990001].name == "Skullsplitter Warrior", "Haulwise Data's name wins over a shared German one")
+  ok(merged[990002].name == "Nur geteilt", "a mob only someone else knows keeps their name")
+  GP.db.shared.testde = nil
+  HaulwiseData.estimates[990001] = nil
+  GP.ForgetEstimates()
+end
 print("NEW FEATURES PASSED")

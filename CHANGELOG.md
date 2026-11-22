@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.18.2
+- **Mob names in your language**: a mob you haven't seen yourself is named from Haulwise Data before someone else's shared data, so a German player's share no longer turns English names German.
+- **Bags: one row per item**: stacks of the same item are added up in one row (gear stays one per row, since each piece can differ).
 - **Kills in a group count**: a corpse you loot shows everything it dropped, so in a group it now counts for drop rates, your session's kills and its gold (your share of the coins). Only what a group can't tell stays solo: kill speed (a group kills faster) and corpses others looted (they'd look empty). *Record in groups* in Settings counts those too.
 
 ## 0.18.1

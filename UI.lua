@@ -922,7 +922,23 @@ TAB.bags = {
         { key = "status", title = L["Best move"], w = 210 },
     },
     rows = function()
-        local rows = GP:BagItems()
+        -- One row per item: stacks of the same item (and the same bound state) are added up. The
+        -- row acts on its smallest stack, the one to sell or throw away first.
+        local rows, byKey = {}, {}
+        for _, r in ipairs(GP:BagItems()) do
+            -- Gear doesn't stack and each piece can differ ("of the Owl"): those stay one per row.
+            local stackable = (r.info and r.info.maxStack or 1) > 1
+            local key = stackable and (r.id .. (r.bound and "b" or "")) or (r.bag .. ":" .. r.slot)
+            local g = byKey[key]
+            if not g then
+                byKey[key] = r
+                rows[#rows + 1] = r
+            else
+                if r.count < g.count then g.bag, g.slot = r.bag, r.slot end
+                g.count, g.total = g.count + r.count, g.total + r.total
+                g.stacks = (g.stacks or 1) + 1
+            end
+        end
         table.sort(rows, function(a, b)
             if (a.protect ~= nil) ~= (b.protect ~= nil) then return a.protect == nil end
             if a.total ~= b.total then return a.total < b.total end

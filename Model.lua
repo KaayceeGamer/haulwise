@@ -149,7 +149,11 @@ function GP:MergedMobs()
                   zones = {}, items = {}, gather = {}, ppItems = {}, own = 0 }
             out[npc] = o
         end
+        -- Names: the one your own client saw (your language) first, then Haulwise Data's, and
+        -- only then a name from someone else's shared data (which may be in their language).
+        local before = o.name
         merge(o, m)
+        if not own and o.name ~= before then o.sharedName = o.sharedName or o.name; o.name = before end
         if own then o.own = o.own + (m.kills or 0) end
     end
     for npc, m in pairs(self.db.mobs) do add(npc, m, true) end
@@ -162,8 +166,12 @@ function GP:MergedMobs()
             for npc, m in pairs(self:CommunityMobs(self.community)) do add(npc, m) end
         end
     end
+    local estimates = self:Estimates()
+    for npc, o in pairs(out) do
+        if not o.name then o.name = (estimates[npc] and estimates[npc].name) or o.sharedName end
+    end
     if self.db.settings.useEstimates then
-        for npc, est in pairs(self:Estimates()) do
+        for npc, est in pairs(estimates) do
             local o = out[npc]
             if o then
                 o.est = est
