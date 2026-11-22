@@ -323,6 +323,8 @@ SlashCmdList.HAULWISE = function(msg)
         s.minimap = not (s.minimap ~= false)
         GP:UpdateMinimapButton()
         GP.Print(s.minimap and GP.L["Minimap button shown."] or GP.L["Minimap button hidden. /haul minimap brings it back."])
+    elseif cmd == "tsm" then
+        GP:DebugTSM()
     elseif cmd == "look" then
         GP:DebugLook()
     elseif cmd == "perf" then

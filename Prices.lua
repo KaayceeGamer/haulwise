@@ -262,6 +262,28 @@ local function tsmPrice(id)
 end
 GP.TSMPrice = tsmPrice
 
+-- /haul tsm: what TradeSkillMaster tells Haulwise, for a few common items, next to Haulwise's own.
+function GP:DebugTSM()
+    local P = GP.Print
+    if not (TSM_API and TSM_API.GetCustomPriceValue) then P("TSM_API: not found (is TradeSkillMaster enabled?)"); return end
+    P("TSM_API found. Sources per item (TSM / Haulwise):")
+    local items = { 2589, 2592, 4306, 4338, 2772, 3575, 10940, 11083, 7909 }
+    local sources = { "DBMarket", "DBMinBuyout", "DBRecent", "DBHistorical", "DBRegionMarketAvg", "DBRegionSaleAvg", "DBRegionSoldPerDay", "VendorSell" }
+    for _, id in ipairs(items) do
+        local parts = {}
+        for _, src in ipairs(sources) do
+            local ok, v = pcall(TSM_API.GetCustomPriceValue, src, "i:" .. id)
+            if ok and v then
+                parts[#parts + 1] = src .. "=" .. (src == "DBRegionSoldPerDay" and string.format("%.2f", v / 100) or GP.Coins(v, true))
+            end
+        end
+        local own = self.db.prices[id]
+        local name = GP.ItemInfo(id) or ("#" .. id)
+        P(name .. ": " .. (#parts > 0 and table.concat(parts, "  ") or "|cffff9944nothing|r")
+            .. "  |  Haulwise scan: " .. (own and own.p and GP.Coins(own.p, true) or "–"))
+    end
+end
+
 function GP:Price(id)
     local p = self.db.prices[id]
     local ownAge = p and p.p and (time() - (p.t or 0))
