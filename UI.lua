@@ -575,7 +575,16 @@ TAB.deals = {
         { key = "roi", title = "ROI", w = 60, align = "RIGHT" },
         { key = "basis", title = L["Sells in"], w = 96 },
     },
-    rows = function() return GP:Deals() end,
+    rows = function()
+        local rows, show = GP:Deals(), S().dealsShow
+        if not show then return rows end
+        local out = {}
+        for _, r in ipairs(rows) do
+            local kind = (r.kind == "under" and r.isRecipe) and "recipe" or r.kind
+            if kind == show then out[#out + 1] = r end
+        end
+        return out
+    end,
     bar = function(r) return r.profit end,
     cells = function(r)
         return {
@@ -624,7 +633,28 @@ TAB.deals = {
             if speed then t:AddLine(speed) end
         end
     end,
-    pickers = { stepsPicker(L["Min profit: "], "minProfit", MIN_STEPS, 2000, nil, L["Hide deals that make less than this."]) },
+    pickers = {
+        {
+            label = function()
+                local NAMES = { under = L["Below market"], flip = L["Vendor flips"], de = L["Disenchant"], craft = L["Craft + vendor"], recipe = L["Cheap recipes"] }
+                return L["Show: "] .. (NAMES[S().dealsShow] or L["All deals"])
+            end,
+            items = function()
+                local cur = S().dealsShow
+                return {
+                    { text = L["All deals"], value = false, checked = cur == nil },
+                    { text = L["Below market"], value = "under", checked = cur == "under", tip = L["30%+ under what it usually sells for: buy and resell."] },
+                    { text = L["Vendor flips"], value = "flip", checked = cur == "flip", tip = L["Listed for less than a vendor pays: buy and sell to a vendor."] },
+                    { text = L["Disenchant"], value = "de", checked = cur == "de", tip = L["Gear for less than its disenchant mats, when you or an alt can disenchant it."] },
+                    { text = L["Craft + vendor"], value = "craft", checked = cur == "craft", tip = L["Mats cheap enough to craft into something a vendor buys for more (Craft > Vendor flips)."] },
+                    { text = L["Cheap recipes"], value = "recipe", checked = cur == "recipe", tip = L["Recipes and patterns under what they usually sell for."] },
+                }
+            end,
+            pick = function(v) S().dealsShow = v or nil; GP.scrollToTop = true end,
+            tip = L["Every kind of deal, or one kind."],
+        },
+        stepsPicker(L["Min profit: "], "minProfit", MIN_STEPS, 2000, nil, L["Hide deals that make less than this."]),
+    },
     options = { option(L["Include gear"], "dealsGear", L["Weapons and armor have random stats per listing, so prices jump around. Off by default."]) },
 }
 
