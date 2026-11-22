@@ -707,57 +707,110 @@ TAB.recipes = {
     options = { option(L["Show recipes far above my skill"], "recipesShowAll", L["Recipes that need 30+ more skill than you have are hidden. Skill comes from trainers, the recipe's tooltip, or (with ~) a guess from the level the crafted gear needs."]) },
 }
 
+local TIP_COLOR = { ["Sell now"] = "|cff5fd35f", ["Farm now"] = "|cff5fd35f", ["Craft now"] = "|cff5fd35f", ["Stock up"] = "|cff5fd35f",
+                    ["Buy"] = "|cff5fd35f", ["Hold"] = "|cffffd060", ["Buy later"] = "|cffffd060", ["Steady"] = "|cff8a8880", ["Vendor it"] = "|cff8a8880" }
+local TIP_HELP = {
+    ["Sell now"] = L["It's dearer than usual and it sells: a good moment to sell what you have."],
+    ["Farm now"] = L["You farm this and it's dearer than usual: a good time to farm it."],
+    ["Craft now"] = L["You craft this and it's dearer than usual: craft and sell now."],
+    ["Stock up"] = L["A reagent you use, cheaper than usual: buy what you'll need."],
+    ["Buy"] = L["Much cheaper than usual and it sells: worth buying to resell (see Deals for how many)."],
+    ["Hold"] = L["You have some, but it's cheaper than usual: wait for the price to come back."],
+    ["Buy later"] = L["A reagent you use, dearer than usual: buy it later if you can."],
+    ["Steady"] = L["About its usual price."],
+    ["Vendor it"] = L["A vendor pays as much as the AH: no point listing it."],
+}
+local function marketShow()
+    local NAMES = { sell = L["To sell"], buy = L["To buy"] }
+    return {
+        label = function() return L["Show: "] .. (NAMES[S().marketShow] or L["Everything"]) end,
+        items = function()
+            local cur = S().marketShow
+            return {
+                { text = L["Everything"], value = false, checked = cur == nil },
+                { text = L["To sell"], value = "sell", checked = cur == "sell", tip = L["Sell now, Farm now and Craft now: what's dearer than usual that you have, farm or craft."] },
+                { text = L["To buy"], value = "buy", checked = cur == "buy", tip = L["Stock up and Buy: reagents and items cheaper than usual."] },
+            }
+        end,
+        pick = function(v) S().marketShow = v or nil; GP.scrollToTop = true end,
+        tip = L["Everything, only what to sell now, or only what to buy now."],
+    }
+end
+local SELL_TIPS = { ["Sell now"] = true, ["Farm now"] = true, ["Craft now"] = true }
+local BUY_TIPS = { ["Stock up"] = true, ["Buy"] = true }
+
 TAB.market = {
     keepFor = 10,
     cols = {
-        { key = "name", title = L["Item"], w = 250, icon = true },
-        { key = "why", title = "", w = 130 },
-        { key = "price", title = L["Price now"], w = 100, align = "RIGHT" },
-        { key = "market", title = L["Usual"], w = 100, align = "RIGHT" },
-        { key = "change", title = L["7 days"], w = 100, align = "RIGHT", bar = true },
-        { key = "tip", title = L["Tip"], w = 110 },
+        { key = "name", title = L["Item"], w = 230, icon = true },
+        { key = "why", title = "", w = 110 },
+        { key = "have", title = L["You have"], w = 70, align = "RIGHT" },
+        { key = "now", title = L["Price now"], w = 90, align = "RIGHT" },
+        { key = "usual", title = L["Usual"], w = 90, align = "RIGHT" },
+        { key = "change", title = L["vs usual"], w = 100, align = "RIGHT", bar = true },
+        { key = "per", title = L["Sells/day"], w = 70, align = "RIGHT" },
+        { key = "tip", title = L["Tip"], w = 100 },
     },
-    rows = function() return GP:MarketRows() end,
+    rows = function()
+        local rows, show = GP:MarketRows(), S().marketShow
+        if not show then return rows end
+        local out = {}
+        for _, r in ipairs(rows) do
+            if (show == "sell" and SELL_TIPS[r.tip]) or (show == "buy" and BUY_TIPS[r.tip]) then out[#out + 1] = r end
+        end
+        return out
+    end,
     bar = function(r) return r.change end,
     cells = function(r)
-        local tipColor = (r.tip == "Sell now" or r.tip == "Stock up") and "|cff5fd35f" or (r.tip == "Steady" and "|cff8a8880" or "|cffffd060")
         return {
             name = itemName(r.id), icon = GP.ItemIcon(r.id), why = grey(r.why and L[r.why] or ""),
-            price = Coins(r.price, true), market = r.market and grey(Coins(r.market, true)) or grey("–"),
-            change = pct(r.change, true) .. (r.tsm and grey(" TSM") or ""), tip = tipColor .. L[r.tip] .. "|r",
+            have = r.have and tostring(r.have) or grey("–"),
+            now = Coins(r.now, true), usual = grey(Coins(r.usual, true)),
+            change = pct(r.change, true) .. (r.tsm and grey(" TSM") or ""), per = demandCell(r.id),
+            tip = (TIP_COLOR[r.tip] or "") .. L[r.tip] .. "|r",
         }
     end,
-    hero = function()
+    hero = function(rows)
+        local nSell, gain, nBuy = 0, 0, 0
+        for _, r in ipairs(rows) do
+            if r.tip == "Sell now" then nSell = nSell + 1; gain = gain + math.max(0, r.gain or 0) end
+            if BUY_TIPS[r.tip] then nBuy = nBuy + 1 end
+        end
+        local parts = {}
+        if nSell > 0 then parts[#parts + 1] = string.format(L["|cff5fd35fSell now:|r %s you have, |cff5fd35f+%s|r over the usual price"], plural(nSell, "item"), Coins(gain, true)) end
+        if nBuy > 0 then parts[#parts + 1] = string.format(L["|cff5fd35fBuy:|r %s cheaper than usual"], plural(nBuy, "item")) end
+        if #parts > 0 then return table.concat(parts, grey("   ·   ")) end
         local p, need = GP:WeekdayPattern()
         if p and p.flat then return grey(L["No clear weekday pattern on your AH: prices are about the same every day."]) end
         if p then
             return string.format(L["Your AH is cheapest on |cffffffff%s|r and dearest on |cffffffff%s|r (%.0f%% apart): buy on %s, sell on %s."],
                 p.cheapest, p.dearest, p.spread * 100, p.cheapest, p.dearest)
         end
-        return grey(string.format(L["Weekday pattern: scan on %d more days to see which day your AH is cheapest."], need or 14))
+        return grey(L["Nothing stands out: what you have, farm, craft and use is about its usual price."])
     end,
-    -- How far along the scans are. A trend compares the last 3 days with 6-13 days ago (see
-    -- GP:Trend), so what counts is how old your oldest scan is, not how many days you scanned.
     empty = function()
         local left, oldest = GP:TrendDaysLeft()
-        local today = GP.db.scanDays and GP.db.scanDays[GP.Day()]
-        local next = today and L["Today's scan is counted: scan again tomorrow."] or L["Scan today to count another day."]
-        if not oldest then
-            return L["No trends yet: open the auction house and press Scan AH to start."]
+        if not oldest and not TSM_API then
+            return L["No prices yet: open the auction house and press Scan AH to start."]
         end
-        if left > 0 then
-            return string.format(L["No trends yet: they compare the last 3 days with the week before, so they need a scan from at least 6 days ago. Your oldest scan is |cffffffff%s|r old.\n\nKeep scanning and trends show up in |cffffffff%s|r: what's rising, what's falling, and when to sell what you farm and craft. %s"],
-                plural(GP.Day() - oldest, "day"), plural(left, "day"), next)
-        end
-        return string.format(L["No trends yet: there's no scan from the last 3 days to compare with. %s"], next)
+        return L["Nothing to show yet: the usual price comes from a week of your scans, or from TSM if it's installed. Keep scanning."]
     end,
+    pickers = { marketShow() },
     click = function(r) GP:SearchAH(r.id) end,
     tooltip = function(t, r)
         t:SetItemByID(r.id)
         t:AddLine(" ")
+        t:AddDoubleLine(L["Price now"], Coins(r.now), 0.7, 0.7, 0.7, 1, 1, 1)
+        t:AddDoubleLine(L["Usual"], Coins(r.usual), 0.7, 0.7, 0.7, 1, 1, 1)
+        if r.have then t:AddDoubleLine(string.format(L["Your %d, sold now (after the AH cut)"], r.have), Coins(r.worth or 0), 0.7, 0.7, 0.7, 1, 1, 1) end
+        local speed = GP:SellSpeedText(r.id)
+        if speed then t:AddLine(speed) end
+        t:AddLine(" ")
+        t:AddLine((TIP_COLOR[r.tip] or "") .. L[r.tip] .. "|r: " .. (TIP_HELP[r.tip] or ""), 1, 1, 1, true)
         if r.tsm then
-            t:AddLine(L["Trend from TSM: its market value for your realm against its 60-day price. Your own scans take over once they cover a week."], 0.7, 0.7, 0.7, true)
+            t:AddLine(L["From TSM: its lowest listing and 60-day price for your realm. Your own scans take over once they cover a week."], 0.6, 0.6, 0.6, true)
         end
+        t:AddLine(" ")
         t:AddLine(L["|cffffd040Haulwise|r price history:"])
         local h = GP:History(r.id)
         for i = math.max(1, #h - 9), #h do
@@ -1363,6 +1416,11 @@ TAB.craft_enchants.sort = {
     offer = function(r) return r.offer end, gold = function(r) return r.perHourGold end, skill = function(r) return r.skill end,
     known = function(r) return r.known and 1 or 0 end,
 }
+TAB.market.sort = {
+    name = function(r) return itemName(r.id) end, why = function(r) return r.why or "" end, have = function(r) return r.have end,
+    now = function(r) return r.now end, usual = function(r) return r.usual end, change = function(r) return r.change end,
+    per = function(r) return r.per end, tip = function(r) return r.tip end,
+}
 TAB.farm_zones.sort = {
     name = function(r) return GP.ZoneName(r.zone):lower() end, lvl = function(r) return r.minL end, mobs = function(r) return r.mobs end,
     kills = function(r) return r.kills end, best = function(r) return r.bestName:lower() end,
@@ -1385,10 +1443,6 @@ TAB.recipes.sort = {
     skill = function(r) return r.skill end,
     profit = function(r) return priced(r) and r.profit or nil end, get = function(r) return r.learnCost end,
     pay = function(r) return r.payback end,
-}
-TAB.market.sort = {
-    name = function(r) return nm(r.id) end, why = function(r) return r.why end, price = function(r) return r.price end,
-    market = function(r) return r.market end, change = function(r) return r.change end, tip = function(r) return r.tip end,
 }
 TAB.market_sales.sort = {
     name = function(r) return (r.id and nm(r.id)) or (r.name or ""):lower() end, count = function(r) return r.count end,

@@ -1381,4 +1381,23 @@ do -- Vendor flips: a craft a vendor buys for more than its mats cost on the AH
   c.recipes = savedRecipes
   GP.db.prices[880001], GP.db.prices[880002] = nil, nil
 end
+do -- Market: price now against the usual one, and what to do about it
+  GP.ForgetTSM()
+  TSM_API = { GetCustomPriceValue = function(src, item)
+    local t = { ["i:778001"] = { DBHistorical = 1000, DBMinBuyout = 600 } }
+    return t[item] and t[item][src]
+  end }
+  local c = GP:Char()
+  local saved = c.recipes
+  c.recipes = { ["t:x"] = { n = "X", prof = "Tailoring", out = 778002, oq = 1, r = "778001:2", learned = true } }
+  local u, uf = GP:UsualPrice(778001)
+  local n, nf = GP:PriceNow(778001)
+  ok(u == 1000 and uf == "TSM" and n == 600 and nf == "TSM", "usual and now from TSM without your own scans")
+  local found
+  for _, r in ipairs(GP:MarketRows()) do if r.id == 778001 then found = r end end
+  ok(found and found.tip == "Stock up" and math.abs(found.change + 0.4) < 0.001, "a reagent 40% under its usual price: Stock up")
+  c.recipes = saved
+  GP.ForgetTSM()
+  TSM_API = nil
+end
 print("NEW FEATURES PASSED")

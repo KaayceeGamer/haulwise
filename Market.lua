@@ -125,6 +125,46 @@ end
 
 -- Market tab ---------------------------------------------------------------------------------
 
+-- The usual price of an item: your own scans' median when they cover a week, else TSM's 60-day
+-- price for your realm, else your scans' median from 3+ days. Returns price, where from.
+function GP:UsualPrice(id)
+    local h = self:History(id)
+    local today, vals = GP.Day(), {}
+    for _, e in ipairs(h) do if e.d > today - 14 then vals[#vals + 1] = e.p end end
+    if #vals >= 7 then return GP.Median(vals), "scan" end
+    local tsm = GP.TSMValue and GP.TSMValue("DBHistorical", id)
+    if tsm then return tsm, "TSM" end
+    if #vals >= 3 then return GP.Median(vals), "scan" end
+    return nil
+end
+
+-- The price now: your scan when it's under 2 days old, else TSM's lowest listing at its last
+-- update, else your older scan.
+function GP:PriceNow(id)
+    local p = self.db.prices[id]
+    if p and p.p and time() - (p.t or 0) < 2 * 86400 then return p.p, "scan" end
+    local tsm = GP.TSMValue and GP.TSMValue("DBMinBuyout", id)
+    if tsm then return tsm, "TSM" end
+    if p and p.p then return p.p, "scan" end
+end
+
+-- What you have to sell (bags, bank, mail; not what you wear or already list), all characters.
+local function holdings(self)
+    local have = {}
+    local rows = self.HoldingsRows and self:HoldingsRows() or {}
+    for _, r in ipairs(rows) do
+        local n = 0
+        for _, w in ipairs(r.where) do
+            if w.loc ~= "equipped" and w.loc ~= "ah" then n = n + w.n end
+        end
+        if n > 0 then have[r.id] = n end
+    end
+    return have
+end
+
+-- Market: for what you farm, gather, craft, use and hold, the price now against the usual one,
+-- with what to do about it: sell what's dear now, stock up on reagents that are cheap, farm or
+-- craft what's in demand, hold what's cheap. Plus the biggest movers you don't deal in.
 function GP:MarketRows()
     local why = {}
     for _, m in pairs(self:MergedMobs()) do
@@ -137,28 +177,61 @@ function GP:MarketRows()
             for _, r in ipairs(GP.UnpackReagents(rec.r)) do why[r[1]] = why[r[1]] or "your reagent" end
         end
     end
+    local have = holdings(self)
+
+    local candidates = {}
+    for id in pairs(why) do candidates[id] = true end
+    for id in pairs(have) do candidates[id] = true end
+    for id in pairs(self.db.prices) do candidates[id] = true end
 
     local rows, movers = {}, {}
-    for id, p in pairs(self.db.prices) do
-        local change, from = self:OwnTrend(id), nil
-        if not change then change, from = tsmTrend(id) end
-        if change then
-            local market = self:MarketValue(id)
-            local r = { id = id, change = change, price = p.p, market = market, why = why[id], tsm = from == "TSM" }
-            if r.why == "your reagent" then
-                r.tip = change <= -0.15 and "Stock up" or change >= 0.15 and "Buy later" or "Steady"
-            else
-                r.tip = change >= 0.15 and "Sell now" or change <= -0.15 and "Hold" or "Steady"
-            end
-            if r.why then rows[#rows + 1] = r
-            elseif math.abs(change) >= 0.25 and p.p * (p.q or 0) >= 500000 then
-                r.why = "big mover"
-                movers[#movers + 1] = r
+    for id in pairs(candidates) do
+        local name, quality, _, vendorPrice, bind = GP.ItemInfo(id)
+        local junk = quality == 0 or bind == 1
+        if not junk then
+            local now, nowFrom = self:PriceNow(id)
+            local usual, usualFrom = self:UsualPrice(id)
+            if now and usual and usual >= 10 then
+                local change = now / usual - 1
+                local per = self:SellSpeed(id)
+                local n = have[id]
+                -- A vendor pays more than the AH: that's no market for it.
+                local vendorBetter = (vendorPrice or 0) >= now * 0.95
+                local r = { id = id, now = now, usual = usual, change = change, per = per, have = n, why = why[id],
+                            tsm = nowFrom == "TSM" or usualFrom == "TSM" }
+                local w = r.why
+                local sells = per == nil or per >= 0.3
+                if vendorBetter then r.tip = "Vendor it"
+                elseif n and change >= 0.15 and sells then r.tip = "Sell now"
+                elseif w == "your reagent" and change <= -0.15 then r.tip = "Stock up"
+                elseif n and change <= -0.15 then r.tip = "Hold"
+                elseif w == "your reagent" and change >= 0.15 then r.tip = "Buy later"
+                elseif (w == "you farm this" or w == "you gather this") and change >= 0.15 and sells then r.tip = "Farm now"
+                elseif w == "you craft this" and change >= 0.15 and sells then r.tip = "Craft now"
+                else r.tip = "Steady" end
+                if n then
+                    r.worth = n * now * 0.95
+                    r.gain = n * (now - usual) * 0.95
+                end
+                if n or (w and math.abs(change) >= 0.10) then
+                    if not (vendorBetter and not n) then rows[#rows + 1] = r end
+                elseif not vendorBetter and math.abs(change) >= 0.30 and usual * (per or 0) >= 10000 then
+                    r.why = "big mover"
+                    if change <= -0.30 then r.tip = "Buy" end
+                    movers[#movers + 1] = r
+                end
             end
         end
     end
-    table.sort(rows, function(a, b) return math.abs(a.change) > math.abs(b.change) end)
-    table.sort(movers, function(a, b) return math.abs(a.change) > math.abs(b.change) end)
+    local ORDER = { ["Sell now"] = 1, ["Farm now"] = 2, ["Craft now"] = 3, ["Stock up"] = 4, ["Buy"] = 5,
+                    ["Hold"] = 6, ["Buy later"] = 7, ["Steady"] = 8, ["Vendor it"] = 9 }
+    table.sort(rows, function(a, b)
+        local oa, ob = ORDER[a.tip] or 9, ORDER[b.tip] or 9
+        if oa ~= ob then return oa < ob end
+        if (a.gain or 0) ~= (b.gain or 0) then return (a.gain or 0) > (b.gain or 0) end
+        return math.abs(a.change) > math.abs(b.change)
+    end)
+    table.sort(movers, function(a, b) return math.abs(a.change) * a.usual * (a.per or 0) > math.abs(b.change) * b.usual * (b.per or 0) end)
     for i = 1, math.min(15, #movers) do rows[#rows + 1] = movers[i] end
     return rows
 end
