@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.1
+- **More from TSM**: with TradeSkillMaster and its desktop app, Haulwise now fills in what your own scans can't tell yet. *Sells/day* (Craft, tooltips, the sell helper) uses TSM's sold per day for the region where you haven't scanned enough. Market shows trends right away (TSM's market value against its 60-day price, marked *TSM*) until your own scans cover a week. Deals and the usual price use TSM's market value before you have 3 days of scans.
+- **Settings: Font and Language are menus** now, instead of buttons you click through.
+- `/haul tsm` shows what TSM returns for a few common items next to Haulwise's own scan.
+
 ## 0.18.0
 - **Pause your session**: click the session box at the top (or the session line on the HUD) to pause. While paused the clock stops and loot stays out of your gold per hour, so a mailbox run or a vendor trip doesn't drag it down. What you loot still counts for drop rates.
 - **Session tools on the HUD**: pause / resume and *New session* buttons on the session line, which also shows how many minutes the session has run.

@@ -724,7 +724,7 @@ TAB.market = {
         return {
             name = itemName(r.id), icon = GP.ItemIcon(r.id), why = grey(r.why and L[r.why] or ""),
             price = Coins(r.price, true), market = r.market and grey(Coins(r.market, true)) or grey("–"),
-            change = pct(r.change, true), tip = tipColor .. L[r.tip] .. "|r",
+            change = pct(r.change, true) .. (r.tsm and grey(" TSM") or ""), tip = tipColor .. L[r.tip] .. "|r",
         }
     end,
     hero = function()
@@ -755,6 +755,9 @@ TAB.market = {
     tooltip = function(t, r)
         t:SetItemByID(r.id)
         t:AddLine(" ")
+        if r.tsm then
+            t:AddLine(L["Trend from TSM: its market value for your realm against its 60-day price. Your own scans take over once they cover a week."], 0.7, 0.7, 0.7, true)
+        end
         t:AddLine(L["|cffffd040Haulwise|r price history:"])
         local h = GP:History(r.id)
         for i = math.max(1, #h - 9), #h do

@@ -101,18 +101,26 @@ local function buildAppearance(page, s, add)
         rowLabel(page, label, y)
         return b
     end
-    -- Font: a button that cycles through the game's fonts, showing each in itself.
+    local ARROW = " |TInterface\\Buttons\\Arrow-Down-Up:10:10:0:-2|t"
+    -- Font: a menu of the game's fonts; the button shows the chosen one in itself.
     local fontBtn = button(L["Font"])
     local function drawFont()
         local f = GP.FONTS[s.font or 1] or GP.FONTS[1]
         fontBtn.label:SetFont(f.path, 12, "")
-        fontBtn:SetLabel(f.name)
+        fontBtn:SetLabel(f.name .. ARROW)
     end
-    fontBtn:SetScript("OnClick", function()
-        s.font = (s.font or 1) % #GP.FONTS + 1
-        GP.ApplyFonts()
-        drawFont()
-        if GP.RefreshUI then GP:RefreshUI() end
+    fontBtn:SetScript("OnClick", function(self)
+        GP.OpenMenu(self, function()
+            local out = {}
+            for i, f in ipairs(GP.FONTS) do
+                out[#out + 1] = { text = f.name, checked = (s.font or 1) == i, click = function()
+                    s.font = i
+                    GP.ApplyFonts()
+                    drawFont()
+                end }
+            end
+            return out
+        end)
     end)
     add(drawFont)
     y = y - 28
@@ -122,14 +130,22 @@ local function buildAppearance(page, s, add)
         local code = s.language or "auto"
         local name = GP.LANGUAGE_NAMES[code] or code
         if code == "auto" then name = L["Auto (game language)"] end
-        langBtn:SetLabel(code ~= GP.LANG and code ~= "auto" and (name .. "  |cffff9944/reload|r") or name)
+        langBtn:SetLabel((code ~= GP.LANG and code ~= "auto" and (name .. "  |cffff9944/reload|r") or name) .. ARROW)
     end
-    langBtn:SetScript("OnClick", function()
-        local idx = 1
-        for i, c in ipairs(GP.LANGUAGES) do if c == (s.language or "auto") then idx = i end end
-        s.language = GP.LANGUAGES[idx % #GP.LANGUAGES + 1]
-        GP.Print(L["Language: "] .. (GP.LANGUAGE_NAMES[s.language] or s.language) .. ". " .. L["Type /reload to apply."])
-        drawLang()
+    langBtn:SetScript("OnClick", function(self)
+        GP.OpenMenu(self, function()
+            local out = {}
+            for _, c in ipairs(GP.LANGUAGES) do
+                local name = c == "auto" and L["Auto (game language)"] or (GP.LANGUAGE_NAMES[c] or c)
+                out[#out + 1] = { text = name, checked = (s.language or "auto") == c, click = function()
+                    if (s.language or "auto") == c then return end
+                    s.language = c
+                    GP.Print(L["Language: "] .. name .. ". " .. L["Type /reload to apply."])
+                    drawLang()
+                end }
+            end
+            return out
+        end)
     end)
     langBtn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")

@@ -73,6 +73,9 @@ local function guideSections() return {
 
 -- What's new, per version, newest first. After an update only the versions you haven't seen show.
 local function newsByVersion() return {
+    { "0.18.1", {
+        L["With TSM installed, Sells/day, Market trends and Deals work right away, from TSM's data, until your own scans take over."],
+    } },
     { "0.18.0", {
         L["Pause: click the session box at the top. Farm > Sessions keeps every farm run, and dungeons get their own session."],
         L["Craft > Vendor flips: crafts a vendor buys for more than the mats cost, and the most to pay for the main mat."],

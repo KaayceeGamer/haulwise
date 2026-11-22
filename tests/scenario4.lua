@@ -1329,6 +1329,19 @@ do -- TSM: its market value fills in when your own scan is old or missing
   GP.db.settings.useTSM = false
   ok(GP:Price(777001) == nil, "and not when TSM prices are turned off")
   GP.db.settings.useTSM = true
+  GP.ForgetTSM()
+  TSM_API = { GetCustomPriceValue = function(src, item)
+    if item ~= "i:777002" then return nil end
+    return ({ DBMarket = 1200, DBHistorical = 1000, DBRegionSoldPerDay = 17180 })[src]
+  end }
+  GP.db.prices[777002] = { p = 1100, q = 30, t = time() }
+  local per, _, label, from = GP:SellSpeed(777002)
+  ok(per and math.abs(per - 17.18) < 0.01 and label == "fast" and from == "TSM", "sells per day from TSM's region data (x1000)")
+  ok(math.abs((GP:Trend(777002) or 0) - 0.2) < 0.001, "a trend from TSM's market value against its historical price")
+  local mv, days, mfrom = GP:MarketValue(777002)
+  ok(mv == 1200 and days == 14 and mfrom == "TSM", "the usual price from TSM before 3 days of your own scans")
+  GP.db.prices[777002] = nil
+  GP.ForgetTSM()
   TSM_API = nil
 end
 do -- Sessions: pause keeps loot out, a session is saved, a /reload carries it on

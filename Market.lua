@@ -11,7 +11,21 @@ local function weekday(day)
 end
 
 -- 7-day trend: median of the last 3 days vs the median a week before. nil until 4+ days.
+-- Without enough of your own scans: TSM's market value against its 60-day historical price for
+-- your realm (a second value, "TSM").
+local function tsmTrend(id)
+    if not GP.TSMValue then return nil end
+    local now, hist = GP.TSMValue("DBMarket", id), GP.TSMValue("DBHistorical", id)
+    if now and hist and hist > 0 then return now / hist - 1, "TSM" end
+end
+
 function GP:Trend(id)
+    local own, from = self:OwnTrend(id)
+    if own then return own end
+    return tsmTrend(id)
+end
+
+function GP:OwnTrend(id)
     local h = self:History(id)
     if #h < 4 then return nil end
     local today, recent, prior = GP.Day(), {}, {}
@@ -126,10 +140,11 @@ function GP:MarketRows()
 
     local rows, movers = {}, {}
     for id, p in pairs(self.db.prices) do
-        local change = self:Trend(id)
+        local change, from = self:OwnTrend(id), nil
+        if not change then change, from = tsmTrend(id) end
         if change then
             local market = self:MarketValue(id)
-            local r = { id = id, change = change, price = p.p, market = market, why = why[id] }
+            local r = { id = id, change = change, price = p.p, market = market, why = why[id], tsm = from == "TSM" }
             if r.why == "your reagent" then
                 r.tip = change <= -0.15 and "Stock up" or change >= 0.15 and "Buy later" or "Steady"
             else

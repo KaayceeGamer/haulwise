@@ -161,6 +161,9 @@ function GP:MarketValue(id)
     local today, vals = GP.Day(), {}
     for _, e in ipairs(h) do if e.d > today - 14 then vals[#vals + 1] = e.p end end
     if #vals >= 3 then return median(vals), #vals end
+    -- Fewer than 3 days of your own scans: TSM's market value for your realm, when it has one.
+    local tsm = GP.TSMValue and GP.TSMValue("DBMarket", id)
+    if tsm then return tsm, 14, "TSM" end
     local cur = self.db.prices[id]
     if cur then return cur.m or cur.p, #vals end
     return nil, 0
@@ -216,12 +219,25 @@ end
 
 -- Units sold per day, days of scans it's based on, and "fast" | "steady" | "slow" | "none".
 -- Nil until scans cover at least half a day.
+-- Without your own scans of it: TSM's sold per day for the region (a fourth value, "TSM").
+local function tsmSpeed(id)
+    local v = GP.TSMValue and GP.TSMValue("DBRegionSoldPerDay", id)
+    if not v then return nil end
+    local per = v / 1000   -- TSM keeps it times 1000
+    local label = per >= 10 and "fast" or per >= 1 and "steady" or "slow"
+    return per, 7, label, "TSM"
+end
+
 function GP:SellSpeed(id)
     local raw = self.db.speed and self.db.speed[id]
-    if not raw then return nil end
+    if not raw then return tsmSpeed(id) end
     local s, d = raw:match("^([%d%.]+):([%d%.]+)")
     s, d = tonumber(s), tonumber(d)
-    if not (s and d) or d < 0.5 then return nil, d end
+    if not (s and d) or d < 0.5 then
+        local a, b, c, e = tsmSpeed(id)
+        if a then return a, b, c, e end
+        return nil, d
+    end
     local per = s / d
     local label = per >= 10 and "fast" or per >= 1 and "steady" or per > 0 and "slow" or "none"
     return per, d, label
@@ -230,7 +246,7 @@ end
 local SPEED_COLOR = { fast = "|cff5fd35f", steady = "|cffffffff", slow = "|cffffd060", none = "|cffff9944" }
 -- "sells ~12 a day", "sells ~1 every 4 days", "no sales seen in 3 days"; coloured by speed.
 function GP:SellSpeedText(id, plain)
-    local per, days, label = self:SellSpeed(id)
+    local per, days, label, from = self:SellSpeed(id)
     if not per then return nil end
     local text
     if label == "none" then
@@ -240,6 +256,7 @@ function GP:SellSpeedText(id, plain)
     else
         text = string.format(L["sells ~1 every %s"], GP.Plural(math.max(2, math.floor(1 / per + 0.5)), "day", "days"))
     end
+    if from == "TSM" then text = text .. L[" (TSM, region)"] end
     if plain then return text, label end
     return SPEED_COLOR[label] .. text .. "|r", label
 end
@@ -252,13 +269,29 @@ end
 -- players shared for your realm (when fresher), your older scan, Auctionator, and last the median
 -- over all realms (see SharedPrices.lua).
 local OWN_FRESH = 3 * 86400
--- TradeSkillMaster's price for an item, when TSM is installed and its desktop app has given it
--- data for your realm (DBMarket by default). Nil otherwise.
+-- TradeSkillMaster, when it's installed and its desktop app has given it data: a value from one
+-- of its sources (DBMarket, DBHistorical, DBRegionSoldPerDay...) for an item. Kept for 10
+-- minutes, so lists that ask about thousands of items stay quick. Nil when TSM has nothing.
+local tsmCache, tsmCacheAt = {}, 0
+function GP.TSMValue(src, id)
+    if GP.db.settings.useTSM == false or not (TSM_API and TSM_API.GetCustomPriceValue) then return nil end
+    local now = time()
+    if now - tsmCacheAt > 600 then tsmCache, tsmCacheAt = {}, now end
+    local c = tsmCache[src]
+    if not c then c = {}; tsmCache[src] = c end
+    local v = c[id]
+    if v == nil then
+        local ok, r = pcall(TSM_API.GetCustomPriceValue, src, "i:" .. id)
+        v = (ok and type(r) == "number" and r > 0) and r or false
+        c[id] = v
+    end
+    return v or nil
+end
+function GP.ForgetTSM() tsmCache = {} end
+
 local function tsmPrice(id)
-    local s = GP.db.settings
-    if s.useTSM == false or not (TSM_API and TSM_API.GetCustomPriceValue) then return nil end
-    local ok, v = pcall(TSM_API.GetCustomPriceValue, s.tsmSource or "DBMarket", "i:" .. id)
-    if ok and type(v) == "number" and v > 0 then return math.floor(v) end
+    local v = GP.TSMValue(GP.db.settings.tsmSource or "DBMarket", id)
+    return v and math.floor(v) or nil
 end
 GP.TSMPrice = tsmPrice
 
