@@ -274,7 +274,7 @@ function GP:DebugTSM()
         for _, src in ipairs(sources) do
             local ok, v = pcall(TSM_API.GetCustomPriceValue, src, "i:" .. id)
             if ok and v then
-                parts[#parts + 1] = src .. "=" .. (src == "DBRegionSoldPerDay" and string.format("%.2f", v / 100) or GP.Coins(v, true))
+                parts[#parts + 1] = src .. "=" .. (src == "DBRegionSoldPerDay" and ("raw " .. tostring(v)) or GP.Coins(v, true))
             end
         end
         local own = self.db.prices[id]
