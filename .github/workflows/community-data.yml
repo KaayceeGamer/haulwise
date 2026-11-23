@@ -1,8 +1,14 @@
-# Every day: pull the pooled community data into Data.lua and commit it. When a CurseForge
-# API key is set (secret CF_API_KEY), also release it as a new file so everyone gets the bigger
-# data pool through the CurseForge app. To keep CurseForge's review queue short (at most 1-2
-# files a day), the data release is skipped when any release went out in the last 20 hours;
-# the new Data.lua is still committed and ships with the next release.
+# Once a day: pull the pooled community data into Data.lua, commit it, and make the day's one
+# CurseForge upload (when the secret CF_API_KEY is set).
+#
+# What gets uploaded:
+#   - New code, when GP.VERSION in Core.lua has no tag yet. The version is bumped only when the
+#     owner says "push", so that bump is the go-ahead: main is tested, tagged v<version> and
+#     released with today's data.
+#   - Otherwise just new data: the last released code (the newest v<version> tag) with today's
+#     Data.lua, tagged v<version>-data<date>. Code on main that hasn't been released stays out.
+# At most one upload a day: nothing goes out when a release (an urgent one from the Release
+# workflow, say) went out in the last 20 hours. The data is committed either way.
 name: Community data
 on:
   schedule:
@@ -29,46 +35,78 @@ jobs:
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
-      # Committed whenever the file changed, also when only the shared prices moved: those ride
-      # along with the next release instead of making one of their own.
       - name: Commit Data.lua
         run: |
-          if git diff --quiet Data.lua; then echo "Data.lua unchanged."; exit 0; fi
           git config user.name "haulwise-bot"
           git config user.email "haulwise-bot@users.noreply.github.com"
+          if git diff --quiet Data.lua; then echo "Data.lua unchanged."; exit 0; fi
           git add Data.lua
           git commit -m "Community data $(date -u +%Y-%m-%d)"
           git push origin HEAD:main
-      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true'
-        id: gate
-        name: Skip if a release went out recently
+
+      - if: env.HAS_CF_KEY == 'true'
+        id: plan
+        name: Decide what to upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          version=$(grep -o 'GP.VERSION = "[^"]*"' Core.lua | cut -d'"' -f2)
+          kind=none
+          if ! git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            kind=code
+          elif [ "${{ steps.data.outputs.changed }}" = "true" ]; then
+            kind=data
+          fi
           last=$(gh api "repos/${{ github.repository }}/releases?per_page=1" --jq '.[0].created_at // empty' || true)
-          release=true
-          if [ -n "$last" ]; then
+          if [ "$kind" != "none" ] && [ -n "$last" ]; then
             age=$(( $(date -u +%s) - $(date -u -d "$last" +%s) ))
             if [ "$age" -lt 72000 ]; then
-              release=false
-              echo "::notice::Last release was $((age / 3600))h ago. Data.lua is committed and ships with the next release."
+              echo "::notice::A release went out $((age / 3600))h ago: today's upload waits for tomorrow."
+              kind=none
             fi
           fi
-          echo "release=$release" >> "$GITHUB_OUTPUT"
-      # The version comes from Core.lua (GP.VERSION), so this works before any tag exists.
-      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true' && steps.gate.outputs.release == 'true'
-        name: Tag the data release
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Upload: $kind (version $version)"
+
+      # New code: tested before it goes anywhere.
+      - if: steps.plan.outputs.kind == 'code'
+        name: Test the code
         run: |
-          version=$(grep -o 'GP.VERSION = "[^"]*"' Core.lua | cut -d'"' -f2)
-          tag="v${version}-data$(date -u +%Y%m%d)"
+          (cd tests && npm install --silent)
+          node --experimental-strip-types tests/server.test.ts
+          pip install lupa
+          python3 tests/run.py "$PWD" "$PWD/tests"
+          node --experimental-strip-types tests/roundtrip.test.ts
+          rm -rf tests/node_modules
+      - if: steps.plan.outputs.kind == 'code'
+        name: Tag the new version
+        run: |
+          tag="v${{ steps.plan.outputs.version }}"
           git tag "$tag"
           git push origin "$tag"
-      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY == 'true' && steps.gate.outputs.release == 'true'
+
+      # Only data: the last released code with today's Data.lua, on a commit of its own.
+      - if: steps.plan.outputs.kind == 'data'
+        name: Put today's data on the last released code
+        run: |
+          base=$(git tag -l 'v*' | grep -v -- '-data' | sort -V | tail -1)
+          cp Data.lua /tmp/Data.lua
+          git checkout -q "$base"
+          cp /tmp/Data.lua Data.lua
+          git add Data.lua
+          git commit -q -m "Community data $(date -u +%Y-%m-%d) on ${base}" || true
+          tag="${base}-data$(date -u +%Y%m%d)"
+          git tag "$tag"
+          git push origin "$tag"
+          echo "::notice::Data release ${tag} (code from ${base})."
+
+      - if: steps.plan.outputs.kind == 'code' || steps.plan.outputs.kind == 'data'
         uses: BigWigsMods/packager@v2
         with:
           args: -p 1812709 -n "Haulwise {project-version}:{package-name}-{project-version}"
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
-      - if: steps.data.outputs.changed == 'true' && env.HAS_CF_KEY != 'true'
-        run: echo "::notice::Data.lua updated. No CF_API_KEY secret yet, so nothing was uploaded to CurseForge."
+      - if: env.HAS_CF_KEY != 'true'
+        run: echo "::notice::No CF_API_KEY secret, so nothing was uploaded to CurseForge."

@@ -1,9 +1,8 @@
-# Release to CurseForge. Either push a tag like v0.6.3, or run this workflow by hand
-# (Actions → Release → Run workflow): it then tags the version from Core.lua itself.
+# Release to CurseForge right away, for urgent fixes: run it by hand (Actions > Release > Run
+# workflow). It tags the version in Core.lua (bump it first) and uploads. Everything else goes
+# out with the daily Community data upload. Pushing a tag no longer releases anything.
 name: Release
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
