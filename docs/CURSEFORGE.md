@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.18.1:** **Market** now says what to sell and what to buy right now, for what you have, farm, craft and use; **Deals** you can trust (real sale prices, how long it takes to sell), plus **disenchant flips** and mats cheap enough to craft into a vendor flip; Craft ranks by **profit per day**; and with **TSM** installed, sells per day, trends and usual prices work from day one.
+**New in 0.18.2:** kills in a **group** count now: the corpses you loot add to drop rates and your session (your share of the coins); mob names stay in your language when others share theirs; and Bags shows one row per item instead of one per stack.
 
 ---
 
