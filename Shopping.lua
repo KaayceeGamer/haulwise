@@ -35,7 +35,7 @@ end
 
 function GP:AddToShopping(key, n)
     local l = list()
-    if not self:Char().recipes[key] then return end
+    if not self:RecipeByKey(key) then return end
     l[key] = math.max(0, (l[key] or 0) + (n or 1))
     if l[key] == 0 then l[key] = nil end
     self:ShowShopping()
@@ -46,11 +46,12 @@ end
 function GP:ShoppingTotals()
     local need, crafts, sell, anyAH = {}, {}, 0, false
     for key, qty in pairs(list()) do
-        local rec = self:Char().recipes[key]
+        local rec = self:RecipeByKey(key)
         if rec then
             crafts[#crafts + 1] = { key = key, rec = rec, qty = qty }
             for _, r in ipairs(GP.UnpackReagents(rec.r)) do need[r[1]] = (need[r[1]] or 0) + r[2] * qty end
-            local value, ah = self:ItemValue(rec.out)
+            local value, ah = 0, nil
+            if rec.out then value, ah = self:ItemValue(rec.out) end
             if ah and ah > 0 then anyAH = true end
             sell = sell + (value or 0) * (rec.oq or 1) * qty
         else
@@ -348,9 +349,18 @@ function GP:RefreshShopping()
         end
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 12, y)
-        row:SetItem(c.rec.out, nil, "|cffffffff×" .. c.qty .. "|r")
+        if c.rec.out then
+            row:SetItem(c.rec.out, nil, "|cffffffff×" .. c.qty .. "|r")
+            row.tip = function(t) t:SetItemByID(c.rec.out) end
+        else
+            -- An enchant: no item, so its own icon and name.
+            row.id = nil
+            row.icon:SetTexture(c.rec.icon or 136244)
+            row.name:SetText("|cffffffff" .. (c.rec.n or "?") .. "|r")
+            row.right:SetText("|cffffffff×" .. c.qty .. "|r")
+            row.tip = function(t) t:AddLine(c.rec.n or "?", 1, 1, 1) end
+        end
         row.link = nil
-        row.tip = function(t) t:SetItemByID(c.rec.out) end
         row.minus:SetScript("OnClick", function() GP:AddToShopping(c.key, -1) end)
         row.plus:SetScript("OnClick", function() GP:AddToShopping(c.key, 1) end)
         row.five:SetScript("OnClick", function() GP:AddToShopping(c.key, 5) end)

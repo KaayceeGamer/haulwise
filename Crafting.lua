@@ -71,7 +71,15 @@ function GP:Char()
     local key = self:CharKey()
     local c = self.db.chars[key]
     if not c then c = { profs = {}, recipes = {} }; self.db.chars[key] = c end
+    c.services = c.services or {}
     return c
+end
+
+-- Recipes that make no item (enchants) live apart, in char.services: everything that prices a
+-- result skips them, but the Recipes tab, Skill up and the shopping list use them too.
+function GP:RecipeByKey(key)
+    local c = self:Char()
+    return c.recipes[key] or c.services[key]
 end
 
 local function packReagents(list)
@@ -106,6 +114,21 @@ local function readModern(char)
         local sch = C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(rid, false)
         if info and info.learned and prof == "Enchanting" and not (sch and sch.outputItemID) then
             GP:NoteKnownEnchant(info.name)
+        end
+        if info and sch and not sch.outputItemID and info.name then
+            local reagents = {}
+            for _, slot in ipairs(sch.reagentSlotSchematics or {}) do
+                if slot.reagentType == BASIC or slot.required then
+                    local r = slot.reagents and slot.reagents[1]
+                    if r and r.itemID then reagents[#reagents + 1] = { r.itemID, slot.quantityRequired or 1 } end
+                end
+            end
+            char.services = char.services or {}
+            char.services["r" .. rid] = {
+                n = info.name, prof = prof, r = packReagents(reagents), icon = info.icon,
+                learned = info.learned and true or false, d = info.learned and info.relativeDifficulty or nil,
+                src = (not info.learned and C_TradeSkillUI.GetRecipeSourceText) and C_TradeSkillUI.GetRecipeSourceText(rid) or nil,
+            }
         end
         if info and sch and sch.outputItemID then
             local reagents = {}
@@ -155,8 +178,19 @@ local function readClassic(char)
                     n = name, prof = prof, out = out, oq = ((lo or 1) + (hi or lo or 1)) / 2,
                     r = packReagents(reagents), learned = true, d = CLASSIC_DIFFICULTY[kind],
                 }
-            elseif prof == "Enchanting" then
-                GP:NoteKnownEnchant(name)
+            else
+                if prof == "Enchanting" then GP:NoteKnownEnchant(name) end
+                local reagents = {}
+                for j = 1, GetTradeSkillNumReagents(i) do
+                    local _, _, count = GetTradeSkillReagentInfo(i, j)
+                    local rid = tonumber((GetTradeSkillReagentItemLink(i, j) or ""):match("item:(%d+)"))
+                    if rid then reagents[#reagents + 1] = { rid, count or 1 } end
+                end
+                char.services = char.services or {}
+                char.services[prof .. ":" .. name] = {
+                    n = name, prof = prof, r = packReagents(reagents), learned = true, d = CLASSIC_DIFFICULTY[kind],
+                    icon = GetTradeSkillIcon and GetTradeSkillIcon(i) or nil,
+                }
             end
         end
     end
@@ -222,6 +256,18 @@ function GP:EvalRecipe(key, rec, farmed)
         trend = self.Trend and self:Trend(rec.out) or nil,
         perDay = (self:SellSpeed(rec.out)),
     }
+end
+
+-- An enchant (or another recipe that makes no item): what its reagents cost.
+function GP:EvalService(key, rec)
+    local cost, missing = 0, {}
+    local reagents = GP.UnpackReagents(rec.r)
+    for _, r in ipairs(reagents) do
+        local unit = self:BuyCost(r[1])
+        if unit then cost = cost + unit * r[2] else missing[#missing + 1] = r[1] end
+    end
+    return { key = key, name = rec.n, prof = rec.prof, service = true, icon = rec.icon, outQty = 1,
+             reagents = reagents, cost = cost, sell = 0, missing = missing, learned = rec.learned, src = rec.src }
 end
 
 function GP:CraftRows()
@@ -337,6 +383,18 @@ function GP:SkillRows()
             rows[#rows + 1] = r
         end
     end
+    -- Enchants give skill too (most of Enchanting's), and nothing back but the enchant.
+    for key, rec in pairs(self:Char().services) do
+        local chance = rec.learned and rec.d and SKILL_CHANCE[rec.d]
+        if chance then
+            local r = self:EvalService(key, rec)
+            r.d, r.chance = rec.d, chance
+            r.priced = #r.missing == 0
+            r.back = 0
+            if r.priced then r.perPoint = r.cost / chance end
+            rows[#rows + 1] = r
+        end
+    end
     table.sort(rows, function(a, b)
         if (a.perPoint ~= nil) ~= (b.perPoint ~= nil) then return a.perPoint ~= nil end
         if a.perPoint and a.perPoint ~= b.perPoint then return a.perPoint < b.perPoint end
@@ -384,6 +442,14 @@ function GP:RecipeRowsUncached()
             byName[(rec.n or ""):lower()] = r
         end
     end
+    for key, rec in pairs(self:Char().services) do
+        if not rec.learned then
+            local r = self:EvalService(key, rec)
+            r.kind, r.noSale, r.reagentCost = "recipe", true, r.cost
+            rows[#rows + 1] = r
+            byName[(rec.n or ""):lower()] = r
+        end
+    end
     -- Recipe items on the AH for professions you have.
     local mySub = {}
     for name in pairs(self:MyProfessions()) do
@@ -392,6 +458,7 @@ function GP:RecipeRowsUncached()
     end
     local known = {}
     for _, rec in pairs(self:Char().recipes) do if rec.learned then known[(rec.n or ""):lower()] = true end end
+    for _, rec in pairs(self:Char().services) do if rec.learned then known[(rec.n or ""):lower()] = true end end
     for id, p in pairs(self.db.prices) do
         if p.k == 9 and mySub[p.sk] and p.n then
             local base = stripPrefix(p.n)

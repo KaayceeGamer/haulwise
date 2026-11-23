@@ -1428,4 +1428,26 @@ do -- Names: Haulwise Data's name before a name from someone else's shared data
   HaulwiseData.estimates[990001] = nil
   GP.ForgetEstimates()
 end
+do -- Enchants (recipes that make no item): Recipes, Skill up and the shopping list
+  local c = GP:Char()
+  local saved, savedAll = c.services, GP.db.settings.recipesShowAll
+  GP.db.settings.recipesShowAll = true
+  c.services = {
+    ["r9001"] = { n = "Enchant Weapon - Revelation", prof = "Enchanting", r = "2589:4", learned = false, icon = 136244 },
+    ["r9002"] = { n = "Enchant Bracer - Minor Health", prof = "Enchanting", r = "2589:1", learned = true, d = 0, icon = 136244 },
+  }
+  GP.recipeRowsCache = nil
+  local inRecipes, inSkill
+  for _, r in ipairs(GP:RecipeRows()) do if r.name == "Enchant Weapon - Revelation" then inRecipes = r end end
+  for _, r in ipairs(GP:SkillRows()) do if r.name == "Enchant Bracer - Minor Health" then inSkill = r end end
+  ok(inRecipes and inRecipes.service and inRecipes.noSale, "an enchant you don't know shows in Recipes")
+  ok(inSkill and inSkill.chance == 1 and inSkill.back == 0, "an orange enchant shows in Skill up")
+  GP:AddToShopping("r9002", 2)
+  local found
+  for _, cr in ipairs((GP:ShoppingTotals())) do if cr.key == "r9002" then found = cr end end
+  ok(found and found.qty == 2, "and goes on the shopping list")
+  GP:AddToShopping("r9002", -2)
+  c.services, GP.db.settings.recipesShowAll = saved, savedAll
+  GP.recipeRowsCache = nil
+end
 print("NEW FEATURES PASSED")

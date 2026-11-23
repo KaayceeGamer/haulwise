@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Enchants in Recipes and Skill up**: recipes that make no item (enchants like *Enchant Weapon - Revelation*) are now read from your Enchanting window. Ones you don't know show in Recipes with where to get them; ones you know show in Skill up with the cost per skill point and can go on the shopping list.
+
 ## 0.18.2
 - **Mob names in your language**: a mob you haven't seen yourself is named from Haulwise Data before someone else's shared data, so a German player's share no longer turns English names German.
 - **Bags: one row per item**: stacks of the same item are added up in one row (gear stays one per row, since each piece can differ).

@@ -681,11 +681,11 @@ TAB.recipes = {
         if r.payback then pay = (r.payback <= 5 and "|cff5fd35f" or "") .. plural(r.payback, "craft") .. "|r"
         elseif r.kind == "ahonly" then pay = grey(L["open profession"]) end
         return {
-            name = r.name or "?", icon = r.out and GP.ItemIcon(r.out) or (r.itemID and GP.ItemIcon(r.itemID)) or 134939,
+            name = r.name or "?", icon = (r.out and GP.ItemIcon(r.out)) or r.icon or (r.itemID and GP.ItemIcon(r.itemID)) or 134939,
             prof = grey(r.prof and L[r.prof] or ""),
             skill = r.skill and ((not r.myRank and "|cffffffff") or (r.skill <= r.myRank and "|cff5fd35f")
                 or (r.skill <= r.myRank + 30 and "|cffffd040") or "|cffff6b5b") .. (r.skillExact and "" or "~") .. r.skill .. "|r" or grey("?"),
-            profit = (r.noSale and grey(L["no AH price"])) or ((r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true)) or grey(L["unknown"]),
+            profit = (r.service and grey(L["an enchant"])) or (r.noSale and grey(L["no AH price"])) or ((r.profit and #(r.missing or {}) == 0) and Coins(r.profit, true)) or grey(L["unknown"]),
             get = get, pay = pay or grey("–"),
         }
     end,
@@ -733,7 +733,11 @@ TAB.recipes = {
         if r.profit then t:AddDoubleLine(L["Profit per craft"], Coins(r.profit)) end
         if r.noSale then
             if r.reagentCost and r.reagentCost > 0 then t:AddDoubleLine(L["Reagents cost"], Coins(r.reagentCost)) end
-            t:AddLine(L["Nobody sells the result on your AH (it may bind when made), so there's no profit to show."], 0.6, 0.6, 0.6, true)
+            if r.service then
+                t:AddLine(L["An enchant makes no item to sell: it earns what players pay you to put it on their gear. Craft > Enchant requests shows what's asked for in trade chat."], 0.6, 0.6, 0.6, true)
+            else
+                t:AddLine(L["Nobody sells the result on your AH (it may bind when made), so there's no profit to show."], 0.6, 0.6, 0.6, true)
+            end
         end
         if r.buyPrice then t:AddDoubleLine(L["Recipe on AH"], Coins(r.buyPrice)) end
         if r.kind == "ahonly" then t:AddLine(L["Open this profession's window so Haulwise can price what the recipe makes."], 1, 0.6, 0.3, true) end
@@ -1207,10 +1211,11 @@ TAB.craft_skill = {
     cells = function(r)
         local col = ({ [0] = L["|cffff8040orange|r"], [1] = L["|cffffff00yellow|r"], [2] = L["|cff40c040green|r"] })[r.d] or grey("?")
         return {
-            name = itemName(r.out), icon = GP.ItemIcon(r.out), prof = grey(r.prof and L[r.prof] or ""), color = col,
+            name = r.service and (r.name or "?") or itemName(r.out), icon = r.service and (r.icon or 136244) or GP.ItemIcon(r.out),
+            prof = grey(r.prof and L[r.prof] or ""), color = col,
             chance = grey(string.format("~%.0f%%", r.chance * 100)),
             cost = r.priced and Coins(r.cost, true) or L["|cffff9944no price|r"],
-            back = Coins(r.back, true),
+            back = r.service and grey(L["an enchant"]) or Coins(r.back, true),
             point = r.perPoint and (r.perPoint <= 0 and L["|cff5fd35fprofit|r"] or Coins(r.perPoint, true)) or "|cffff9944?|r",
         }
     end,
@@ -1226,12 +1231,12 @@ TAB.craft_skill = {
         table.sort(profs)
         local tail = #profs > 0 and grey("   ·   " .. table.concat(profs, "  ·  ")) or ""
         if not b then return grey(L["Open your profession windows to see which recipes still give skill."]) .. tail end
-        return string.format(L["Cheapest skill-up:  %s   %s per point%s"], itemName(b.out),
+        return string.format(L["Cheapest skill-up:  %s   %s per point%s"], b.service and b.name or itemName(b.out),
             b.perPoint <= 0 and L["|cff5fd35fearns gold|r"] or Coins(b.perPoint, true), tail)
     end,
     empty = L["No recipes that still give skill.\n\nOpen your profession windows: recipe colours (orange, yellow, green) are read from there. Grey recipes no longer give skill, so they're left out. If everything is grey, visit your trainer."],
     click = function(r)
-        if IsShiftKeyDown and IsShiftKeyDown() then GP:SearchAH(r.out) else GP:AddToShopping(r.key, 1) end
+        if IsShiftKeyDown and IsShiftKeyDown() then if r.out then GP:SearchAH(r.out) end else GP:AddToShopping(r.key, 1) end
     end,
     tooltip = function(t, r)
         t:AddLine(r.name or "?", GOLD[1], GOLD[2], GOLD[3])
