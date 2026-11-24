@@ -464,7 +464,7 @@ function GP:ShowStash()
     if listH <= MAX_LIST and f.scroll.SetVerticalScroll then f.scroll:SetVerticalScroll(0) end
     -- The scroll bar only when there's something to scroll.
     local bar = f.scroll.ScrollBar or (f.scroll.GetName and f.scroll:GetName() and _G[f.scroll:GetName() .. "ScrollBar"])
-    if bar then
+    if type(bar) == "table" and bar.Hide then
         if listH > MAX_LIST then bar:Show() else bar:Hide() end
     end
     if not f:IsShown() then
