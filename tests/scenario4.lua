@@ -1461,7 +1461,7 @@ do -- Profession reagents at the bank: keep what still gives skill, done with wh
   c.bags, c.bank = { [769] = 4 }, { [2672] = 13, [4306] = 2 }
   GP:ForgetReagentUses()
   local wolf, boar = GP:ReagentVerdict(2672), GP:ReagentVerdict(769)
-  ok(wolf and wolf.keep and wolf.why == "skill", "wolf meat: keep, a yellow recipe uses it")
+  ok(wolf and wolf.keep and wolf.why == "skill" and wolf.who == nil, "wolf meat: keep, a yellow recipe of yours uses it (no alt name)")
   ok(boar and not boar.keep and boar.why == "done", "boar meat: done with, its only recipe is grey")
   -- Silk Cloth: its only recipe (the bolt) is grey, but the bolt goes into a vest that gives skill
   c.recipes.r3 = { n = "Bolt of Silk Cloth", prof = "Tailoring", out = 4305, oq = 1, r = "4306:4", learned = true, d = 3 }

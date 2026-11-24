@@ -8,7 +8,6 @@ local _, GP = ...
 local L = GP.L
 
 local SOON = 25 -- skill points ahead: reagents for recipes you can learn this soon are kept
-local MAX_ROWS = 10
 local MAX_CRAFTS = 10 -- per recipe: its colour changes as you skill up, so further than this is a guess
 local DIFF_COLOR = { [0] = "|cffff8040", [1] = "|cffffff00", [2] = "|cff40c040" }
 
@@ -44,7 +43,7 @@ local function buildIndex()
         local stale = key ~= me and c.short and c.short == myName
         if not stale and (key == me or sameSide(c)) then
             local mine = key == me
-            local who = mine and nil or (c.short or key:match("^([^%-]+)") or key)
+            local who = (not mine) and (c.short or key:match("^([^%-]+)") or key) or nil
             for _, rec in pairs(c.recipes or {}) do
                 if rec.out then makers[#makers + 1] = { out = rec.out, name = rec.n, reagents = GP.UnpackReagents(rec.r) } end
             end
@@ -234,14 +233,16 @@ end
 -- The panel ----------------------------------------------------------------------------------
 
 local panel
-local WIDTH = 420
+local WIDTH = 440
+local INNER = WIDTH - 24 - 22 -- minus the margins and the scroll bar
+local MAX_LIST = 460          -- tallest the list gets before it scrolls
 
 local function header(f, i, text)
     local h = f.heads[i]
     if not h then
-        h = f:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
+        h = f.child:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
         h:SetJustifyH("LEFT")
-        h:SetWidth(WIDTH - 24)
+        h:SetWidth(INNER)
         h:SetWordWrap(false)
         f.heads[i] = h
     end
@@ -253,7 +254,7 @@ end
 local function row(f, i)
     local r = f.rows[i]
     if not r then
-        r = GP.ItemRow(f, WIDTH - 24)
+        r = GP.ItemRow(f.child, INNER)
         f.rows[i] = r
     end
     r:Show()
@@ -262,36 +263,47 @@ end
 
 local function grey(t) return "|cff8a8880" .. t .. "|r" end
 
+local function build()
+    panel = GP.Panel("HaulwiseStash", WIDTH, 120, L["Profession reagents"])
+    panel.rows, panel.heads = {}, {}
+    local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 12, -32)
+    scroll:SetPoint("RIGHT", panel, "RIGHT", -32, 0)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetSize(INNER, 10)
+    scroll:SetScrollChild(child)
+    panel.scroll, panel.child = scroll, child
+    panel.note = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+    panel.note:SetJustifyH("LEFT")
+    panel.note:SetWidth(WIDTH - 24)
+    panel.note:SetTextColor(0.55, 0.54, 0.5)
+    panel.note:SetPoint("BOTTOMLEFT", 12, 10)
+    panel.note:SetText(L["Colours are from the last time each profession window was open: open it again after skilling up."])
+end
+
 function GP:ShowStash()
     local rep = self:StashReport()
     if #rep.keep == 0 and #rep.done == 0 and #rep.crafts == 0 then
         if panel then panel:Hide() end
         return false
     end
-    if not panel then
-        panel = GP.Panel("HaulwiseStash", WIDTH, 80, L["Profession reagents"])
-        panel.rows, panel.heads = {}, {}
-        panel.note = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
-        panel.note:SetJustifyH("LEFT")
-        panel.note:SetWidth(WIDTH - 24)
-        panel.note:SetTextColor(0.55, 0.54, 0.5)
-    end
+    if not panel then build() end
     local f = panel
     for _, r in ipairs(f.rows) do r:Hide() end
     for _, h in ipairs(f.heads) do h:Hide() end
-    local y, nr, nh = -34, 0, 0
+    local y, nr, nh = 0, 0, 0
     local function addHead(text)
         nh = nh + 1
         local h = header(f, nh, text)
         h:ClearAllPoints()
-        h:SetPoint("TOPLEFT", 12, y - 4)
+        h:SetPoint("TOPLEFT", 0, y - 4)
         y = y - 22
     end
     local function addRow()
         nr = nr + 1
         local r = row(f, nr)
         r:ClearAllPoints()
-        r:SetPoint("TOPLEFT", 12, y)
+        r:SetPoint("TOPLEFT", 0, y)
         r:SetScript("OnClick", nil)
         r.tip = nil
         r.right:SetWidth(0)
@@ -305,8 +317,7 @@ function GP:ShowStash()
         local points = 0
         for _, x in ipairs(rep.crafts) do points = points + x.points end
         addHead(string.format(L["Craft now: about %d skill points from what you have"], math.floor(points + 0.5)))
-        for i, x in ipairs(rep.crafts) do
-            if i > 4 then break end
+        for _, x in ipairs(rep.crafts) do
             local r = addRow()
             if x.out then r:SetItem(x.out, nil, nil) else r.icon:SetTexture(x.icon or 136244) end
             r.name:SetText((DIFF_COLOR[x.d] or "") .. (x.name or "?") .. "|r |cffaaaaaax" .. x.times .. "|r")
@@ -323,14 +334,7 @@ function GP:ShowStash()
     end
     if #rep.keep > 0 then
         addHead(string.format(L["Keep (%d)"], #rep.keep))
-        for i, k in ipairs(rep.keep) do
-            if i > MAX_ROWS then
-                local r = addRow()
-                r.icon:SetTexture(nil)
-                r.name:SetText(grey(string.format(L["...and %d more"], #rep.keep - MAX_ROWS)))
-                r.right:SetText("")
-                break
-            end
+        for _, k in ipairs(rep.keep) do
             local r = addRow()
             r:SetItem(k.id, nil, nil, k.count)
             r.right:SetText(k.v.short or k.v.text)
@@ -345,14 +349,7 @@ function GP:ShowStash()
     end
     if #rep.done > 0 then
         addHead(string.format(L["Done with (%d): worth %s"], #rep.done, GP.Coins(rep.doneValue, true)))
-        for i, k in ipairs(rep.done) do
-            if i > MAX_ROWS then
-                local r = addRow()
-                r.icon:SetTexture(nil)
-                r.name:SetText(grey(string.format(L["...and %d more"], #rep.done - MAX_ROWS)))
-                r.right:SetText("")
-                break
-            end
+        for _, k in ipairs(rep.done) do
             local r = addRow()
             r:SetItem(k.id, nil, nil, k.count)
             r.right:SetText(k.total > 0 and (GP.Coins(k.total, true) .. grey(k.ah and L[" AH"] or L[" vendor"])) or grey(L["no value"]))
@@ -366,12 +363,14 @@ function GP:ShowStash()
             end
         end
     end
-    f.note:ClearAllPoints()
-    f.note:SetPoint("TOPLEFT", 12, y - 6)
-    f.note:SetText(L["Colours are from the last time each profession window was open: open it again after skilling up."])
-    f.note:Show()
-    y = y - 6 - (f.note:GetStringHeight() or 24)
-    f:SetHeight(-y + 12)
+    -- The list scrolls once it's taller than MAX_LIST; the note stays under it.
+    local listH = -y + 4
+    f.child:SetHeight(listH)
+    local shown = math.min(listH, MAX_LIST)
+    f.scroll:SetHeight(shown)
+    local noteH = f.note:GetStringHeight() or 24
+    f:SetHeight(32 + shown + 8 + noteH + 12)
+    if listH <= MAX_LIST and f.scroll.SetVerticalScroll then f.scroll:SetVerticalScroll(0) end
     if not f:IsShown() then
         f:ClearAllPoints()
         local pos = GP.db.positions and GP.db.positions.HaulwiseStash
