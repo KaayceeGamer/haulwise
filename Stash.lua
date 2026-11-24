@@ -37,8 +37,11 @@ local function buildIndex()
         if not e then e = { grey = 0 }; index[id] = e end
         return e
     end
+    local myName = UnitName and UnitName("player")
     for key, c in pairs(GP.db.chars or {}) do
-        if key == me or sameSide(c) then
+        -- An old record of this same character under another key isn't an alt: skip it.
+        local stale = key ~= me and c.short and c.short == myName and sameSide(c)
+        if not stale and (key == me or sameSide(c)) then
             local mine = key == me
             local who = mine and nil or (c.short or key:match("^([^%-]+)") or key)
             for _, book in ipairs({ c.recipes or {}, c.services or {} }) do

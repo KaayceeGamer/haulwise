@@ -225,6 +225,54 @@ for _, ev in ipairs({ "TRADE_SKILL_SHOW", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKIL
     GP:On(ev, function() C_Timer.After(0.3, readProfession) end)
 end
 
+-- /haul prof: what the game says about the open profession window, and what's saved per profession.
+function GP:DebugProf()
+    local P = GP.Print
+    local T = C_TradeSkillUI
+    P(string.format("modern: GetAllRecipeIDs %s, GetBaseProfessionInfo %s, GetTradeSkillLineForRecipe %s",
+        tostring(T and T.GetAllRecipeIDs ~= nil), tostring(T and T.GetBaseProfessionInfo ~= nil),
+        tostring(T and T.GetTradeSkillLineForRecipe ~= nil)))
+    if T and T.GetBaseProfessionInfo then
+        local ok, b = pcall(T.GetBaseProfessionInfo)
+        if ok and b then
+            P(string.format("base: %s (id %s, parent %s) %s/%s", tostring(b.professionName), tostring(b.professionID),
+                tostring(b.parentProfessionID), tostring(b.skillLevel), tostring(b.maxSkillLevel)))
+        end
+        local ids = T.GetAllRecipeIDs and T.GetAllRecipeIDs() or {}
+        P("recipe ids: " .. #ids)
+        for i = 1, math.min(3, #ids) do
+            local info = T.GetRecipeInfo and T.GetRecipeInfo(ids[i])
+            local line = ""
+            if T.GetTradeSkillLineForRecipe then
+                local ok2, id, name, parent = pcall(T.GetTradeSkillLineForRecipe, ids[i])
+                line = ok2 and string.format(" line %s %s %s", tostring(id), tostring(name), tostring(parent)) or " line error"
+            end
+            P(string.format("  %d %s%s", ids[i], tostring(info and info.name), line))
+        end
+    end
+    if GetTradeSkillLine then
+        local name, rank, max = GetTradeSkillLine()
+        P(string.format("classic: %s %s/%s, %s recipes", tostring(name), tostring(rank), tostring(max),
+            tostring(GetNumTradeSkills and GetNumTradeSkills())))
+        local shown = 0
+        for i = 1, (GetNumTradeSkills and GetNumTradeSkills() or 0) do
+            local n, kind = GetTradeSkillInfo(i)
+            if kind ~= "header" and kind ~= "subheader" and shown < 3 then shown = shown + 1; P("  " .. tostring(n) .. " " .. tostring(kind)) end
+        end
+    end
+    local per = {}
+    local c = self:Char()
+    for key, rec in pairs(c.recipes) do
+        local k = (rec.prof or "?") .. (key:find(":") and " (by name)" or " (by id)")
+        per[k] = (per[k] or 0) + 1
+    end
+    for k, n in pairs(per) do P(string.format("saved %s: %d", k, n)) end
+    P("this character: " .. self:CharKey())
+    for key, ch in pairs(self.db.chars) do
+        P(string.format("  char %s: %s, %s %s", key, tostring(ch.short), tostring(ch.realm), tostring(ch.faction)))
+    end
+end
+
 -- Your professions: from opened windows, plus the profession list in case you never opened one.
 function GP:MyProfessions()
     local out = {}
