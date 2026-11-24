@@ -325,8 +325,17 @@ local function grey(t) return "|cff8a8880" .. t .. "|r" end
 local function build()
     panel = GP.Panel("HaulwiseStash", WIDTH, 120, L["Bags and bank: keep or sell"])
     panel.rows, panel.heads = {}, {}
+    -- Three views, so what's safe to sell never hides at the bottom of a long list.
+    panel.tabs = {}
+    local tabW = math.floor((WIDTH - 24 - 8) / 3)
+    for i, key in ipairs({ "sell", "keep", "craft" }) do
+        local b = GP.FlatButton(panel, "", tabW, 24)
+        b:SetPoint("TOPLEFT", 12 + (i - 1) * (tabW + 4), -32)
+        b:SetScript("OnClick", function() panel.view = key; GP:ShowStash() end)
+        panel.tabs[key] = b
+    end
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 12, -32)
+    scroll:SetPoint("TOPLEFT", 12, -64)
     scroll:SetPoint("RIGHT", panel, "RIGHT", -32, 0)
     local child = CreateFrame("Frame", nil, scroll)
     child:SetSize(INNER, 10)
@@ -337,7 +346,6 @@ local function build()
     panel.note:SetWidth(WIDTH - 24)
     panel.note:SetTextColor(0.55, 0.54, 0.5)
     panel.note:SetPoint("BOTTOMLEFT", 12, 10)
-    panel.note:SetText(L["Colours are from the last time each profession window was open: open it again after skilling up."])
 end
 
 function GP:ShowStash()
@@ -373,11 +381,23 @@ function GP:ShowStash()
         return r
     end
 
-    -- Suggestions first: what to craft now.
-    if #rep.crafts > 0 then
-        local points = 0
-        for _, x in ipairs(rep.crafts) do points = points + x.points end
-        addHead(string.format(L["Craft now: about %d skill points from what you have"], math.floor(points + 0.5)))
+    local points = 0
+    for _, x in ipairs(rep.crafts) do points = points + x.points end
+    points = math.floor(points + 0.5)
+    -- Which view: the one picked, unless it's empty; Sell first when there's something to sell.
+    local counts = { sell = #sell, keep = #rep.keep, craft = #rep.crafts }
+    local view = f.view
+    if not view or counts[view] == 0 then
+        view = (#sell > 0 and "sell") or (#rep.crafts > 0 and "craft") or "keep"
+    end
+    f.view = view
+    f.tabs.sell:SetLabel(#sell > 0 and string.format(L["Sell %d: %s"], #sell, GP.Coins(sellTotal, true)) or L["Nothing to sell"])
+    f.tabs.keep:SetLabel(string.format(L["Keep %d"], #rep.keep))
+    f.tabs.craft:SetLabel(#rep.crafts > 0 and string.format(L["Craft: ~%d points"], points) or L["Nothing to craft"])
+    for key, b in pairs(f.tabs) do b:SetPrimary(key == view) end
+
+    if view == "craft" and #rep.crafts > 0 then
+        addHead(string.format(L["Craft now: about %d skill points from what you have"], points))
         for _, x in ipairs(rep.crafts) do
             local r = addRow()
             if x.out then r:SetItem(x.out, nil, nil) else r.icon:SetTexture(x.icon or 136244) end
@@ -393,8 +413,8 @@ function GP:ShowStash()
             end
         end
     end
-    if #rep.keep > 0 then
-        addHead(string.format(L["Keep (%d)"], #rep.keep))
+    if view == "keep" and #rep.keep > 0 then
+        addHead(L["Still used by recipes you or your alts know:"])
         for _, k in ipairs(rep.keep) do
             local r = addRow()
             r:SetItem(k.id, nil, nil, k.count)
@@ -408,7 +428,7 @@ function GP:ShowStash()
             end
         end
     end
-    if #sell > 0 then
+    if view == "sell" and #sell > 0 then
         addHead(string.format(bankOpen and L["Safe to sell from bags and bank (%d): worth %s"] or L["Safe to sell from your bags (%d): worth %s"],
             #sell, GP.Coins(sellTotal, true)))
         for _, k in ipairs(sell) do
@@ -428,16 +448,18 @@ function GP:ShowStash()
             end
         end
     end
-    if not bankOpen then
+    if view == "sell" and not bankOpen then
         addHead(grey(L["Open the bank to check what's in it too."]))
     end
+    f.note:SetText(view == "sell" and L["Never offered: quest items, upgrades, things you use, epics, and reagents you still need."]
+        or L["Colours are from the last time each profession window was open: open it again after skilling up."])
     -- The list scrolls once it's taller than MAX_LIST; the note stays under it.
     local listH = -y + 4
     f.child:SetHeight(listH)
     local shown = math.min(listH, MAX_LIST)
     f.scroll:SetHeight(shown)
     local noteH = f.note:GetStringHeight() or 24
-    f:SetHeight(32 + shown + 8 + noteH + 12)
+    f:SetHeight(64 + shown + 8 + noteH + 12)
     if listH <= MAX_LIST and f.scroll.SetVerticalScroll then f.scroll:SetVerticalScroll(0) end
     if not f:IsShown() then
         f:ClearAllPoints()
@@ -460,6 +482,7 @@ function GP:ToggleStash()
 end
 
 GP:On("BANKFRAME_OPENED", function()
+    if panel then panel.view = nil end -- each visit starts on Sell (when there's something to sell)
     if GP.db.settings.stashAtBank then C_Timer.After(1.5, function() GP:ShowStash() end) end
 end)
 GP:On("BANKFRAME_CLOSED", function() if panel then panel:Hide() end end)
