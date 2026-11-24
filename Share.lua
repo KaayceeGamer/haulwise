@@ -172,7 +172,7 @@ function GP:ParseExport(str)
             if #f < 15 then error(L["record "] .. i .. L[" is cut short"]) end
             local npc = num(f[1], 1e7)
             local m = {
-                name = f[2] ~= "" and f[2] or nil,
+                name = (f[2] ~= "" and f[2] ~= "?") and f[2] or nil, -- "?": the sharer never saw its name
                 minL = num(f[3], 200), maxL = num(f[4], 200), kills = num(f[5], 1e7),
                 money = num(f[6], 1e15), gathered = num(f[7], 1e7), pp = num(f[8], 1e7), ppMoney = num(f[9], 1e15),
                 tIntervals = num(f[10], 1e7), tSeconds = num(f[11], 1e12),

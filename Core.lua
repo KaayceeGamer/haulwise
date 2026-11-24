@@ -82,6 +82,7 @@ local DEFAULTS = {
         hearTrade = true,         -- count enchant requests in trade chat (an estimate, nothing about who is saved)
         useTSM = true,            -- use TradeSkillMaster's prices (DBMarket) when installed, after your own fresh scan
         recipesShowAll = false,   -- Recipes tab: also show recipes far above your skill
+        stashAtBank = true,       -- at the bank, show which profession reagents to keep and which you're done with
         matsToCrafters = true,    -- at a mailbox, offer to send crafting mats to the alt who uses them
         views = {},               -- [tab] = the view shown ("zones", "sessions", "skill", "vendor", "ah", "sales"...)
         hudShown = true,
@@ -302,6 +303,8 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ToggleGuide()
     elseif cmd == "settings" or cmd == "options" or cmd == "config" then
         GP:ToggleSettings()
+    elseif cmd == "reagents" or cmd == "stash" then
+        GP:ToggleStash()
     elseif cmd == "hud" then
         GP:ToggleHUD()
     elseif cmd == "lang" or cmd == "language" then
@@ -361,6 +364,7 @@ SlashCmdList.HAULWISE = function(msg)
         GP.Print(L["/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button"])
         GP.Print(L["/haul room  make room   ·   /haul bags | gear | holdings  open that tab"])
         GP.Print(L["/haul trainer [profession]  waypoint to the nearest trainer"])
+        GP.Print(L["/haul reagents  which profession reagents to keep and which you're done with"])
         GP.Print(L["/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes"])
         GP.Print(L["/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9"])
         GP.Print(L["/haul kph <n>  kills/hour to assume for mobs you have not timed"])

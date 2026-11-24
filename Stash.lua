@@ -1,0 +1,354 @@
+-- Haulwise: which reagents in your bags and bank are still worth keeping for your professions.
+-- An item is worth keeping when a recipe you or an alt know still gives skill with it (orange,
+-- yellow or green), when crafting it makes a profit, or when it goes into a recipe you can learn
+-- within the next 25 points. It's done with when every recipe of yours that uses it has gone grey.
+-- Items no known recipe uses are left alone: Haulwise can't tell what they're for.
+-- Shown in a panel next to the bank, and as one line in item tooltips.
+local _, GP = ...
+local L = GP.L
+
+local SOON = 25 -- skill points ahead: reagents for recipes you can learn this soon are kept
+local MAX_ROWS = 10
+local DIFF_COLOR = { [0] = "|cffff8040", [1] = "|cffffff00", [2] = "|cff40c040" }
+
+local function sameSide(c)
+    local realm = GetRealmName and GetRealmName() or "?"
+    local faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
+    return c.realm == realm and c.faction == faction
+end
+
+-- [itemID] = { skill = {...}, profit = {...}, soon = {...}, grey = n }, rebuilt at most once a minute.
+local index, indexTime = nil, 0
+function GP:ForgetReagentUses() index = nil end
+
+local function better(a, b) -- the best recipe to name: yours first, then the most skill per craft
+    if not b then return true end
+    if a.mine ~= b.mine then return a.mine end
+    return (a.d or 9) < (b.d or 9)
+end
+
+local function buildIndex()
+    if index and GetTime() - indexTime < 60 then return index end
+    index, indexTime = {}, GetTime()
+    local me = GP:CharKey()
+    local function entry(id)
+        local e = index[id]
+        if not e then e = { grey = 0 }; index[id] = e end
+        return e
+    end
+    for key, c in pairs(GP.db.chars or {}) do
+        if key == me or sameSide(c) then
+            local mine = key == me
+            local who = mine and nil or (c.short or key:match("^([^%-]+)") or key)
+            for _, book in ipairs({ c.recipes or {}, c.services or {} }) do
+                for _, rec in pairs(book) do
+                    if rec.learned then
+                        local gives = rec.d and GP.SKILL_CHANCE[rec.d]
+                        for _, r in ipairs(GP.UnpackReagents(rec.r)) do
+                            local e = entry(r[1])
+                            if gives then
+                                local cand = { name = rec.n, prof = rec.prof, d = rec.d, mine = mine, who = who }
+                                if better(cand, e.skill) then e.skill = cand end
+                            elseif rec.d == 3 then
+                                e.grey = e.grey + 1
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    -- Crafts that make money (yours), and recipes you can learn soon.
+    for _, r in ipairs(GP:CraftRows()) do
+        if r.profit and r.profit > 0 and #r.missing == 0 then
+            for _, rg in ipairs(r.reagents or {}) do
+                local e = entry(rg[1])
+                if not e.profit or r.profit > e.profit.each then e.profit = { name = r.name, each = r.profit } end
+            end
+        end
+    end
+    local ok, rows = pcall(GP.RecipeRowsCached, GP)
+    for _, r in ipairs(ok and rows or {}) do
+        if r.kind == "recipe" and r.skill and r.myRank and r.skill <= r.myRank + SOON then
+            for _, rg in ipairs(r.reagents or {}) do
+                local e = entry(rg[1])
+                if not e.soon or r.skill < e.soon.skill then e.soon = { name = r.name, prof = r.prof, skill = r.skill } end
+            end
+        end
+    end
+    return index
+end
+
+-- What to do with an item for your professions: { keep = bool, why = "skill"|"profit"|"soon"|"done",
+-- text } or nil when no recipe of yours or your alts' uses it.
+function GP:ReagentVerdict(id)
+    local e = id and buildIndex()[id]
+    if not e then return nil end
+    if e.skill then
+        local s = e.skill
+        local text = string.format(L["skill up %s: %s"], L[s.prof or ""] or "", (DIFF_COLOR[s.d] or "") .. (s.name or "?") .. "|r")
+        if s.who then text = text .. string.format(L[" (%s)"], "|cffff9944" .. s.who .. "|r") end
+        return { keep = true, why = "skill", text = text, who = s.who, d = s.d }
+    end
+    if e.profit then
+        return { keep = true, why = "profit", text = string.format(L["craft %s for profit: +%s each"], e.profit.name or "?", GP.Coins(e.profit.each, true)) }
+    end
+    if e.soon then
+        return { keep = true, why = "soon", text = string.format(L["for %s at %s %d"], e.soon.name or "?", L[e.soon.prof or ""] or "", e.soon.skill) }
+    end
+    if e.grey > 0 then
+        if self.QuestKeepReason and self:QuestKeepReason(id) then return nil end
+        return { keep = false, why = "done", text = L["no recipe of yours gives skill with it anymore"] }
+    end
+    return nil
+end
+
+-- What's in this character's bags and bank, split into what to keep and what you're done with,
+-- plus what you can craft right now for skill.
+function GP:StashReport()
+    local c = self:Char()
+    local have, where = {}, {}
+    for _, loc in ipairs({ "bags", "bank" }) do
+        for id, n in pairs(c[loc] or {}) do
+            have[id] = (have[id] or 0) + n
+            local here = loc == "bags" and L["in your bags"] or L["in your bank"]
+            where[id] = (where[id] and where[id] ~= here) and L["in your bags and bank"] or here
+        end
+    end
+    local keep, done, doneValue = {}, {}, 0
+    for id, n in pairs(have) do
+        local v = self:ReagentVerdict(id)
+        if v then
+            local row = { id = id, count = n, where = where[id], v = v }
+            if v.keep then
+                keep[#keep + 1] = row
+            else
+                local unit, ah = self:ItemValue(id)
+                row.unit, row.ah = unit or 0, ah
+                row.total = row.unit * n
+                doneValue = doneValue + row.total
+                done[#done + 1] = row
+            end
+        end
+    end
+    local order = { skill = 1, profit = 2, soon = 3 }
+    table.sort(keep, function(a, b)
+        if a.v.why ~= b.v.why then return order[a.v.why] < order[b.v.why] end
+        if (a.v.d or 9) ~= (b.v.d or 9) then return (a.v.d or 9) < (b.v.d or 9) end
+        return a.id < b.id
+    end)
+    table.sort(done, function(a, b)
+        if a.total ~= b.total then return a.total > b.total end
+        return a.id < b.id
+    end)
+
+    -- Crafts for skill you can make from what you have, orange first; mats used once are gone.
+    local left = {}
+    for id, n in pairs(have) do left[id] = n end
+    local recipes = {}
+    for _, book in ipairs({ c.recipes or {}, c.services or {} }) do
+        for _, rec in pairs(book) do
+            local chance = rec.learned and rec.d and GP.SKILL_CHANCE[rec.d]
+            if chance then recipes[#recipes + 1] = { rec = rec, chance = chance } end
+        end
+    end
+    table.sort(recipes, function(a, b)
+        if a.rec.d ~= b.rec.d then return a.rec.d < b.rec.d end
+        return (a.rec.n or "") < (b.rec.n or "")
+    end)
+    local crafts = {}
+    for _, x in ipairs(recipes) do
+        local reagents = GP.UnpackReagents(x.rec.r)
+        local times = math.huge
+        for _, r in ipairs(reagents) do times = math.min(times, math.floor((left[r[1]] or 0) / r[2])) end
+        if #reagents > 0 and times > 0 and times < math.huge then
+            for _, r in ipairs(reagents) do left[r[1]] = left[r[1]] - times * r[2] end
+            crafts[#crafts + 1] = { name = x.rec.n, prof = x.rec.prof, d = x.rec.d, times = times,
+                                    points = times * x.chance, icon = x.rec.icon, out = x.rec.out }
+        end
+    end
+    return { keep = keep, done = done, doneValue = doneValue, crafts = crafts, bankSeen = c.seen and c.seen.bank }
+end
+
+-- The panel ----------------------------------------------------------------------------------
+
+local panel
+local WIDTH = 330
+
+local function header(f, i, text)
+    local h = f.heads[i]
+    if not h then
+        h = f:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
+        h:SetJustifyH("LEFT")
+        h:SetWidth(WIDTH - 24)
+        f.heads[i] = h
+    end
+    h:SetText(text)
+    h:Show()
+    return h
+end
+
+local function row(f, i)
+    local r = f.rows[i]
+    if not r then
+        r = GP.ItemRow(f, WIDTH - 24)
+        f.rows[i] = r
+    end
+    r:Show()
+    return r
+end
+
+local function grey(t) return "|cff8a8880" .. t .. "|r" end
+
+function GP:ShowStash()
+    local rep = self:StashReport()
+    if #rep.keep == 0 and #rep.done == 0 and #rep.crafts == 0 then
+        if panel then panel:Hide() end
+        return false
+    end
+    if not panel then
+        panel = GP.Panel("HaulwiseStash", WIDTH, 80, L["Profession reagents"])
+        panel.rows, panel.heads = {}, {}
+        panel.note = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
+        panel.note:SetJustifyH("LEFT")
+        panel.note:SetWidth(WIDTH - 24)
+        panel.note:SetTextColor(0.55, 0.54, 0.5)
+    end
+    local f = panel
+    for _, r in ipairs(f.rows) do r:Hide() end
+    for _, h in ipairs(f.heads) do h:Hide() end
+    local y, nr, nh = -34, 0, 0
+    local function addHead(text)
+        nh = nh + 1
+        local h = header(f, nh, text)
+        h:ClearAllPoints()
+        h:SetPoint("TOPLEFT", 12, y - 4)
+        y = y - 22
+    end
+    local function addRow()
+        nr = nr + 1
+        local r = row(f, nr)
+        r:ClearAllPoints()
+        r:SetPoint("TOPLEFT", 12, y)
+        r:SetScript("OnClick", nil)
+        r.tip = nil
+        r.right:SetWidth(0)
+        r.right:SetWordWrap(false)
+        y = y - 22
+        return r
+    end
+
+    -- Suggestions first: what to craft now.
+    if #rep.crafts > 0 then
+        local points = 0
+        for _, x in ipairs(rep.crafts) do points = points + x.points end
+        addHead(string.format(L["Craft now: about %d skill points from what you have"], math.floor(points + 0.5)))
+        for i, x in ipairs(rep.crafts) do
+            if i > 4 then break end
+            local r = addRow()
+            if x.out then r:SetItem(x.out, nil, nil) else r.icon:SetTexture(x.icon or 136244) end
+            r.name:SetText((DIFF_COLOR[x.d] or "") .. (x.name or "?") .. "|r |cffaaaaaax" .. x.times .. "|r")
+            r.right:SetText(grey(string.format(L["~%d points"], math.max(1, math.floor(x.points + 0.5)))))
+            r.tip = function(t)
+                t:AddLine(x.name or "?", 1, 0.82, 0.25)
+                t:AddLine(string.format(L["%s: you have the mats for %d. Orange always gives a point, yellow mostly, green now and then."],
+                    L[x.prof or ""] or "", x.times), 0.8, 0.8, 0.8, true)
+            end
+        end
+    end
+    if #rep.keep > 0 then
+        addHead(string.format(L["Keep (%d)"], #rep.keep))
+        for i, k in ipairs(rep.keep) do
+            if i > MAX_ROWS then
+                local r = addRow()
+                r.icon:SetTexture(nil)
+                r.name:SetText(grey(string.format(L["...and %d more"], #rep.keep - MAX_ROWS)))
+                r.right:SetText("")
+                break
+            end
+            local r = addRow()
+            r:SetItem(k.id, nil, nil, k.count)
+            r.right:SetText(k.v.text)
+            r.right:SetWidth(170)
+            r.tip = function(t)
+                t:SetItemByID(k.id)
+                t:AddLine(" ")
+                t:AddLine(L["|cffffd700Haulwise|r keep: "] .. k.v.text, 1, 1, 1, true)
+                t:AddLine(k.count .. " " .. k.where, 0.6, 0.6, 0.6)
+            end
+        end
+    end
+    if #rep.done > 0 then
+        addHead(string.format(L["Done with (%d): worth %s"], #rep.done, GP.Coins(rep.doneValue, true)))
+        for i, k in ipairs(rep.done) do
+            if i > MAX_ROWS then
+                local r = addRow()
+                r.icon:SetTexture(nil)
+                r.name:SetText(grey(string.format(L["...and %d more"], #rep.done - MAX_ROWS)))
+                r.right:SetText("")
+                break
+            end
+            local r = addRow()
+            r:SetItem(k.id, nil, nil, k.count)
+            r.right:SetText(k.total > 0 and (GP.Coins(k.total, true) .. grey(k.ah and L[" AH"] or L[" vendor"])) or grey(L["no value"]))
+            r.right:SetWidth(110)
+            r.tip = function(t)
+                t:SetItemByID(k.id)
+                t:AddLine(" ")
+                t:AddLine(L["|cffffd700Haulwise|r: every recipe of yours that uses it has gone grey, so it gives no more skill."], 1, 1, 1, true)
+                t:AddLine(k.ah and L["Sell it on the AH, or keep it if you want to craft for other reasons."]
+                    or L["Sell it to a vendor, or keep it if you want to craft for other reasons."], 0.8, 0.8, 0.8, true)
+            end
+        end
+    end
+    f.note:ClearAllPoints()
+    f.note:SetPoint("TOPLEFT", 12, y - 6)
+    f.note:SetText(L["Colours are from the last time each profession window was open: open it again after skilling up."])
+    f.note:Show()
+    y = y - 6 - (f.note:GetStringHeight() or 24)
+    f:SetHeight(-y + 12)
+    if not f:IsShown() then
+        f:ClearAllPoints()
+        local pos = GP.db.positions and GP.db.positions.HaulwiseStash
+        if pos then
+            f:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4])
+        elseif BankFrame and BankFrame:IsShown() then
+            f:SetPoint("TOPLEFT", BankFrame, "TOPRIGHT", 6, 0)
+        else
+            f:SetPoint("LEFT", UIParent, "LEFT", 40, 60)
+        end
+    end
+    f:Show()
+    return true
+end
+
+function GP:ToggleStash()
+    if panel and panel:IsShown() then panel:Hide(); return end
+    if not self:ShowStash() then GP.Print(L["No reagents for your recipes in your bags or bank. Open your profession windows so Haulwise knows your recipes."]) end
+end
+
+GP:On("BANKFRAME_OPENED", function()
+    if GP.db.settings.stashAtBank then C_Timer.After(1.5, function() GP:ShowStash() end) end
+end)
+GP:On("BANKFRAME_CLOSED", function() if panel then panel:Hide() end end)
+GP:On("BAG_UPDATE_DELAYED", function()
+    if panel and panel:IsShown() then C_Timer.After(1.2, function() GP:ForgetReagentUses(); GP:ShowStash() end) end
+end)
+GP:On("TRADE_SKILL_LIST_UPDATE", function() index = nil end)
+
+-- One line in item tooltips: keep it for a profession, or done with it.
+if TooltipDataProcessor and Enum and Enum.TooltipDataType then
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip, info)
+        if not GP.db or tooltip ~= GameTooltip or not GP.db.settings.tooltipUses then return end
+        local id = info and GP.Safe(info.id)
+        if not id then return end
+        local ok, v = pcall(GP.ReagentVerdict, GP, id)
+        if not ok then GP.ReportError("reagent tooltip", v); return end
+        if not v then return end
+        if v.keep then
+            tooltip:AddLine(L["|cffffd700Haulwise|r keep: "] .. v.text, 1, 1, 1, true)
+        else
+            tooltip:AddLine(L["|cffffd700Haulwise|r done with it: "] .. "|cffaaaaaa" .. v.text .. "|r", 1, 1, 1, true)
+        end
+    end)
+end

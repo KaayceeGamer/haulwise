@@ -369,6 +369,7 @@ end
 -- skill point costs: reagents minus what the result sells for, divided by the chance of a point.
 -- The chances are rough (the game doesn't tell addons the exact ones).
 local SKILL_CHANCE = { [0] = 1.0, [1] = 0.75, [2] = 0.25 }
+GP.SKILL_CHANCE = SKILL_CHANCE
 
 function GP:SkillRows()
     local rows = {}

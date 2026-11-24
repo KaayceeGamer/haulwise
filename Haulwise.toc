@@ -47,6 +47,7 @@ Settings.lua
 Guide.lua
 Tooltip.lua
 Uses.lua
+Stash.lua
 Favor.lua
 QuestRewards.lua
 Minimap.lua

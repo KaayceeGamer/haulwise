@@ -1450,4 +1450,24 @@ do -- Enchants (recipes that make no item): Recipes, Skill up and the shopping l
   c.services, GP.db.settings.recipesShowAll = saved, savedAll
   GP.recipeRowsCache = nil
 end
+do -- Profession reagents at the bank: keep what still gives skill, done with what's only grey
+  local c = GP:Char()
+  local savedR, savedS, savedBags, savedBank = c.recipes, c.services, c.bags, c.bank
+  c.recipes = {
+    ["r1"] = { n = "Charred Wolf Meat", prof = "Cooking", out = 2679, oq = 1, r = "2672:1", learned = true, d = 1 },
+    ["r2"] = { n = "Roasted Boar Meat", prof = "Cooking", out = 2681, oq = 1, r = "769:1", learned = true, d = 3 },
+  }
+  c.services = {}
+  c.bags, c.bank = { [769] = 4 }, { [2672] = 13, [4306] = 2 }
+  GP:ForgetReagentUses()
+  local wolf, boar = GP:ReagentVerdict(2672), GP:ReagentVerdict(769)
+  ok(wolf and wolf.keep and wolf.why == "skill", "wolf meat: keep, a yellow recipe uses it")
+  ok(boar and not boar.keep and boar.why == "done", "boar meat: done with, its only recipe is grey")
+  local rep = GP:StashReport()
+  ok(#rep.keep == 1 and #rep.done == 1, "the report splits keep and done")
+  ok(rep.crafts[1] and rep.crafts[1].times == 13, "and suggests crafting 13 Charred Wolf Meat")
+  ok(GP:ShowStash(), "the panel shows")
+  c.recipes, c.services, c.bags, c.bank = savedR, savedS, savedBags, savedBank
+  GP:ForgetReagentUses()
+end
 print("NEW FEATURES PASSED")

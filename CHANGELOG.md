@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- **Profession reagents at the bank**: when you open the bank, a list shows which reagents in your bags and bank to keep (a recipe you or an alt know still gives skill with them, crafting them makes a profit, or you can learn a recipe for them within 25 points) and which you're done with (every recipe of yours that uses them has gone grey), with what they're worth. On top: what you can craft for skill right now from what you have, and about how many points it gives. Item tooltips say the same in one line. Also `/haul reagents`; turn it off in Settings > Bags and loot.
+- **No more "?" mobs**: a mob someone shared without ever seeing its name (inside dungeons the game hides names) is no longer named "?".
 - **Enchants in Recipes and Skill up**: recipes that make no item (enchants like *Enchant Weapon - Revelation*) are now read from your Enchanting window. Ones you don't know show in Recipes with where to get them; ones you know show in Skill up with the cost per skill point and can go on the shopping list.
 
 ## 0.18.2
