@@ -340,6 +340,7 @@ local function build()
     local child = CreateFrame("Frame", nil, scroll)
     child:SetSize(INNER, 10)
     scroll:SetScrollChild(child)
+    scroll.scrollBarHideable = true -- Blizzard's template then hides the bar when nothing scrolls
     panel.scroll, panel.child = scroll, child
     panel.note = panel:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmall")
     panel.note:SetJustifyH("LEFT")
@@ -461,6 +462,11 @@ function GP:ShowStash()
     local noteH = f.note:GetStringHeight() or 24
     f:SetHeight(64 + shown + 8 + noteH + 12)
     if listH <= MAX_LIST and f.scroll.SetVerticalScroll then f.scroll:SetVerticalScroll(0) end
+    -- The scroll bar only when there's something to scroll.
+    local bar = f.scroll.ScrollBar or (f.scroll.GetName and f.scroll:GetName() and _G[f.scroll:GetName() .. "ScrollBar"])
+    if bar then
+        if listH > MAX_LIST then bar:Show() else bar:Hide() end
+    end
     if not f:IsShown() then
         f:ClearAllPoints()
         local pos = GP.db.positions and GP.db.positions.HaulwiseStash
