@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.18.2:** kills in a **group** count now: the corpses you loot add to drop rates and your session (your share of the coins); mob names stay in your language when others share theirs; and Bags shows one row per item instead of one per stack.
+**New in 0.19.0:** open the **bank** and Haulwise shows what's **safe to sell** from your bags and bank, which **reagents to keep** for your professions (and your alts'), and what you can **craft for skill** right now. **Enchants** now show in Recipes and Skill up.
 
 ---
 
@@ -43,6 +43,8 @@ The tooltip shows the whole calculation, and **Best move** says what gets the mo
 - items a quest in your log needs
 - anything you mark to keep
 
+**Clean-up at the bank**: open the bank and a panel shows three things. **Sell**: everything in your bags and bank that nothing of yours needs, with what it's worth and where to sell it. **Keep**: reagents a recipe you or an alt know still gives skill with, or that make a mat for one (Silk Cloth for the bolts a Crimson Silk Vest needs), or that a recipe you can learn soon uses. **Craft**: what you can make for skill right now from what you have, and about how many points it gives. Reagents whose recipes have all gone grey move to Sell. Item tooltips say the same in one line. Also `/haul cleanup`.
+
 ### ⚔️ Upgrade Advisor, for you and your alts
 - New gear is compared with what you wear, using **your Pawn scales** if Pawn is installed, or Haulwise's own stat weights per talent tree.
 - Only gear your class can wear is suggested, and only once you can put it on within 3 levels (marked *at level 40* until then). No mail armor for a level 5 shaman.
@@ -69,7 +71,7 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
   - Says when a reagent is **dear today** (30%+ over its usual price), and which **alt** already has it, so you send it over instead of buying it.
   - Vendor reagents get an arrow to the nearest vendor that sells them.
 - **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
-- **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs.
+- **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs. Enchants are in too.
 - **Vendor flips**: crafts a vendor buys for more than their mats cost on the AH, for you and your alts, with the most you can pay for the main mat (*Buy below*).
 - **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
@@ -146,6 +148,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 | `/haul lang deDE` | language: `auto`, `enUS`, `deDE` or `frFR` (then `/reload`) |
 | `/haul trainer [profession]` | waypoint to the nearest trainer |
 | `/haul room` | make room in your bags |
+| `/haul cleanup` | what to keep for your professions and what's safe to sell |
 | `/haul settings` | settings |
 | `/haul guide` | the guide |
 | `/haul start` | the start card again |
