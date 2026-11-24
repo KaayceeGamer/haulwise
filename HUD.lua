@@ -33,7 +33,7 @@ local function build()
     hud.open:SetPoint("LEFT", hud.title, "RIGHT", 10, 0)
     hud.open:SetPrimary(true)
     hud.open:SetScript("OnClick", function() GP:ToggleUI() end)
-    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Open the Haulwise window"]); GameTooltip:AddLine(L["Farm, Bags, Gear, Craft, Deals, Recipes, Market and Holdings."], 0.8, 0.8, 0.8, true); GameTooltip:Show() end)
+    hud.open:SetScript("OnEnter", function(self) GameTooltip:SetOwner(self, "ANCHOR_TOP"); GameTooltip:AddLine(L["Open the Haulwise window"]); GameTooltip:AddLine(L["Farm, Bags, Gear, Craft and Auction House."], 0.8, 0.8, 0.8, true); GameTooltip:Show() end)
     hud.open:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     hud.gear = GP.IconButton(hud, "Interface\\Buttons\\UI-OptionsButton", L["Settings"], 14)

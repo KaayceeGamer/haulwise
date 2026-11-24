@@ -169,7 +169,7 @@ GP:CycleSpec()
 ok(not GP.db.settings.usePawn, "Gear button cycles from Pawn to Haulwise weights")
 print("PAWN PASSED")
 -- Sorting by clicking a column title
-GP.db.settings.tab = "bags"; GP:ShowUI()
+GP.db.settings.tab = "bags"; GP.db.settings.views = {}; GP:ShowUI()
 GP:SortBy("total")
 local first = HaulwiseFrame.hero and GP.db.settings.sorts.bags
 ok(first.key == "total" and first.desc == true, "first click sorts by worth, biggest first")
@@ -178,12 +178,16 @@ ok(GP.db.settings.sorts.bags.desc == false, "second click reverses")
 GP:SortBy("name")
 ok(GP.db.settings.sorts.bags.key == "name" and GP.db.settings.sorts.bags.desc == false, "names sort A to Z")
 local rowsB = GP:BagItems()
-for _, tabName in ipairs({ "farm", "craft", "deals", "recipes", "market", "holdings", "gear" }) do
+-- The old tab names (from saved settings) still open, where they went: Deals, Prices and Recipes
+-- are views now.
+for _, tabName in ipairs({ "farm", "craft", "deals", "recipes", "market", "holdings", "gear", "ah" }) do
   GP.db.settings.tab = tabName
   GP:RefreshUI()
+  ok(({ farm = 1, craft = 1, ah = 1, bags = 1, gear = 1 })[GP.db.settings.tab], tabName .. " opens as " .. GP.db.settings.tab)
   local keys = {}
   for k in pairs(GP.db.settings.sorts) do keys[#keys+1] = k end
 end
+GP.db.settings.views = {}
 GP.db.settings.tab = "craft"
 GP.db.settings.sorts.craft = { key = "profit", desc = true }
 GP:RefreshUI()

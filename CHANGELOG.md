@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Five tabs instead of eight**: what belongs together sits together. **Bags** has Bags and Holdings; **Craft** has Best profit, Skill up, Vendor flips, Enchant requests and Recipes; the new **Auction House** tab has Deals, Prices and Your sales. Each tab remembers the view you were on.
+
 ## 0.19.1
 - **Import without freezing**: pasting community data (hundreds of kilobytes) froze the game for seconds while the text box laid it all out. The box now shows only the start of what you paste and collects the rest as it arrives; Import then takes a moment instead.
 

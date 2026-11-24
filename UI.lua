@@ -13,14 +13,11 @@ local C = {
 }
 -- tip: the question each tab answers, shown when you point at it.
 local TABS = {
-    { key = "farm",    label = L["Farm"],    icon = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01", tip = L["Where do I make the most gold per hour? Mobs and zones ranked from real drops."] },
-    { key = "bags",    label = L["Bags"],    icon = "Interface\\Icons\\INV_Misc_Bag_08", tip = L["What is everything in my bags worth, and should I sell, auction or disenchant it?"] },
-    { key = "gear",    label = L["Gear"],    icon = "Interface\\Icons\\INV_Chest_Chain", tip = L["Which gear is an upgrade for me or my alts, also for sale on the auction house?"] },
-    { key = "craft",   label = L["Craft"],   icon = "Interface\\Icons\\Trade_BlackSmithing", tip = L["What's profitable to craft, and what's the cheapest way to skill up?"] },
-    { key = "deals",   label = L["Deals"],   icon = "Interface\\Icons\\INV_Misc_Coin_02", tip = L["What's cheap on the auction house right now, worth buying to resell or vendor?"] },
-    { key = "recipes", label = L["Recipes"], icon = "Interface\\Icons\\INV_Scroll_03", tip = L["Which recipes are worth learning, and where do I get them?"] },
-    { key = "market",  label = L["Market"],  icon = "Interface\\Icons\\INV_Misc_Note_01", tip = L["How are prices moving, and what have I sold?"] },
-    { key = "holdings", label = L["Holdings"], icon = "Interface\\Icons\\INV_Misc_Book_09", tip = L["What do my characters own, in bags, bank, mail and on the auction house?"] },
+    { key = "farm",  label = L["Farm"],  icon = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01", tip = L["Where do I make the most gold per hour? Mobs and zones ranked from real drops."] },
+    { key = "bags",  label = L["Bags"],  icon = "Interface\\Icons\\INV_Misc_Bag_08", tip = L["What do I own and what is it worth? Your bags with what to sell, auction or disenchant, and everything all your characters own."] },
+    { key = "gear",  label = L["Gear"],  icon = "Interface\\Icons\\INV_Chest_Chain", tip = L["Which gear is an upgrade for me or my alts, also for sale on the auction house?"] },
+    { key = "craft", label = L["Craft"], icon = "Interface\\Icons\\Trade_BlackSmithing", tip = L["What should I craft and learn? Profit, the cheapest way to skill up, and recipes worth learning."] },
+    { key = "ah",    label = L["Auction House"], icon = "Interface\\Icons\\INV_Misc_Coin_02", tip = L["What should I buy and sell? Deals right now, how prices are moving, and what you've sold."] },
 }
 
 -- Formatting ------------------------------------------------------------------------------
@@ -145,7 +142,21 @@ local TAB = {}
 -- A tab can have more than one view (Gear: your bags / the AH). The view is TAB["gear_ah"] etc.
 local plural = GP.Plural
 
+-- Tabs that are views now (0.19.2): a saved tab from before opens where it went.
+local MOVED = { deals = { "ah" }, market = { "ah", "prices" }, recipes = { "craft", "recipes" }, holdings = { "bags", "holdings" } }
+local function migrateTab()
+    local s = S()
+    local m = MOVED[s.tab]
+    if not m then return end
+    s.views = s.views or {}
+    local wasSales = s.views.market == "sales"
+    s.views.market = nil
+    s.tab = m[1]
+    s.views[m[1]] = (m[1] == "ah" and wasSales) and "sales" or m[2]
+end
+
 local function current()
+    migrateTab()
     local tab = TAB[S().tab] and S().tab or "farm"
     local v = S().views and S().views[tab]
     if v and TAB[tab .. "_" .. v] then return tab .. "_" .. v end
@@ -168,11 +179,15 @@ local VIEWS = {
     craft = { { nil, L["Best profit"], L["What's profitable to craft and sell on the auction house."] },
               { "skill", L["Skill up"], L["Show the cheapest recipes to raise your professions right now, instead of the most profitable ones."] },
               { "vendor", L["Vendor flips"], L["Crafts a vendor buys for more than the mats cost on the AH, and the most you can pay for the main mat."] },
-              { "enchants", L["Enchant requests"], L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] } },
+              { "enchants", L["Enchant requests"], L["Counts the enchants people ask for in trade chat while you're in a city. It's an estimate, not sales: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."] },
+              { "recipes", L["Recipes"], L["Recipes you don't know yet, ranked by profit, with where to get them."] } },
     gear = { { nil, L["Your gear"], L["Gear in your bags that's an upgrade for you or one of your alts."] },
              { "ah", L["On the AH"], L["Show gear upgrades for you and your alts that are for sale on the auction house (from your last full scan), ranked by how much upgrade each gold buys."] } },
-    market = { { nil, L["Prices"], L["How prices are moving on your auction house, from your scans."] },
-               { "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."] } },
+    bags = { { nil, L["Bags"], L["What's in your bags, what it's worth, and whether to sell, auction or disenchant it."] },
+             { "holdings", L["Holdings"], L["What all your characters own, in bags, bank, mail and on the auction house."] } },
+    ah = { { nil, L["Deals"], L["What's cheap on the auction house right now, worth buying to resell or vendor."] },
+           { "prices", L["Prices"], L["How prices are moving on your auction house, from your scans."] },
+           { "sales", L["Your sales"], L["What you've sold on the auction house and earned, from the invoices in your mail."] } },
 }
 local function setView(tab, view)
     S().views = S().views or {}
@@ -1544,6 +1559,7 @@ function GP:SortBy(key)
     else
         -- Numbers start biggest first, words start at A.
         local t = TAB[tab]
+        if not (t.sort and t.sort[key]) then return end -- this view has no such column
         local sample
         for _, r in ipairs(t.rows()) do sample = t.sort[key](r); if sample ~= nil then break end end
         s.sorts[tab] = { key = key, desc = type(sample) == "number" }
@@ -1579,6 +1595,11 @@ end
 -- Window -------------------------------------------------------------------------------------
 
 local f, rows, offset, data = nil, {}, 0, {}
+-- Five main tabs: what used to be tabs of their own are views of them now.
+TAB.ah, TAB.ah_prices, TAB.ah_sales = TAB.deals, TAB.market, TAB.market_sales
+TAB.craft_recipes, TAB.bags_holdings = TAB.recipes, TAB.holdings
+TAB.deals, TAB.market, TAB.market_sales, TAB.recipes, TAB.holdings = nil, nil, nil, nil, nil
+
 local tabButtons, toggleBar = {}, {}
 local cachedRows
 local updateDisenchant -- defined below RefreshUI's helpers
@@ -1775,7 +1796,7 @@ local function build()
     local x = 12
     for _, t in ipairs(TABS) do
         local b = CreateFrame("Button", nil, f)
-        b:SetSize(110, 30)
+        b:SetSize(150, 30)
         b:SetPoint("TOPLEFT", x, -62)
         b.bg = tex(b, "BACKGROUND", { 1, 1, 1, 0.05 })
         b.bg:SetAllPoints()
@@ -1803,7 +1824,7 @@ local function build()
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b.key = t.key
         tabButtons[#tabButtons + 1] = b
-        x = x + 114
+        x = x + 154
     end
     local tabLine = tex(f, "BORDER", C.line)
     tabLine:SetPoint("TOPLEFT", 12, -92)
@@ -1896,7 +1917,7 @@ local function build()
     st:SetText(L["Start here: four steps and Haulwise knows your gold"])
     local steps = {
         { L["1.  Scan the auction house"], L["Open the AH and press Scan AH (bottom right). Now every item has a price."] },
-        { L["2.  Open your professions"], L["Open each profession window once, so Craft knows your recipes. Log in on your alts once too: Gear and Holdings then cover them."] },
+        { L["2.  Open your professions"], L["Open each profession window once, so Craft knows your recipes. Log in on your alts once too: Gear and Bags > Holdings then cover them."] },
         { L["3.  Look in Bags"], L["See what everything you carry is worth, and the best move for each item: sell, auction, disenchant or keep."] },
         { L["4.  Go farm"], L["Kill and loot as usual. Farm ranks mobs by real gold per hour, and Share data makes everyone's numbers better."] },
     }

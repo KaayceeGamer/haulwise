@@ -710,7 +710,8 @@ GP:On("GET_ITEM_INFO_RECEIVED", function(itemID)
     C_Timer.After(3, function()
         GP.recipeRedrawQueued = false
         GP.recipeRowsCache = nil
-        if GP.db and GP.db.settings.tab == "recipes" and GP.RefreshUI then GP:RefreshUI() end
+        local st = GP.db and GP.db.settings
+        if st and st.tab == "craft" and st.views and st.views.craft == "recipes" and GP.RefreshUI then GP:RefreshUI() end
     end)
 end)
 

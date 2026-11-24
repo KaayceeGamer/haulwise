@@ -15,7 +15,7 @@ local function guideSections() return {
         W .. L["2. Visit a trade goods vendor"] .. E .. L[". Haulwise learns what thread, dyes and vials cost."],
         W .. L["3. Press Scan AH at the auction house"] .. E .. L[" (bottom of the Haulwise window). Once a day is ideal."],
         W .. L["4. Log in on each of your characters once"] .. E .. L[". Haulwise learns their gear, professions and bags."],
-        W .. L["5. Open your bank and mailbox once"] .. E .. L[". Now Holdings knows everything you own."],
+        W .. L["5. Open your bank and mailbox once"] .. E .. L[". Now Bags > Holdings knows everything you own."],
         L["Then just play: every mob you kill and loot, every trainer and vendor you open, adds to it."],
     } },
     { L["The HUD"], {
@@ -49,13 +49,13 @@ local function guideSections() return {
         G .. L["Craft"] .. E .. L[" shows every recipe you know: reagent cost, sale price, profit and margin. \"?\" means a reagent has no price yet: visit a vendor or scan the AH."],
         G .. L["Shopping list"] .. E .. L[" click a recipe in Craft to add it. The list sums every reagent, subtracts what's in your bags and bank, and says where each is cheapest. Click a reagent to find it on the AH."],
         G .. L["Skill up"] .. E .. L[" (Craft tab) ranks the recipes that still give skill by what each point costs: reagents minus what the result sells for. Colours come from your profession window."],
-        G .. L["Recipes"] .. E .. L[" shows recipes you don't know yet, ranked by profit, with where to get them (trainer, vendor, drop, AH) and how many crafts until they pay for themselves."],
+        G .. L["Recipes"] .. E .. L[" (Craft tab) shows recipes you don't know yet, ranked by profit, with where to get them (trainer, vendor, drop, AH) and how many crafts until they pay for themselves."],
     } },
-    { L["Deals and Market"], {
+    { L["Auction House: deals and prices"], {
         G .. L["Deals"] .. E .. L[" listings 30%+ under their usual price, and vendor flips (cheaper than a vendor pays). Click to search the AH."],
-        G .. L["Market"] .. E .. L[" 7-day price trends for what you farm, craft and use, with a tip: Sell now, Hold, Stock up. After two weeks of scans it shows your AH's cheapest and dearest weekday."],
+        G .. L["Prices"] .. E .. L[" 7-day price trends for what you farm, craft and use, with a tip: Sell now, Hold, Stock up. After two weeks of scans it shows your AH's cheapest and dearest weekday."],
     } },
-    { L["Holdings"], {
+    { L["Bags > Holdings"], {
         L["Everything all your characters own and where: bags, bank, equipped, mail, auctions. Worn gear isn't counted as worth anything; it isn't for sale."],
     } },
     { L["Community data: everyone's kills in your Haulwise"], {
