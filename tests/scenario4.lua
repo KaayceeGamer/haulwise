@@ -1463,6 +1463,14 @@ do -- Profession reagents at the bank: keep what still gives skill, done with wh
   local wolf, boar = GP:ReagentVerdict(2672), GP:ReagentVerdict(769)
   ok(wolf and wolf.keep and wolf.why == "skill", "wolf meat: keep, a yellow recipe uses it")
   ok(boar and not boar.keep and boar.why == "done", "boar meat: done with, its only recipe is grey")
+  -- Silk Cloth: its only recipe (the bolt) is grey, but the bolt goes into a vest that gives skill
+  c.recipes.r3 = { n = "Bolt of Silk Cloth", prof = "Tailoring", out = 4305, oq = 1, r = "4306:4", learned = true, d = 3 }
+  c.recipes.r4 = { n = "Crimson Silk Vest", prof = "Tailoring", out = 7058, oq = 1, r = "4305:2", learned = true, d = 0 }
+  GP:ForgetReagentUses()
+  local silk = GP:ReagentVerdict(4306)
+  ok(silk and silk.keep and silk.why == "chain", "silk cloth: keep, it makes bolts for a vest that gives skill")
+  c.recipes.r3, c.recipes.r4 = nil, nil
+  GP:ForgetReagentUses()
   local rep = GP:StashReport()
   ok(#rep.keep == 1 and #rep.done == 1, "the report splits keep and done")
   ok(rep.crafts[1] and rep.crafts[1].times == 10 and rep.crafts[1].canMake == 13, "and suggests crafting Charred Wolf Meat (10 of the 13 it could)")

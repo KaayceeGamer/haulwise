@@ -653,6 +653,7 @@ GP.LOCALES.frFR = {
     ["craft %s for profit: +%s each"] = "fabriquer %s avec profit : +%s chacun",
     ["for %s at %s %d"] = "pour %s à %s %d",
     ["%s at %d"] = "%s à %d",
+    ["makes %s for %s"] = "sert à %s pour %s",
     ["no recipe of yours gives skill with it anymore"] = "aucune de vos recettes ne donne plus de points avec",
     ["in your bags"] = "dans vos sacs",
     ["in your bank"] = "dans votre banque",

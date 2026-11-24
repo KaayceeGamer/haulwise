@@ -653,6 +653,7 @@ GP.LOCALES.deDE = {
     ["craft %s for profit: +%s each"] = "%s mit Gewinn herstellen: +%s pro Stück",
     ["for %s at %s %d"] = "für %s ab %s %d",
     ["%s at %d"] = "%s ab %d",
+    ["makes %s for %s"] = "ergibt %s für %s",
     ["no recipe of yours gives skill with it anymore"] = "keines deiner Rezepte bringt damit noch Fertigkeit",
     ["in your bags"] = "in deinen Taschen",
     ["in your bank"] = "in deiner Bank",

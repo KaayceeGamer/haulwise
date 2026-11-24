@@ -38,12 +38,16 @@ local function buildIndex()
         return e
     end
     local myName = UnitName and UnitName("player")
+    local makers = {} -- every recipe that makes an item: { out, name, reagents }
     for key, c in pairs(GP.db.chars or {}) do
         -- An old record of this same character under another key isn't an alt: skip it.
-        local stale = key ~= me and c.short and c.short == myName and sameSide(c)
+        local stale = key ~= me and c.short and c.short == myName
         if not stale and (key == me or sameSide(c)) then
             local mine = key == me
             local who = mine and nil or (c.short or key:match("^([^%-]+)") or key)
+            for _, rec in pairs(c.recipes or {}) do
+                if rec.out then makers[#makers + 1] = { out = rec.out, name = rec.n, reagents = GP.UnpackReagents(rec.r) } end
+            end
             for _, book in ipairs({ c.recipes or {}, c.services or {} }) do
                 for _, rec in pairs(book) do
                     if rec.learned then
@@ -98,6 +102,28 @@ local function buildIndex()
             end
         end
     end
+    -- Mats for mats: Silk Cloth only goes into Bolt of Silk Cloth (grey), but the bolts go into
+    -- recipes that still give skill, so the cloth is kept too. Two steps deep.
+    local function goal(e)
+        if not e then return nil end
+        if e.skill then return e.skill.name, e.skill.d end
+        if e.profit then return e.profit.name end
+        if e.soon then return e.soon.name end
+        if e.chain then return e.chain.final, e.chain.d end
+    end
+    for _ = 1, 2 do
+        for _, x in ipairs(makers) do
+            local final, d = goal(index[x.out])
+            if final then
+                for _, rg in ipairs(x.reagents) do
+                    local e = entry(rg[1])
+                    if rg[1] ~= x.out and not (e.skill or e.profit or e.soon or e.chain) then
+                        e.chain = { via = x.name, final = final, d = d }
+                    end
+                end
+            end
+        end
+    end
     return index
 end
 
@@ -123,6 +149,11 @@ function GP:ReagentVerdict(id)
     if e.soon then
         return { keep = true, why = "soon", text = string.format(L["for %s at %s %d"], e.soon.name or "?", L[e.soon.prof or ""] or "", e.soon.skill),
                  short = "|cff8a8880" .. string.format(L["%s at %d"], e.soon.name or "?", e.soon.skill) .. "|r" }
+    end
+    if e.chain then
+        local c = e.chain
+        return { keep = true, why = "chain", text = string.format(L["makes %s for %s"], c.via or "?", (DIFF_COLOR[c.d] or "") .. (c.final or "?") .. "|r"),
+                 short = "|cff8a8880" .. (c.via or "?") .. " >|r " .. (DIFF_COLOR[c.d] or "") .. (c.final or "?") .. "|r" }
     end
     if e.grey > 0 and not e.later then
         if self.QuestKeepReason and self:QuestKeepReason(id) then return nil end
@@ -159,7 +190,7 @@ function GP:StashReport()
             end
         end
     end
-    local order = { skill = 1, profit = 2, soon = 3 }
+    local order = { skill = 1, chain = 2, profit = 3, soon = 4 }
     table.sort(keep, function(a, b)
         if a.v.why ~= b.v.why then return order[a.v.why] < order[b.v.why] end
         if (a.v.d or 9) ~= (b.v.d or 9) then return (a.v.d or 9) < (b.v.d or 9) end
