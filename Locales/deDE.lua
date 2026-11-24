@@ -253,6 +253,7 @@ GP.LOCALES.deDE = {
     [" window positions and sizes"] = " Fensterpositionen und -größen",
     ["Under the tabs: the small tabs on the left switch what the list shows, menus like Profession narrow it down, Options holds the switches for that list, and the buttons on the right do something."] = "Unter den Reitern: Die kleinen Reiter links wechseln, was die Liste zeigt, Menüs wie Beruf grenzen sie ein, Optionen enthält die Schalter für diese Liste, und die Buttons rechts tun etwas.",
     ["Click any column title to sort. Drag a window's corner to resize it. Ctrl + mouse wheel scales it."] = "Klick auf einen Spaltentitel zum Sortieren. Zieh an der Ecke eines Fensters, um die Größe zu ändern. Strg + Mausrad skaliert es.",
+    ["Importing community data no longer freezes the game."] = "Das Importieren von Community-Daten lässt das Spiel nicht mehr einfrieren.",
     ["Open the bank: Haulwise shows what's safe to sell from your bags and bank, which reagents to keep for your professions, and what to craft for skill right now."] = "Öffne die Bank: Haulwise zeigt, was du aus Taschen und Bank sicher verkaufen kannst, welche Reagenzien du für deine Berufe behalten solltest und was du jetzt für Fertigkeit herstellen kannst.",
     ["Enchants show in Recipes and Skill up."] = "Verzauberungen erscheinen jetzt unter Rezepte und Skillen.",
     ["Kills in a group count now: the corpses you loot add to drop rates and your session."] = "Kills in der Gruppe zählen jetzt: die Leichen, die du plünderst, zählen für Dropraten und deine Sitzung.",

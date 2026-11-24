@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.19.1
 - **Import without freezing**: pasting community data (hundreds of kilobytes) froze the game for seconds while the text box laid it all out. The box now shows only the start of what you paste and collects the rest as it arrives; Import then takes a moment instead.
 
 ## 0.19.0

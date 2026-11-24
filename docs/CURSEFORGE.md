@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.19.0:** open the **bank** and Haulwise shows what's **safe to sell** from your bags and bank, which **reagents to keep** for your professions (and your alts'), and what you can **craft for skill** right now. **Enchants** now show in Recipes and Skill up.
+**New in 0.19.1:** importing community data no longer freezes the game: paste it and press Import.
 
 ---
 

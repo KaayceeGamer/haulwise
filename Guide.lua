@@ -73,6 +73,9 @@ local function guideSections() return {
 
 -- What's new, per version, newest first. After an update only the versions you haven't seen show.
 local function newsByVersion() return {
+    { "0.19.1", {
+        L["Importing community data no longer freezes the game."],
+    } },
     { "0.19.0", {
         L["Open the bank: Haulwise shows what's safe to sell from your bags and bank, which reagents to keep for your professions, and what to craft for skill right now."],
         L["Enchants show in Recipes and Skill up."],
