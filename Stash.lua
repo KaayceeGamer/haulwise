@@ -13,7 +13,7 @@ local MAX_CRAFTS = 10 -- per recipe: its colour changes as you skill up, so furt
 local DIFF_COLOR = { [0] = "|cffff8040", [1] = "|cffffff00", [2] = "|cff40c040" }
 
 local function sameSide(c)
-    local realm = GetRealmName and GetRealmName() or "?"
+    local realm = GP.RealmName()
     local faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
     return c.realm == realm and c.faction == faction
 end

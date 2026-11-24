@@ -1470,4 +1470,24 @@ do -- Profession reagents at the bank: keep what still gives skill, done with wh
   c.recipes, c.services, c.bags, c.bank = savedR, savedS, savedBags, savedBank
   GP:ForgetReagentUses()
 end
+do -- The game answered "" for the realm: one character saved twice gets folded back into one
+  local key = GP:CharKey()
+  local name = UnitName("player")
+  local cur = GP:Char()
+  local savedProfs, savedRecipes = cur.profs, cur.recipes
+  cur.profs = { Cooking = { rank = 22, max = 75, t = 100 } }
+  cur.recipes = { r1 = { n = "Old Cooking", prof = "Cooking", learned = true } }
+  GP.db.chars[name .. "-"] = { short = name, realm = "", profs = { Cooking = { rank = 30, max = 75, t = 200 }, Tailoring = { rank = 155, max = 225, t = 200 } },
+    recipes = { r2 = { n = "New Cooking", prof = "Cooking", learned = true }, r3 = { n = "Bolt", prof = "Tailoring", learned = true } }, services = {} }
+  local realBefore = GetRealmName
+  GetRealmName = function() return "" end
+  ok(GP:CharKey() == key, "an empty realm answer keeps the same character key")
+  GP:MergeCharRecords() -- still "": the realm saved before is used
+  GetRealmName = realBefore
+  local c = GP.db.chars[key]
+  ok(GP.db.chars[name .. "-"] == nil, "the second record is gone")
+  ok(c.profs.Cooking.rank == 30 and c.recipes.r2 and not c.recipes.r1 and c.recipes.r3, "the newer reading of each profession is kept")
+  c.profs, c.recipes = savedProfs, savedRecipes
+  GP.InvalidateCraftIndex()
+end
 print("NEW FEATURES PASSED")

@@ -21,6 +21,28 @@ end })
 local L = GP.L
 
 -- "3 kills" / "1 kill", in the game's language: the words are looked up as "kill" and "kills".
+-- The realm's name. The game sometimes answers "" (seen on Forever), which split one character
+-- into two saved records ("No-Realm" and "No-"). Then it's the realm last seen, or the realm
+-- saved for a character with this name.
+function GP.RealmName()
+    local r = GetRealmName and GetRealmName()
+    if type(r) == "string" and r ~= "" then
+        if GP.db then
+            GP.db.lastRealm = r
+            if not GP.realmMerged and GP.MergeCharRecords then GP.realmMerged = true; GP:MergeCharRecords() end
+        end
+        return r
+    end
+    if GP.db then
+        if GP.db.lastRealm then return GP.db.lastRealm end
+        local me = UnitName and UnitName("player")
+        for _, c in pairs(GP.db.chars or {}) do
+            if c.short == me and type(c.realm) == "string" and c.realm ~= "" and c.realm ~= "?" then return c.realm end
+        end
+    end
+    return "?"
+end
+
 function GP.Plural(n, one, many)
     return n .. " " .. (n == 1 and L[one] or L[many or (one .. "s")])
 end

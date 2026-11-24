@@ -1065,7 +1065,7 @@ local function charPicker()
         end,
         items = function()
             local keys = {}
-            local realm = GetRealmName and GetRealmName() or "?"
+            local realm = GP.RealmName()
             for key, c in pairs(GP.db.chars) do if c.short and c.realm == realm then keys[#keys + 1] = key end end
             table.sort(keys)
             local out = { { text = L["All characters"], value = false, checked = holdChar == nil } }

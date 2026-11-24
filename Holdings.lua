@@ -66,7 +66,7 @@ end
 local function readBasics(c)
     local _, classFile = UnitClass("player")
     c.short = UnitName("player")
-    c.realm = GetRealmName and GetRealmName() or "?"
+    c.realm = GP.RealmName()
     c.faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
     c.class, c.classFile = UnitClass("player"), classFile
     c.level = UnitLevel("player")
@@ -173,7 +173,7 @@ end)
 -- Your other characters that can trade items with this one (same realm and faction).
 function GP:Alts()
     local me, out = self:CharKey(), {}
-    local realm = GetRealmName and GetRealmName() or "?"
+    local realm = GP.RealmName()
     local faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
     for key, c in pairs(self.db.chars) do
         if key ~= me and c.short and c.realm == realm and c.faction == faction then
@@ -191,7 +191,7 @@ end
 
 -- Holdings rows for the window: one per item, with where it is.
 function GP:HoldingsRows(charFilter, locFilter)
-    local realm = GetRealmName and GetRealmName() or "?"
+    local realm = GP.RealmName()
     local faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
     local byId = {}
     for key, c in pairs(self.db.chars) do
@@ -227,7 +227,7 @@ function GP:HoldingsRows(charFilter, locFilter)
 end
 
 function GP:HoldingsGold()
-    local realm = GetRealmName and GetRealmName() or "?"
+    local realm = GP.RealmName()
     local faction = UnitFactionGroup and UnitFactionGroup("player") or "?"
     local gold, mail = 0, 0
     for _, c in pairs(self.db.chars) do

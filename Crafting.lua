@@ -64,8 +64,60 @@ end
 GP:On("PLAYER_LOGIN", function() if GP.db then GP:NormalizeProfessions() end end)
 
 function GP:CharKey()
-    return (UnitName("player") or "?") .. "-" .. ((GetRealmName and GetRealmName()) or "?")
+    return (UnitName("player") or "?") .. "-" .. GP.RealmName()
 end
+
+-- A record of this character saved under another key (the realm was "" or "?" then): fold it
+-- into this one. Per profession, the newer reading wins; bags, bank and the rest come from
+-- whichever record was used last.
+local PER_PROF = { "recipes", "services" }
+local function invalidateLater() if GP.InvalidateCraftIndex then GP.InvalidateCraftIndex() end end
+local function newest(c)
+    local t = 0
+    for _, v in pairs(c.seen or {}) do if type(v) == "number" and v > t then t = v end end
+    for _, p in pairs(c.profs or {}) do if (p.t or 0) > t then t = p.t end end
+    return t
+end
+function GP:MergeCharRecords()
+    local name = UnitName and UnitName("player")
+    local realm = GP.RealmName()
+    if not name or realm == "?" then return end -- only once the realm is known
+    local key = name .. "-" .. realm
+    local chars = self.db.chars
+    for _, oldKey in ipairs({ name .. "-", name .. "-?" }) do
+        local old = chars[oldKey]
+        if old and oldKey ~= key then
+            local cur = chars[key]
+            if not cur then
+                chars[key] = old
+            else
+                cur.profs, cur.recipes, cur.services = cur.profs or {}, cur.recipes or {}, cur.services or {}
+                for prof, p in pairs(old.profs or {}) do
+                    local mine = cur.profs[prof]
+                    if not mine or (p.t or 0) > (mine.t or 0) then
+                        cur.profs[prof] = p
+                        for _, book in ipairs(PER_PROF) do
+                            for k, rec in pairs(cur[book]) do if rec.prof == prof then cur[book][k] = nil end end
+                            for k, rec in pairs(old[book] or {}) do if rec.prof == prof then cur[book][k] = rec end end
+                        end
+                    end
+                end
+                if newest(old) > newest(cur) then
+                    for k, v in pairs(old) do
+                        if k ~= "profs" and k ~= "recipes" and k ~= "services" and k ~= "shopping" then cur[k] = v end
+                    end
+                end
+                for id, n in pairs(old.shopping or {}) do
+                    cur.shopping = cur.shopping or {}
+                    cur.shopping[id] = math.max(cur.shopping[id] or 0, n)
+                end
+            end
+            chars[key].realm = realm
+            chars[oldKey] = nil
+        end
+    end
+end
+GP:On("PLAYER_ENTERING_WORLD", function() if GP.db then GP:MergeCharRecords(); invalidateLater() end end)
 
 function GP:Char()
     local key = self:CharKey()
@@ -359,7 +411,7 @@ end
 -- result, what the mats cost now (a mat you can craft yourself counts at the cheaper of buying
 -- it and crafting it), and the most you can pay for the main mat and still come out ahead.
 function GP:VendorFlipRows()
-    local realm = GetRealmName and GetRealmName() or "?"
+    local realm = GP.RealmName()
     local faction = UnitFactionGroup and UnitFactionGroup("player")
     local me = self:CharKey()
     local recipes, byOut = {}, {}

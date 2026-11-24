@@ -21,20 +21,20 @@ end
 
 local function cleanRealm(s)
     s = tostring(s or ""):gsub("[,;:/~|<>\n\r]", " "):match("^%s*(.-)%s*$")
-    if s == "" or #s > 60 then return nil end
+    if s == "" or s == "?" or #s > 60 then return nil end
     return s
 end
 
 -- "Realm|A": the key imported prices are stored under, for the character you're playing.
 function GP.RealmKey()
-    local realm, fac = cleanRealm(GetRealmName and GetRealmName()), GP.FactionLetter()
+    local realm, fac = cleanRealm(GP.RealmName()), GP.FactionLetter()
     if not (realm and fac) then return nil end
     return realm .. "|" .. fac
 end
 
 -- Called when a scan finishes: remember where it was taken.
 function GP:NoteScanRealm(t)
-    local realm, fac = cleanRealm(GetRealmName and GetRealmName()), GP.FactionLetter()
+    local realm, fac = cleanRealm(GP.RealmName()), GP.FactionLetter()
     if realm and fac then self.db.scanRealm = { r = realm, f = fac, t = t or time() } end
 end
 
