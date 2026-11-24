@@ -226,7 +226,8 @@ local function rankPicker()
                        tip = L["Ranks by the low end of each drop chance, so a lucky streak can't put a mob on top."] },
                      { text = L["Expected"], value = "est", checked = S().sortBy == "est", tip = L["Ranks by the average."] } }
         end,
-        pick = function(v) S().sortBy = v end,
+        -- Picking a ranking undoes a column you clicked, so the list follows what the button says.
+        pick = function(v) S().sortBy = v; if S().sorts then S().sorts[current()] = nil end end,
         tip = L["Safe ranks by the low end of each drop chance, so a lucky streak can't put a mob on top. Expected ranks by the average."],
     }
 end
@@ -332,7 +333,14 @@ TAB.farm = {
         }
     end,
     hero = function(rows)
-        local b = rows[1]
+        -- The best by the ranking (not by a column you clicked), and not a mob with 1 or 2 kills
+        -- whose one lucky drop makes it look great, when something better known is there.
+        local metric = S().sortBy == "est" and "est" or "safe"
+        local b
+        for _, r in ipairs(rows) do
+            if (r.estOnly or r.kills >= 3) and (not b or (r[metric] or 0) > (b[metric] or 0)) then b = r end
+        end
+        b = b or rows[1]
         local zone = GP:FarmZoneFilter()
         if not b then return zone and (L["No mobs recorded in "] .. GP.ZoneName(zone) .. L[" yet."]) or nil end
         local text = string.format(L["%s  |cffffffff%s|r in %s   %s/h  %s"], zone and L["Best farm here:"] or L["Best farm right now:"],

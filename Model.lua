@@ -26,7 +26,7 @@ local function addCount(dst, src)
 end
 
 local function merge(into, m)
-    into.name = into.name or m.name
+    if m.name ~= "?" then into.name = into.name or m.name end -- "?": a sharer who never saw the name
     into.kills = into.kills + (m.kills or 0)
     into.money = into.money + (m.money or 0)
     into.gathered = into.gathered + (m.gathered or 0)

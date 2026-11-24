@@ -1465,7 +1465,7 @@ do -- Profession reagents at the bank: keep what still gives skill, done with wh
   ok(boar and not boar.keep and boar.why == "done", "boar meat: done with, its only recipe is grey")
   local rep = GP:StashReport()
   ok(#rep.keep == 1 and #rep.done == 1, "the report splits keep and done")
-  ok(rep.crafts[1] and rep.crafts[1].times == 13, "and suggests crafting 13 Charred Wolf Meat")
+  ok(rep.crafts[1] and rep.crafts[1].times == 10 and rep.crafts[1].canMake == 13, "and suggests crafting Charred Wolf Meat (10 of the 13 it could)")
   ok(GP:ShowStash(), "the panel shows")
   c.recipes, c.services, c.bags, c.bank = savedR, savedS, savedBags, savedBank
   GP:ForgetReagentUses()

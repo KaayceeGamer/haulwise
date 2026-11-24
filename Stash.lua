@@ -9,6 +9,7 @@ local L = GP.L
 
 local SOON = 25 -- skill points ahead: reagents for recipes you can learn this soon are kept
 local MAX_ROWS = 10
+local MAX_CRAFTS = 10 -- per recipe: its colour changes as you skill up, so further than this is a guess
 local DIFF_COLOR = { [0] = "|cffff8040", [1] = "|cffffff00", [2] = "|cff40c040" }
 
 local function sameSide(c)
@@ -76,6 +77,24 @@ local function buildIndex()
             end
         end
     end
+    -- Recipes other players shared, for a profession you're still levelling: a reagent a recipe
+    -- above your skill uses isn't done with (Mageweave for a tailor at 155). Its skill is the wiki's.
+    local profs = GP:MyProfessions()
+    for _, craft in pairs(GP.SharedCrafts and GP:SharedCrafts() or {}) do
+        local p = craft.prof and profs[craft.prof]
+        local name = p and GP.ItemInfo(craft.out)
+        local w = name and GP.WikiRecipe and GP.WikiRecipe(name)
+        if w and p.rank and w.skill > p.rank then
+            for _, rg in ipairs(craft.reagents or {}) do
+                local e = entry(rg[1])
+                if w.skill <= p.rank + SOON then
+                    if not e.soon or w.skill < e.soon.skill then e.soon = { name = name, prof = craft.prof, skill = w.skill } end
+                else
+                    e.later = true
+                end
+            end
+        end
+    end
     return index
 end
 
@@ -87,16 +106,22 @@ function GP:ReagentVerdict(id)
     if e.skill then
         local s = e.skill
         local text = string.format(L["skill up %s: %s"], L[s.prof or ""] or "", (DIFF_COLOR[s.d] or "") .. (s.name or "?") .. "|r")
-        if s.who then text = text .. string.format(L[" (%s)"], "|cffff9944" .. s.who .. "|r") end
-        return { keep = true, why = "skill", text = text, who = s.who, d = s.d }
+        local short = (DIFF_COLOR[s.d] or "") .. (s.name or "?") .. "|r"
+        if s.who then
+            text = text .. string.format(L[" (%s)"], "|cffff9944" .. s.who .. "|r")
+            short = short .. " |cffff9944" .. s.who .. "|r"
+        end
+        return { keep = true, why = "skill", text = text, short = short, who = s.who, d = s.d }
     end
     if e.profit then
-        return { keep = true, why = "profit", text = string.format(L["craft %s for profit: +%s each"], e.profit.name or "?", GP.Coins(e.profit.each, true)) }
+        return { keep = true, why = "profit", text = string.format(L["craft %s for profit: +%s each"], e.profit.name or "?", GP.Coins(e.profit.each, true)),
+                 short = (e.profit.name or "?") .. " |cff5fd35f+" .. GP.Coins(e.profit.each, true) .. "|r" }
     end
     if e.soon then
-        return { keep = true, why = "soon", text = string.format(L["for %s at %s %d"], e.soon.name or "?", L[e.soon.prof or ""] or "", e.soon.skill) }
+        return { keep = true, why = "soon", text = string.format(L["for %s at %s %d"], e.soon.name or "?", L[e.soon.prof or ""] or "", e.soon.skill),
+                 short = "|cff8a8880" .. string.format(L["%s at %d"], e.soon.name or "?", e.soon.skill) .. "|r" }
     end
-    if e.grey > 0 then
+    if e.grey > 0 and not e.later then
         if self.QuestKeepReason and self:QuestKeepReason(id) then return nil end
         return { keep = false, why = "done", text = L["no recipe of yours gives skill with it anymore"] }
     end
@@ -161,10 +186,12 @@ function GP:StashReport()
         local reagents = GP.UnpackReagents(x.rec.r)
         local times = math.huge
         for _, r in ipairs(reagents) do times = math.min(times, math.floor((left[r[1]] or 0) / r[2])) end
+        local canMake = times
+        times = math.min(times, MAX_CRAFTS)
         if #reagents > 0 and times > 0 and times < math.huge then
             for _, r in ipairs(reagents) do left[r[1]] = left[r[1]] - times * r[2] end
             crafts[#crafts + 1] = { name = x.rec.n, prof = x.rec.prof, d = x.rec.d, times = times,
-                                    points = times * x.chance, icon = x.rec.icon, out = x.rec.out }
+                                    points = times * x.chance, icon = x.rec.icon, out = x.rec.out, canMake = canMake }
         end
     end
     return { keep = keep, done = done, doneValue = doneValue, crafts = crafts, bankSeen = c.seen and c.seen.bank }
@@ -173,7 +200,7 @@ end
 -- The panel ----------------------------------------------------------------------------------
 
 local panel
-local WIDTH = 330
+local WIDTH = 420
 
 local function header(f, i, text)
     local h = f.heads[i]
@@ -181,6 +208,7 @@ local function header(f, i, text)
         h = f:CreateFontString(nil, "OVERLAY", "HaulwiseFontSmallGold")
         h:SetJustifyH("LEFT")
         h:SetWidth(WIDTH - 24)
+        h:SetWordWrap(false)
         f.heads[i] = h
     end
     h:SetText(text)
@@ -252,7 +280,10 @@ function GP:ShowStash()
             r.tip = function(t)
                 t:AddLine(x.name or "?", 1, 0.82, 0.25)
                 t:AddLine(string.format(L["%s: you have the mats for %d. Orange always gives a point, yellow mostly, green now and then."],
-                    L[x.prof or ""] or "", x.times), 0.8, 0.8, 0.8, true)
+                    L[x.prof or ""] or "", x.canMake), 0.8, 0.8, 0.8, true)
+                if x.canMake > x.times then
+                    t:AddLine(string.format(L["Counted as %d: the colour changes as you skill up, so look again after those."], x.times), 0.6, 0.6, 0.6, true)
+                end
             end
         end
     end
@@ -268,8 +299,8 @@ function GP:ShowStash()
             end
             local r = addRow()
             r:SetItem(k.id, nil, nil, k.count)
-            r.right:SetText(k.v.text)
-            r.right:SetWidth(170)
+            r.right:SetText(k.v.short or k.v.text)
+            r.right:SetWidth(220)
             r.tip = function(t)
                 t:SetItemByID(k.id)
                 t:AddLine(" ")

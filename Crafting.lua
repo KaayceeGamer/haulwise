@@ -100,6 +100,14 @@ GP.InvalidateCraftIndex = invalidate
 
 -- Reading the profession window -------------------------------------------------------
 
+-- The profession a recipe belongs to, when the game says (nil when it can't).
+local function recipeProf(rid)
+    if not (C_TradeSkillUI and C_TradeSkillUI.GetTradeSkillLineForRecipe) then return nil end
+    local ok, id, name, parent = pcall(C_TradeSkillUI.GetTradeSkillLineForRecipe, rid)
+    if not ok or not (id or name) then return nil end
+    return GP.ProfKey(name, parent or id)
+end
+
 local function readModern(char)
     if not (C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs and C_TradeSkillUI.GetBaseProfessionInfo) then return false end
     if C_TradeSkillUI.IsTradeSkillLinked and C_TradeSkillUI.IsTradeSkillLinked() then return true end
@@ -110,8 +118,16 @@ local function readModern(char)
     char.profs[prof] = { rank = base.skillLevel, max = base.maxSkillLevel, t = time() }
     local n = 0
     for _, rid in ipairs(C_TradeSkillUI.GetAllRecipeIDs() or {}) do
-        local info = C_TradeSkillUI.GetRecipeInfo(rid)
-        local sch = C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(rid, false)
+        -- The game can list other professions' recipes too (Tailoring's while Cooking is open):
+        -- each recipe is filed under its own profession, and only the open one's are read.
+        local own = recipeProf(rid)
+        if own and own ~= prof then
+            local old = char.recipes["r" .. rid] or char.services["r" .. rid]
+            if old and old.prof == prof then old.prof = own end -- filed wrong by an older Haulwise
+            rid = nil
+        end
+        local info = rid and C_TradeSkillUI.GetRecipeInfo(rid)
+        local sch = rid and C_TradeSkillUI.GetRecipeSchematic and C_TradeSkillUI.GetRecipeSchematic(rid, false)
         if info and info.learned and prof == "Enchanting" and not (sch and sch.outputItemID) then
             GP:NoteKnownEnchant(info.name)
         end
