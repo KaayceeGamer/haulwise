@@ -1475,6 +1475,17 @@ do -- Profession reagents at the bank: keep what still gives skill, done with wh
   ok(#rep.keep == 1 and #rep.done == 1, "the report splits keep and done")
   ok(rep.crafts[1] and rep.crafts[1].times == 10 and rep.crafts[1].canMake == 13, "and suggests crafting Charred Wolf Meat (10 of the 13 it could)")
   ok(GP:ShowStash(), "the panel shows")
+  -- Safe to sell: a grey item in the bags is offered; the wolf meat (keep) and a quest item aren't
+  local savedBags = W.bags
+  W.items[4865] = W.items[4865] or { name = "Ruined Pelt", sell = 20 }
+  W.items[4865].quality = 0
+  W.bags = { [0] = { size = 3, slots = { { id = 4865, count = 3 }, { id = 2672, count = 13 } } } }
+  local list, total = GP:CleanupItems(false)
+  local pelt, meat
+  for _, g in ipairs(list) do if g.id == 4865 then pelt = g elseif g.id == 2672 then meat = g end end
+  ok(pelt and pelt.count == 3 and total > 0, "safe to sell: the grey pelts")
+  ok(not meat, "but not the wolf meat a recipe still needs")
+  W.bags = savedBags
   c.recipes, c.services, c.bags, c.bank = savedR, savedS, savedBags, savedBank
   GP:ForgetReagentUses()
 end

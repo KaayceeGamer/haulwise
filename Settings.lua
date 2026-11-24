@@ -66,7 +66,7 @@ local function sections(s)
             { L["Swap popup"], "swapPopups", L["Bags full while looting: offer to swap the cheapest item for the loot."] },
             { L["Make room popup"], "makeRoomPopup", L["\"Inventory is full\" elsewhere: offer the cheapest items to delete."] },
             { L["Disenchant value"], "useDisenchant", L["Value gear at what disenchanting gives, when you or an alt can disenchant it."] },
-            { L["Reagents at the bank"], "stashAtBank", L["At the bank: a list of the reagents in your bags and bank that still give skill for you or an alt, the ones you're done with, and what you can craft for skill right now. Also /haul reagents."] },
+            { L["Clean-up at the bank"], "stashAtBank", L["At the bank: what you can craft for skill right now, the reagents in your bags and bank to keep for you or an alt, and what's safe to sell. Also /haul cleanup."] },
             { L["Protect recipe reagents"], "protectReagents", L["Never offer items your known recipes use. Crafting materials are never offered anyway."] },
         } },
         { L["Gear"], {

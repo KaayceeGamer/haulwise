@@ -325,7 +325,7 @@ SlashCmdList.HAULWISE = function(msg)
         GP:ToggleGuide()
     elseif cmd == "settings" or cmd == "options" or cmd == "config" then
         GP:ToggleSettings()
-    elseif cmd == "reagents" or cmd == "stash" then
+    elseif cmd == "reagents" or cmd == "stash" or cmd == "cleanup" then
         GP:ToggleStash()
     elseif cmd == "hud" then
         GP:ToggleHUD()
@@ -388,7 +388,7 @@ SlashCmdList.HAULWISE = function(msg)
         GP.Print(L["/haul  open window   ·   /haul hud  show/hide the HUD   ·   /haul minimap  show/hide the minimap button"])
         GP.Print(L["/haul room  make room   ·   /haul bags | gear | holdings  open that tab"])
         GP.Print(L["/haul trainer [profession]  waypoint to the nearest trainer"])
-        GP.Print(L["/haul reagents  which profession reagents to keep and which you're done with"])
+        GP.Print(L["/haul cleanup  what to keep for your professions and what's safe to sell"])
         GP.Print(L["/haul scan  check bags for gear upgrades   ·   /haul reset  window positions and sizes"])
         GP.Print(L["/haul settings  font, size, opacity and options. Resize: drag the corner grip. Scale: Ctrl + mouse wheel over a window, the - / + buttons, or /haul scale 1.2 and /haul hudscale 0.9"])
         GP.Print(L["/haul kph <n>  kills/hour to assume for mobs you have not timed"])

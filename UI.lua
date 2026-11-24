@@ -353,11 +353,13 @@ TAB.farm = {
             text = text .. "  " .. string.format(L["|cff5fd35f%s in other zones: set Zone to All|r"], plural(hidden, "mob"))
         elseif b.estOnly then
             -- The top is a guess: name the best mob with real kills too.
+            local key = S().sortBy == "est" and "est" or "safe"
             local real
-            for _, r in ipairs(rows) do if not r.estOnly then real = r; break end end
+            for _, r in ipairs(rows) do
+                if not r.estOnly and r.kills >= 3 and (not real or (r[key] or 0) > (real[key] or 0)) then real = r end
+            end
             text = text .. "  " .. grey(L["estimate"])
             if real then
-                local key = S().sortBy == "est" and "est" or "safe"
                 text = text .. grey("   ·   ") .. string.format(L["farmed: |cffffffff%s|r %s/h"], real.name, Coins(real[key], true))
             end
         elseif b.kills < 30 then

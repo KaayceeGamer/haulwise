@@ -3,7 +3,8 @@
 -- yellow or green), when crafting it makes a profit, or when it goes into a recipe you can learn
 -- within the next 25 points. It's done with when every recipe of yours that uses it has gone grey.
 -- Items no known recipe uses are left alone: Haulwise can't tell what they're for.
--- Shown in a panel next to the bank, and as one line in item tooltips.
+-- Shown in a panel next to the bank (with what's safe to sell from bags and bank), and as one
+-- line in item tooltips.
 local _, GP = ...
 local L = GP.L
 
@@ -230,6 +231,64 @@ function GP:StashReport()
     return { keep = keep, done = done, doneValue = doneValue, crafts = crafts, bankSeen = c.seen and c.seen.bank }
 end
 
+-- Safe to sell: everything in your bags (and the bank, while it's open) that nothing of yours
+-- needs. The Bags tab's rules decide what's protected (quest items, upgrades, things you use,
+-- epics, crafting materials Haulwise can't place); profession reagents you're done with are
+-- offered too. Stacks of one item are one row; gear is one row per piece.
+function GP:CleanupItems(withBank)
+    local bags = {}
+    for _, b in ipairs(GP.BagIDs()) do bags[#bags + 1] = { b, L["in your bags"] } end
+    if withBank and GP.BankIDs then
+        for _, b in ipairs(GP.BankIDs()) do bags[#bags + 1] = { b, L["in your bank"] } end
+    end
+    local groups, list = {}, {}
+    for _, x in ipairs(bags) do
+        local bag, where = x[1], x[2]
+        for slot = 1, GP.NumSlots(bag) do
+            local it = GP.SlotInfo(bag, slot)
+            if it and it.itemID then
+                local info = GP.LinkInfo(it.hyperlink or it.itemID)
+                local v = self:ReagentVerdict(it.itemID)
+                local sell, why = false, nil
+                if v and v.why == "done" then
+                    sell, why = true, v.text
+                elseif not (v and v.keep) and not self:ProtectReason(bag, slot, it, info) then
+                    sell = true
+                end
+                if sell then
+                    local gear = info.classID == 2 or info.classID == 4
+                    local key = gear and (bag .. ":" .. slot) or it.itemID
+                    local g = groups[key]
+                    if not g then
+                        local unit, src, d = self:BagValue(it.itemID, it.hyperlink, it.isBound)
+                        g = { id = it.itemID, link = it.hyperlink, count = 0, unit = unit or 0, src = src, d = d,
+                              why = why, where = where, quality = it.quality or info.quality }
+                        groups[key] = g
+                        list[#list + 1] = g
+                    elseif g.where ~= where then
+                        g.where = L["in your bags and bank"]
+                    end
+                    g.count = g.count + (it.stackCount or 1)
+                end
+            end
+        end
+    end
+    local out, total = {}, 0
+    for _, g in ipairs(list) do
+        g.total = g.unit * g.count
+        if g.total > 0 then
+            g.advice = self:BagAdvice(g)
+            total = total + g.total
+            out[#out + 1] = g
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.total ~= b.total then return a.total > b.total end
+        return a.id < b.id
+    end)
+    return out, total
+end
+
 -- The panel ----------------------------------------------------------------------------------
 
 local panel
@@ -264,7 +323,7 @@ end
 local function grey(t) return "|cff8a8880" .. t .. "|r" end
 
 local function build()
-    panel = GP.Panel("HaulwiseStash", WIDTH, 120, L["Profession reagents"])
+    panel = GP.Panel("HaulwiseStash", WIDTH, 120, L["Bags and bank: keep or sell"])
     panel.rows, panel.heads = {}, {}
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 12, -32)
@@ -283,7 +342,9 @@ end
 
 function GP:ShowStash()
     local rep = self:StashReport()
-    if #rep.keep == 0 and #rep.done == 0 and #rep.crafts == 0 then
+    local bankOpen = GP.IsBankOpen and GP.IsBankOpen()
+    local sell, sellTotal = self:CleanupItems(bankOpen)
+    if #rep.keep == 0 and #rep.crafts == 0 and #sell == 0 then
         if panel then panel:Hide() end
         return false
     end
@@ -347,21 +408,28 @@ function GP:ShowStash()
             end
         end
     end
-    if #rep.done > 0 then
-        addHead(string.format(L["Done with (%d): worth %s"], #rep.done, GP.Coins(rep.doneValue, true)))
-        for _, k in ipairs(rep.done) do
+    if #sell > 0 then
+        addHead(string.format(bankOpen and L["Safe to sell from bags and bank (%d): worth %s"] or L["Safe to sell from your bags (%d): worth %s"],
+            #sell, GP.Coins(sellTotal, true)))
+        for _, k in ipairs(sell) do
             local r = addRow()
-            r:SetItem(k.id, nil, nil, k.count)
-            r.right:SetText(k.total > 0 and (GP.Coins(k.total, true) .. grey(k.ah and L[" AH"] or L[" vendor"])) or grey(L["no value"]))
-            r.right:SetWidth(110)
+            r:SetItem(k.id, k.link, nil, k.count)
+            r.right:SetText(GP.Coins(k.total, true) .. "  " .. (k.advice or ""))
+            r.right:SetWidth(230)
             r.tip = function(t)
-                t:SetItemByID(k.id)
+                if k.link then t:SetHyperlink(k.link) else t:SetItemByID(k.id) end
                 t:AddLine(" ")
-                t:AddLine(L["|cffffd700Haulwise|r: every recipe of yours that uses it has gone grey, so it gives no more skill."], 1, 1, 1, true)
-                t:AddLine(k.ah and L["Sell it on the AH, or keep it if you want to craft for other reasons."]
-                    or L["Sell it to a vendor, or keep it if you want to craft for other reasons."], 0.8, 0.8, 0.8, true)
+                if k.why then
+                    t:AddLine(L["|cffffd700Haulwise|r: every recipe of yours that uses it has gone grey, so it gives no more skill."], 1, 1, 1, true)
+                else
+                    t:AddLine(L["|cffffd700Haulwise|r: nothing of yours needs it. It isn't for a quest, an upgrade, something you use or a recipe you know."], 1, 1, 1, true)
+                end
+                t:AddLine(k.count .. " " .. k.where, 0.6, 0.6, 0.6)
             end
         end
+    end
+    if not bankOpen then
+        addHead(grey(L["Open the bank to check what's in it too."]))
     end
     -- The list scrolls once it's taller than MAX_LIST; the note stays under it.
     local listH = -y + 4

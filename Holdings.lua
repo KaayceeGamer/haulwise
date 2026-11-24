@@ -35,6 +35,9 @@ local function bankIDs()
     return ids
 end
 
+GP.BankIDs = bankIDs
+function GP.IsBankOpen() return bankOpen end
+
 local function slotInfo(bag, slot)
     if C_Container and C_Container.GetContainerItemInfo then
         local ok, info = pcall(C_Container.GetContainerItemInfo, bag, slot)
