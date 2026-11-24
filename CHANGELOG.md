@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Import without freezing**: pasting community data (hundreds of kilobytes) froze the game for seconds while the text box laid it all out. The box now shows only the start of what you paste and collects the rest as it arrives; Import then takes a moment instead.
+
 ## 0.19.0
 - **Clean-up at the bank**: when you open the bank, a list shows what's safe to sell from your bags and bank (the Bags tab's rules: quest items, upgrades, things you use, epics and crafting materials Haulwise can't place are never offered), with what each is worth and where to sell it. It also shows which reagents in your bags and bank to keep (a recipe you or an alt know still gives skill with them, they make a mat for such a recipe, like Silk Cloth for the bolts a Crimson Silk Vest needs, crafting them makes a profit, or you can learn a recipe for them within 25 points) and which you're done with (every recipe of yours that uses them has gone grey), with what they're worth. On top: what you can craft for skill right now from what you have, and about how many points it gives. Item tooltips say the same in one line. Also `/haul cleanup`; turn it off in Settings > Bags and loot.
 - **Enchants in Recipes and Skill up**: recipes that make no item (enchants like *Enchant Weapon - Revelation*) are now read from your Enchanting window. Ones you don't know show in Recipes with where to get them; ones you know show in Skill up with the cost per skill point and can go on the shopping list.

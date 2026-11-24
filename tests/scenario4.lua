@@ -1509,4 +1509,19 @@ do -- The game answered "" for the realm: one character saved twice gets folded 
   c.profs, c.recipes = savedProfs, savedRecipes
   GP.InvalidateCraftIndex()
 end
+do -- Import: a big paste is collected char by char (the box shows only the start), then imported
+  GP:ShowImport()
+  local b = HaulwiseShareFrame
+  -- A long label makes it long enough to count as a paste.
+  local str = "CF2,friendpaste," .. string.rep("P", 200) .. "," .. time() .. ",1,1;1234,Test Mob,10,12,3,0,0,0,0,0,0,,,,"
+  local onChar = b.edit:GetScript("OnChar")
+  for i = 1, #str do onChar(b.edit, str:sub(i, i)) end
+  local up = b.edit:GetScript("OnUpdate")
+  if up then up(b.edit) end
+  ok(b.pasted == str, "the whole paste is collected")
+  b.action:GetScript("OnClick")(b.action)
+  ok(GP.db.shared.friendpaste and GP.db.shared.friendpaste.n == 1, "and imported: " .. tostring(b.status:GetText()))
+  GP.db.shared.friendpaste = nil
+  b:Hide()
+end
 print("NEW FEATURES PASSED")

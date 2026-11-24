@@ -383,8 +383,43 @@ function GP:MySharedMobs(poolTime)
     end
 end
 
+-- The box shows whole texts for copying (export, feedback); for pasting it's in paste mode below.
+local function copyMode(b)
+    b.pasted = nil
+    b.edit:SetScript("OnChar", nil)
+    b.edit:SetScript("OnUpdate", nil)
+    if b.edit.SetMaxBytes then b.edit:SetMaxBytes(0) end
+end
+
+-- Paste mode. A multi-line box lays out every line of what's pasted, and a community string is
+-- hundreds of kilobytes: the game froze for seconds. So the box keeps only its first 2,500 bytes
+-- to show, and the characters are collected as they arrive (one OnChar each, all in the same
+-- frame for a paste); the next frame joins them. Typing a few characters by hand still works.
+local PASTE_SHOWN = 2500
+local function pasteMode(b)
+    copyMode(b)
+    if b.edit.SetMaxBytes then b.edit:SetMaxBytes(PASTE_SHOWN) end
+    local buf, n, frame = {}, 0, nil
+    b.edit:SetScript("OnChar", function(edit, c)
+        local now = GetTime()
+        if frame ~= now then
+            buf, n, frame = {}, 0, now
+            edit:SetScript("OnUpdate", function(e)
+                e:SetScript("OnUpdate", nil)
+                if n >= 100 then -- a paste, not typing
+                    b.pasted = table.concat(buf)
+                    b.status:SetText(string.format(L["Pasted %d characters: press Import."], #b.pasted))
+                end
+            end)
+        end
+        n = n + 1
+        buf[n] = c
+    end)
+end
+
 function GP:ShowExport()
     local b = getBox()
+    copyMode(b)
     b.title:SetText(L["Share your data: press Ctrl+C, then paste it on the Haulwise website"])
     self.db.sharedKills = self:OwnKills()
     local export = self:ExportString()
@@ -424,6 +459,7 @@ end
 
 function GP:ShowFeedback()
     local b = getBox()
+    copyMode(b)
     local report = self:ErrorReport(5)
     b.title:SetText(report and L["Feedback: Haulwise noted errors. Copy everything below with Ctrl+C"]
         or L["Feedback, bugs and ideas: copy a link with Ctrl+C"])
@@ -443,13 +479,20 @@ end
 function GP:ShowImport()
     local b = getBox()
     b.title:SetText(L["Import: paste a friend's string or the latest community data"])
+    pasteMode(b)
     b.edit:SetText("")
     b.edit:SetFocus()
     b.status:SetText("")
     b.action:SetText(L["Import"])
     b.action:SetScript("OnClick", function()
-        local ok, msg = GP:ImportString(b.edit:GetText())
-        b.status:SetText((ok and "|cff55ff55" or "|cffff5555") .. msg .. "|r")
+        local text = b.pasted or b.edit:GetText()
+        b.status:SetText(L["Importing..."])
+        -- One frame later, so "Importing..." shows before the work starts.
+        C_Timer.After(0, function()
+            local ok, msg = GP:ImportString(text)
+            b.status:SetText((ok and "|cff55ff55" or "|cffff5555") .. msg .. "|r")
+            if ok then b.pasted = nil; b.edit:SetText("") end
+        end)
     end)
     b:Show()
 end
