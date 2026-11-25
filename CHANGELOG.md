@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Enchant requests say where to learn them**: for an enchant you don't know, the *Learn it* column shows where it's taught (vendor, trainer, drop, the AH, or what Warcraft Wiki says), the tooltip lists every place known, and a click sets a waypoint, just like Recipes.
+
 ## 0.20.0
 - **Five tabs instead of eight**: what belongs together sits together. **Bags** has Bags and Holdings; **Craft** has Best profit, Skill up, Vendor flips, Enchant requests and Recipes; the new **Auction House** tab has Deals, Prices and Your sales. Each tab remembers the view you were on.
 

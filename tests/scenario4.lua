@@ -1526,4 +1526,13 @@ do -- Import: a big paste is collected char by char (the box shows only the star
   GP.db.shared.friendpaste = nil
   b:Hide()
 end
+do -- Where to learn an enchant: Warcraft Wiki says Revelation is sold by a vendor
+  local saved = HaulwiseData.wikiRecipes
+  HaulwiseData.wikiRecipes = { ["enchant weapon - revelation"] = "140:V:1" }
+  local srcs, _, _, skill = GP:LearnSources("Enchant Weapon - Revelation")
+  local wiki
+  for _, s in ipairs(srcs) do if s.kind == "Wiki" then wiki = s end end
+  ok(wiki and wiki.how == "V" and skill == 140, "Revelation: sold by a vendor (wiki), skill 140")
+  HaulwiseData.wikiRecipes = saved
+end
 print("NEW FEATURES PASSED")

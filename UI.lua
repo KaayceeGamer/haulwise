@@ -1278,6 +1278,22 @@ TAB.craft_skill = {
 }
 
 -- Craft → Enchant requests: what people ask enchanters for in trade chat. An estimate.
+-- Where to learn an enchant you don't know: the lowest-skill rank chat could mean. Kept on the row.
+local function enchantLearn(r)
+    if r.known or r.vague or not r.names or #r.names == 0 then return nil end
+    if r.learn ~= nil then return r.learn or nil end
+    local best, bestSkill
+    for _, n in ipairs(r.names) do
+        local w = GP.WikiRecipe(n)
+        local sk = w and w.skill or 999
+        if not bestSkill or sk < bestSkill then best, bestSkill = n, sk end
+    end
+    local name = best:gsub("(%a)([%w']*)", function(a, b) return a:upper() .. b end)
+    local srcs, _, itemID, _, trainer = GP:LearnSources(name)
+    r.learn = { name = name, sources = srcs, itemID = itemID, wikiTrainer = trainer, prof = "Enchanting" }
+    return r.learn
+end
+
 TAB.craft_enchants = {
     cols = {
         { key = "name", title = L["Enchant asked for"], w = 250, icon = true },
@@ -1286,7 +1302,7 @@ TAB.craft_enchants = {
         { key = "offer", title = L["~ offered"], w = 90, align = "RIGHT" },
         { key = "gold", title = L["~ gold/hour"], w = 110, align = "RIGHT", bar = true },
         { key = "skill", title = L["Skill"], w = 56, align = "RIGHT" },
-        { key = "known", title = L["You know it"], w = 90, align = "CENTER" },
+        { key = "known", title = L["Learn it"], w = 220 },
     },
     rows = function() return (GP:EnchantRowsCached()) end,
     bar = function(r) return r.perHourGold or 0 end,
@@ -1298,7 +1314,8 @@ TAB.craft_enchants = {
             offer = r.offer and grey("~") .. Coins(r.offer, true) or grey(L["not said"]),
             gold = r.perHourGold and grey("~") .. Coins(r.perHourGold, true) or grey("–"),
             skill = r.skill and tostring(r.skill) or grey("–"),
-            known = r.vague and grey("–") or (r.known and "|cff5fd35f" .. L["yes"] .. "|r" or grey(L["no"])),
+            known = r.vague and grey("–") or (r.known and "|cff5fd35f" .. L["you know it"] .. "|r")
+                or (enchantLearn(r) and enchantLearn(r).sources[1] and GP.SourceShort(enchantLearn(r).sources[1])) or grey(L["not known where"]),
         }
     end,
     hero = function(rows)
@@ -1311,9 +1328,26 @@ TAB.craft_enchants = {
             plural(info.total, "enchant"), info.hours, plural(info.supply, "enchanter"))
     end,
     empty = L["No enchant requests heard yet.\n\nWhile you're in a city, Haulwise counts the messages in trade chat that ask for an enchanter, per enchant, and how long you've listened. After a few hours you'll see what people want and what they offer for it.\n\nIt's an estimate: many ask by whisper, others answer first, and the words in chat are guessed at. Nothing about who asked is saved."],
-    click = function() end,
+    -- A click sets a waypoint to where you learn it (a vendor that sells it, or your trainer).
+    click = function(r)
+        local learn = not r.known and enchantLearn(r)
+        if learn and not GP:GoToRecipe(learn) then GP.Print(L["No place known for it yet: see the tooltip."]) end
+    end,
     tooltip = function(t, r)
         t:AddLine(r.label, GOLD[1], GOLD[2], GOLD[3])
+        local learn = not r.known and not r.vague and enchantLearn(r)
+        if learn then
+            t:AddLine(" ")
+            t:AddLine(string.format(L["Where to learn %s:"], learn.name), 0.8, 0.8, 0.8)
+            for i, src in ipairs(learn.sources) do
+                if i > 5 then break end
+                local left, right = GP.SourceLong(src)
+                t:AddDoubleLine("  " .. left, right, 1, 1, 1, 0.7, 0.7, 0.7)
+            end
+            if #learn.sources == 0 then t:AddLine("  " .. L["Not known yet. Recipes other players share fill this in."], 0.6, 0.6, 0.6, true) end
+            if GP:RecipeDestination(learn) or learn.wikiTrainer then t:AddLine(L["Click for a waypoint."], 0.4, 0.8, 1) end
+            t:AddLine(" ")
+        end
         t:AddDoubleLine(L["Asked for, last 7 days"], tostring(r.n), 0.7, 0.7, 0.7, 1, 1, 1)
         if r.perHour then t:AddDoubleLine(L["Per hour you were in trade chat"], string.format("~%.1f", r.perHour), 0.7, 0.7, 0.7, 1, 1, 1) end
         if r.offer then
