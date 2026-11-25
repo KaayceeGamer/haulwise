@@ -2,7 +2,7 @@
 local ADDON, GP = ...
 Haulwise = GP
 
-GP.VERSION = "0.19.1"
+GP.VERSION = "0.20.0"
 GP.SITE_URL = "kaayceegamer.github.io/haulwise"
 GP.ISSUES_URL = "github.com/KaayceeGamer/haulwise/issues"
 

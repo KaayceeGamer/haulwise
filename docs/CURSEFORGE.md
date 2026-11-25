@@ -2,13 +2,13 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.19.1:** importing community data no longer freezes the game: paste it and press Import.
+**New in 0.20.0:** five tabs instead of eight, with what belongs together in one place: **Bags** (with Holdings), **Gear**, **Craft** (with Recipes) and the new **Auction House** tab (Deals, Prices and Your sales). Each tab remembers where you were.
 
 ---
 
 ## What you get
 
-Open Haulwise with the **gold bag button on your minimap**, the **Open Haulwise** button on the HUD, or `/haul`.
+Open Haulwise with the **gold bag button on your minimap**, the **Open Haulwise** button on the HUD, or `/haul`. Five tabs, each answering one question: **Farm** (where do I make gold?), **Bags** (what do I own and what's it worth?), **Gear** (what's an upgrade?), **Craft** (what should I craft and learn?) and **Auction House** (what should I buy and sell?).
 
 ### 💰 The HUD — always on screen until you close it
 - Gold per hour this session, with **pause** and **new session** buttons
@@ -73,14 +73,14 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
 - **Craft queue**: the shopping list is also your queue. Open a profession and the queued crafts show beside it with how many you can make; click one and Haulwise picks the recipe and count, you press Create, and finished crafts come off the queue. **Queue best 5** fills it with your most profitable crafts, as many as sell in about two days.
 - **Skill up**: the cheapest recipes to raise your profession right now, by what each skill point costs. Enchants are in too.
 - **Vendor flips**: crafts a vendor buys for more than their mats cost on the AH, for you and your alts, with the most you can pay for the main mat (*Buy below*).
-- **Recipes**: the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
+- **Recipes** (on the Craft tab): the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
 - **Enchant requests** (an estimate): in a city, Haulwise counts what people ask enchanters for in trade chat, per enchant, how often per hour you're listening, the gold they name and whether you know it. Many ask by whisper and others answer first, so it's marked as an estimate everywhere. Nothing about who asked is saved.
 - Show **one profession at a time** with the Profession menu.
 
-### 📈 Deals and Market
+### 📈 Auction House: Deals, Prices and Your sales
 - **Deals**: listings under what they really sell for, items cheaper than a vendor pays, **gear cheaper than its disenchant mats**, and mats cheap enough to craft into something a vendor buys for more. Each says how long it takes to sell, and never more than sells in about three days. *Show* picks one kind.
-- **Market**: for everything you have, farm, gather, craft or use: the price now against its usual price, how many you have, how fast it sells, and what to do: *Sell now*, *Farm now*, *Craft now*, *Stock up*, *Hold*. The top line adds up what selling now brings over the usual price. After two weeks of scans it also shows which weekday your auction house is cheapest.
+- **Prices**: for everything you have, farm, gather, craft or use: the price now against its usual price, how many you have, how fast it sells, and what to do: *Sell now*, *Farm now*, *Craft now*, *Stock up*, *Hold*. The top line adds up what selling now brings over the usual price. After two weeks of scans it also shows which weekday your auction house is cheapest.
 - **Your sales**: open a mailbox and Haulwise logs every auction sale from the invoices: what you earned today, this week and this month, per item, after the AH cut.
 - **How fast it sells**: from your scans, Haulwise sees which cheap listings disappear. Tooltips, the sell helper and the Craft tab show *sells ~12 a day*.
 
@@ -101,7 +101,7 @@ Item tooltips show:
 - **Craftsman's Writs** say what the ordered item costs to buy or to craft yourself.
 
 ### 📦 Holdings and mail
-- What every character owns and where: bags, bank, equipped, mail and auctions, with values.
+- **Bags > Holdings**: what every character owns and where: bags, bank, equipped, mail and auctions, with values.
 - **Mats to crafters**: at a mailbox, one click sends the crafting mats in your bags to the alt whose recipes use them.
 
 ### 🌍 Community data
@@ -159,7 +159,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 
 ## Works with
 - **Pawn**: Haulwise uses your Pawn scales.
-- **TradeSkillMaster**: with its desktop app, Haulwise uses TSM's prices, sales per day and 60-day prices where your own scans don't reach yet, so Market, Deals and Craft work from day one.
+- **TradeSkillMaster**: with its desktop app, Haulwise uses TSM's prices, sales per day and 60-day prices where your own scans don't reach yet, so Prices, Deals and Craft work from day one.
 - **Auctionator**: Haulwise uses its prices until you scan yourself.
 - **TomTom**: waypoints use TomTom's arrow when it's installed; otherwise the game's own map pin.
 - **QuestieDB**: not needed. Haulwise Data (included) already has its trainers, vendors, quests and drop sources. If you have QuestieDB installed anyway, Haulwise also uses it to find NPCs that Haulwise Data doesn't cover.

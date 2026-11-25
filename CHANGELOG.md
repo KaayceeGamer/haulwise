@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.20.0
 - **Five tabs instead of eight**: what belongs together sits together. **Bags** has Bags and Holdings; **Craft** has Best profit, Skill up, Vendor flips, Enchant requests and Recipes; the new **Auction House** tab has Deals, Prices and Your sales. Each tab remembers the view you were on.
 
 ## 0.19.1

@@ -73,6 +73,9 @@ local function guideSections() return {
 
 -- What's new, per version, newest first. After an update only the versions you haven't seen show.
 local function newsByVersion() return {
+    { "0.20.0", {
+        L["Five tabs instead of eight: Holdings is under Bags, Recipes under Craft, and the new Auction House tab has Deals, Prices and Your sales."],
+    } },
     { "0.19.1", {
         L["Importing community data no longer freezes the game."],
     } },

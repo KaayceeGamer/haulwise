@@ -142,7 +142,7 @@ local TAB = {}
 -- A tab can have more than one view (Gear: your bags / the AH). The view is TAB["gear_ah"] etc.
 local plural = GP.Plural
 
--- Tabs that are views now (0.19.2): a saved tab from before opens where it went.
+-- Tabs that are views now (0.20.0): a saved tab from before opens where it went.
 local MOVED = { deals = { "ah" }, market = { "ah", "prices" }, recipes = { "craft", "recipes" }, holdings = { "bags", "holdings" } }
 local function migrateTab()
     local s = S()
