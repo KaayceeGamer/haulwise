@@ -166,7 +166,7 @@ Then just play. The in-game guide (the **i** button, or `/haul guide`) explains 
 
 ## Good to know
 - Deleting items can't be undone. If the game wants you to confirm a delete, the item stays on your cursor until you do.
-- Drop rates are recorded only while you're solo, because group loot skews them. You can change this in Settings.
+- In a group, the corpses you loot count for drop rates and your session. Kill speed and corpses others looted count only when you're solo, since a group skews them. *Record in groups* in Settings counts those too.
 - Haulwise never buys, posts auctions or sends mail for you. It only fills in prices, recipients and attachments for you to confirm.
 - Haulwise can't reach the internet. Everything it learns stays in your SavedVariables until you choose to export it. Shared data is anonymous: no character, account or realm names are kept.
 - Auction house scans use the game's own full scan, which the game allows once every 15 minutes.
