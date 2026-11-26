@@ -25,10 +25,26 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
     if craft and craft > (value or 0) then
         tooltip:AddDoubleLine(L["  Worth more as "] .. (craftName or "?"), GP.Coins(craft) .. L[" each"], 0.53, 0.8, 1, 0.53, 0.8, 1)
     end
-    for _, s in ipairs(sources) do
-        tooltip:AddDoubleLine("  " .. s.name, string.format(L["%.0f%%  (%d kills)"], s.chance * 100, s.kills),
+    -- Where it drops: the best mob on one line; Shift shows them all (tooltips with other
+    -- addons' lines ran off the top of the screen).
+    if GP.TooltipFull() then
+        for _, s in ipairs(sources) do
+            tooltip:AddDoubleLine("  " .. s.name, string.format(L["%.0f%%  (%d kills)"], s.chance * 100, s.kills),
+                0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+        end
+    elseif sources[1] then
+        local s = sources[1]
+        local more = #sources > 1 and ("|cff8a8880 " .. string.format(L["+%d more (Shift)"], #sources - 1) .. "|r") or ""
+        tooltip:AddDoubleLine(L["  Drops from "] .. s.name .. more, string.format(L["%.0f%%  (%d kills)"], s.chance * 100, s.kills),
             0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
     end
+end)
+
+-- Shift held: tooltips show every line. Holding or letting go redraws the open tooltip.
+function GP.TooltipFull() return IsShiftKeyDown and IsShiftKeyDown() or false end
+GP:On("MODIFIER_STATE_CHANGED", function(key)
+    if key ~= "LSHIFT" and key ~= "RSHIFT" then return end
+    if GameTooltip and GameTooltip:IsShown() and GameTooltip.RefreshData then pcall(GameTooltip.RefreshData, GameTooltip) end
 end)
 
 -- Gear: sell, auction or disenchant? One line with the best move, then what disenchanting gives

@@ -176,11 +176,22 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
         if last and last.id == id then ownDrops = last.n > 0 else ownDrops = #GP:SourcesFor(id, 1) > 0 end
         local hasSrc = src and (#src.vendors > 0 or (not ownDrops and (#src.drops > 0 or src.world > 0)))
         if #quests == 0 and #crafts == 0 and not hasSrc then return end
+        -- Short unless Shift is held: quests in your log and your own recipes first, the rest counted.
+        local full = GP.TooltipFull()
+        local maxQ, maxC = MAX_QUESTS, MAX_CRAFTS
+        if not full then
+            local active, mine = 0, 0
+            for _, q in ipairs(quests) do if q.active then active = active + 1 end end
+            for _, c in ipairs(crafts) do if c.who == "you" then mine = mine + 1 end end
+            maxQ = math.min(MAX_QUESTS, math.max(1, active))
+            maxC = math.min(MAX_CRAFTS, math.max(1, mine))
+        end
+        local shiftHint = full and "" or L[" (Shift)"]
         tooltip:AddLine(" ")
         if #quests > 0 or #crafts > 0 then tooltip:AddLine(L["|cffffd700Haulwise|r  used for:"]) end
         for i, q in ipairs(quests) do
-            if i > MAX_QUESTS then
-                tooltip:AddLine(string.format(L["  and %d more quests"], #quests - MAX_QUESTS), 0.6, 0.6, 0.6)
+            if i > maxQ then
+                tooltip:AddLine(string.format(L["  and %d more quests"], #quests - maxQ) .. shiftHint, 0.6, 0.6, 0.6)
                 break
             end
             local lvl = (q.level or 0) > 0 and string.format(" (%d)", q.level) or ""
@@ -191,8 +202,8 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
             end
         end
         for i, c in ipairs(crafts) do
-            if i > MAX_CRAFTS then
-                tooltip:AddLine(string.format(L["  and %d more crafts"], #crafts - MAX_CRAFTS), 0.6, 0.6, 0.6)
+            if i > maxC then
+                tooltip:AddLine(string.format(L["  and %d more crafts"], #crafts - maxC) .. shiftHint, 0.6, 0.6, 0.6)
                 break
             end
             local name = c.name or GP.ItemInfo(c.out) or "?"
@@ -208,7 +219,7 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
             end
             if not ownDrops then
                 if #src.drops > 0 then
-                    tooltip:AddLine(L["  Drops from "] .. nameList(src.drops, MAX_NAMES), 0.8, 0.8, 0.8, true)
+                    tooltip:AddLine(L["  Drops from "] .. nameList(src.drops, full and MAX_NAMES or 1), 0.8, 0.8, 0.8, true)
                 elseif src.world > 0 then
                     tooltip:AddLine(string.format(L["  World drop: %d kinds of mobs drop it"], src.world), 0.8, 0.8, 0.8)
                 end
