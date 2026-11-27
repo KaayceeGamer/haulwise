@@ -1535,4 +1535,17 @@ do -- Where to learn an enchant: Warcraft Wiki says Revelation is sold by a vend
   ok(wiki and wiki.how == "V" and skill == 140, "Revelation: sold by a vendor (wiki), skill 140")
   HaulwiseData.wikiRecipes = saved
 end
+do -- A name loaded for a tooltip (an item not on the list) must not redraw the list
+  local n, real = 0, GP.RefreshUI
+  local realShows = GP.ListShows
+  GP.ListShows = function(id) return id == 9900002 end
+  GP.RefreshUI = function() n = n + 1 end
+  GP.ItemInfo(9900001)   -- not cached: asked for, as a tooltip would
+  GP.ItemInfo(9900002)   -- not cached: on the list
+  fire("GET_ITEM_INFO_RECEIVED", 9900001, true)
+  ok(n == 0, "a tooltip's item doesn't redraw the list")
+  fire("GET_ITEM_INFO_RECEIVED", 9900002, true)
+  ok(n == 1, "an item on the list does")
+  GP.RefreshUI, GP.ListShows = real, realShows
+end
 print("NEW FEATURES PASSED")

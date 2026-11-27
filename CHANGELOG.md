@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **No more flicker under the mouse**: hovering items in a list made it redraw and change colours, because the tooltip asked the game for other items' names (drops, crafts, disenchant mats). Now a loaded name only redraws the list when that item is on it.
 - **Shorter tooltips, Shift for all**: with other addons' lines too, item tooltips ran off the top of the screen. Haulwise now shows the best drop on one line, quests in your log and your own recipes, and counts the rest; hold Shift to see every mob, quest and craft.
 - **Enchant requests say where to learn them**: for an enchant you don't know, the *Learn it* column shows where it's taught (vendor, trainer, drop, the AH, or what Warcraft Wiki says), the tooltip lists every place known, and a click sets a waypoint, just like Recipes.
 

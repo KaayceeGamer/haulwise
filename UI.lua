@@ -2574,6 +2574,17 @@ cachedRows = function(t, key)
 end
 function GP:ForgetRows() rowCache = {} end
 
+-- Is this item on the rows you can see right now? (So a name the game loads for a tooltip
+-- doesn't redraw the whole list.)
+function GP.ListShows(id)
+    if not (f and f:IsShown() and data) then return false end
+    for i = offset + 1, math.min(#data, offset + ROWS) do
+        local r = data[i]
+        if r and (r.id == id or r.out == id or r.itemID == id) then return true end
+    end
+    return false
+end
+
 function GP:RefreshUI()
     if not f or not f:IsShown() then updateDisenchant(false); return end
     local key = current()

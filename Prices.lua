@@ -554,10 +554,14 @@ function GP:SearchAH(id)
     end
 end
 
+-- A name we asked for arrived: redraw, but only if that item is on the rows you can see.
+-- Tooltips ask for names too (drops, crafts, disenchant mats), and redrawing for those made the
+-- list flicker and change colour under the mouse.
 local namesRedrawQueued = false
 GP:On("GET_ITEM_INFO_RECEIVED", function(itemID)
     if not waitingNames[itemID] then return end
     waitingNames[itemID] = false
+    if not (GP.ListShows and GP.ListShows(itemID)) then return end
     if namesRedrawQueued then return end
     namesRedrawQueued = true
     C_Timer.After(1, function()
