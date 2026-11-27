@@ -73,6 +73,11 @@ local function guideSections() return {
 
 -- What's new, per version, newest first. After an update only the versions you haven't seen show.
 local function newsByVersion() return {
+    { "0.20.1", {
+        L["Enchant requests say where to learn each enchant you don't know; click for a waypoint."],
+        L["Item tooltips are shorter: hold Shift to see every mob, quest and craft."],
+        L["The Disenchant button always hits the item it names, and lists no longer flicker under the mouse."],
+    } },
     { "0.20.0", {
         L["Five tabs instead of eight: Holdings is under Bags, Recipes under Craft, and the new Auction House tab has Deals, Prices and Your sales."],
     } },

@@ -2,7 +2,7 @@
 
 Made for **WoW Forever**. Free and open source. No ads, no accounts, no donations. In English, German and French.
 
-**New in 0.20.0:** five tabs instead of eight, with what belongs together in one place: **Bags** (with Holdings), **Gear**, **Craft** (with Recipes) and the new **Auction House** tab (Deals, Prices and Your sales). Each tab remembers where you were.
+**New in 0.20.1:** **Enchant requests** say where to learn each enchant you don't know (click for a waypoint), item **tooltips are shorter** (hold Shift for every mob, quest and craft), and the **Disenchant button** always hits the item it names.
 
 ---
 
@@ -75,7 +75,7 @@ Every number says **how sure** it is: what it's based on ("34 kills: 12 yours, 2
 - **Vendor flips**: crafts a vendor buys for more than their mats cost on the AH, for you and your alts, with the most you can pay for the main mat (*Buy below*).
 - **Recipes** (on the Craft tab): the ones you don't know yet, ranked by profit, with **where to get them** (trainer, vendor, drop, quest, auction house; how every Forever recipe is learned and its exact skill come from Warcraft Wiki) and how many crafts until each pays for itself. Results nobody sells on the AH (bound gear) say *no AH price* instead of a made-up loss. **Click one for a waypoint** to the vendor that sells it.
 - **Find trainer**: a waypoint to the nearest trainer of your faction that teaches your next rank (Journeyman, Expert, Artisan). Also `/haul trainer tailoring`.
-- **Enchant requests** (an estimate): in a city, Haulwise counts what people ask enchanters for in trade chat, per enchant, how often per hour you're listening, the gold they name and whether you know it. Many ask by whisper and others answer first, so it's marked as an estimate everywhere. Nothing about who asked is saved.
+- **Enchant requests** (an estimate): in a city, Haulwise counts what people ask enchanters for in trade chat, per enchant, how often per hour you're listening, the gold they name and whether you know it. Many ask by whisper and others answer first, so it's marked as an estimate everywhere. Nothing about who asked is saved. For an enchant you don't know, it says where it's taught, and a click sets a waypoint.
 - Show **one profession at a time** with the Profession menu.
 
 ### 📈 Auction House: Deals, Prices and Your sales
@@ -94,6 +94,8 @@ Item tooltips show:
 - the **quests that need it**, yours in the log first (done and other-faction quests are left out), and who to bring quest items to
 - the **crafts that use it**: your recipes, your alts', and recipes other players shared
 - **who sells it** and **which mobs drop it**
+
+They're kept short (the best drop, quests in your log, your own recipes); hold **Shift** to see everything.
 
 ### 📦 Supply crates and writs
 - **Waylaid Crates**: the tooltip prices every way to fill the crate (the materials you have at what they'd sell for, the rest at the cheapest place to buy), marks the cheapest, and says what one Merchant's Favor costs.
