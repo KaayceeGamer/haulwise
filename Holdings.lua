@@ -55,6 +55,26 @@ end
 GP.NumSlots = numSlots
 GP.SlotInfo = slotInfo
 
+-- Where an item is in your bags now (the same link when given, else the same item), and not
+-- locked (being moved, mailed or disenchanted). Returns bag, slot or nil.
+function GP.FindInBags(id, link)
+    if not id then return nil end
+    local fallbackBag, fallbackSlot
+    for _, bag in ipairs(GP.BagIDs()) do
+        for slot = 1, numSlots(bag) do
+            local it = slotInfo(bag, slot)
+            if it and it.itemID == id and not it.isLocked then
+                if not link or it.hyperlink == link then return bag, slot end
+                fallbackBag, fallbackSlot = fallbackBag or bag, fallbackSlot or slot
+            end
+        end
+    end
+    -- A link can differ in ways that don't matter (a level field); the same item will do then,
+    -- but only for items without random suffixes.
+    if fallbackBag and link and not link:find("item:%d+:%d*:%d*:%d*:%d*:%d*:%-?[1-9]") then return fallbackBag, fallbackSlot end
+    return nil
+end
+
 local function countBags(ids)
     local counts = {}
     for _, bag in ipairs(ids) do

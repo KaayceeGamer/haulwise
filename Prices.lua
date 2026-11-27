@@ -31,12 +31,18 @@ local waitingNames = {}
 local function itemInfo(id)
     local get = (C_Item and C_Item.GetItemInfo) or GetItemInfo
     local name, _, quality, _, _, _, _, _, _, icon, sellPrice, classID, subclassID, bindType = get(id)
+    if name and quality and GP.db and GP.db.names and GP.db.names[id] then
+        GP.db.quals = GP.db.quals or {}
+        GP.db.quals[id] = quality
+    end
     if not name then
         if waitingNames[id] == nil and C_Item and C_Item.RequestLoadItemDataByID then
             waitingNames[id] = true
             C_Item.RequestLoadItemDataByID(id)
         end
         name = GP.db and GP.db.names and GP.db.names[id]
+        -- Its quality from the last scan, so the name is coloured right before the game answers.
+        quality = quality or (GP.db and GP.db.quals and GP.db.quals[id])
     end
     return name, quality, icon, sellPrice, bindType, classID, subclassID
 end
@@ -124,6 +130,9 @@ function GP:UnpackSaved()
     end
     for id, n in pairs(db.names) do
         if n == "" or not (db.prices[id] or db.history[id]) then db.names[id] = nil end
+    end
+    for id in pairs(db.quals or {}) do
+        if not db.names[id] then db.quals[id] = nil end
     end
     -- Sell speeds nobody has updated for two weeks are stale.
     for id, raw in pairs(db.speed or {}) do
@@ -412,7 +421,8 @@ end
 local GEAR_CLASS = { [2] = true, [4] = true }
 local MAX_GEAR = 30000
 
-local function finish(lists, names, gear)
+local function finish(lists, names, gear, quals)
+    quals = quals or {}
     local db = GP.db
     local prices, t, day = {}, time(), GP.Day()
     local n = 0
@@ -446,6 +456,7 @@ local function finish(lists, names, gear)
         end
         prices[id] = rec
         if names[id] then db.names[id] = names[id] end
+        if quals[id] then db.quals = db.quals or {}; db.quals[id] = quals[id] end
         if tracked(rec.k) then addHistory(db, id, day, rec.p, total) end
         n = n + 1
     end
@@ -472,20 +483,21 @@ end
 local function process()
     local total = C_AuctionHouse.GetNumReplicateItems() or 0
     if total == 0 then return fail(L["the auction house sent an empty list"]) end
-    local lists, names, i = {}, {}, 0
+    local lists, names, quals, i = {}, {}, {}, 0
     local gear, nGear = {}, 0
     local instant = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
     local getLink = C_AuctionHouse.GetReplicateItemLink
     local function rows()
         local stop = math.min(total - 1, i + CHUNK - 1)
         for idx = i, stop do
-            local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID =
+            local name, _, count, quality, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID =
                 C_AuctionHouse.GetReplicateItemInfo(idx)
             if itemID and buyout and buyout > 0 and count and count > 0 then
                 local l = lists[itemID]
                 if not l then l = {}; lists[itemID] = l end
                 l[#l + 1] = { buyout / count, count }
                 if name and name ~= "" then names[itemID] = name end
+                if quality then quals[itemID] = quality end
                 if count == 1 and nGear < MAX_GEAR and getLink and instant then
                     local _, _, _, equipLoc, _, classID = instant(itemID)
                     if GEAR_CLASS[classID] and equipLoc and equipLoc ~= "" then
@@ -512,7 +524,7 @@ local function process()
             C_Timer.After(0, step)
         else
             GP.scanProgress = nil
-            local ok2, err2 = pcall(finish, lists, names, gear)
+            local ok2, err2 = pcall(finish, lists, names, gear, quals)
             if not ok2 then fail(err2) end
         end
     end

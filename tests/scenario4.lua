@@ -1548,4 +1548,22 @@ do -- A name loaded for a tooltip (an item not on the list) must not redraw the 
   ok(n == 1, "an item on the list does")
   GP.RefreshUI, GP.ListShows = real, realShows
 end
+do -- Disenchant button: finds the item where it is now, by its link
+  local saved = W.bags
+  W.items[9900010] = W.items[9900010] or { name = "Test Robe", quality = 2 }
+  W.bags = { [0] = { size = 4, slots = { nil, { id = 9900010, count = 1 } } } }
+  local bag, slot = GP.FindInBags(9900010, nil)
+  ok(bag == 0 and slot == 2, "the item is found in its new slot")
+  W.bags = { [0] = { size = 4, slots = {} } }
+  ok(GP.FindInBags(9900010, nil) == nil, "and not when it's gone")
+  W.bags = saved
+end
+do -- Names not loaded yet keep their colour from the last scan
+  GP.db.names[9900020] = "Plans: Test Helm"
+  GP.db.quals = GP.db.quals or {}
+  GP.db.quals[9900020] = 4
+  local name, quality = GP.ItemInfo(9900020)
+  ok(name == "Plans: Test Helm" and quality == 4, "an uncached epic stays purple")
+  GP.db.names[9900020], GP.db.quals[9900020] = nil, nil
+end
 print("NEW FEATURES PASSED")

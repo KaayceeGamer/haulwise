@@ -2520,7 +2520,25 @@ updateDisenchant = function(show)
         deButton.label:SetPoint("RIGHT", -8, 0)
         deButton.label:SetWordWrap(false)
         deButton:SetAttribute("type", "macro")
-        deButton:SetScript("PreClick", function(self) GP.deTarget = self.target end)
+        -- Right before the click: find the item the button names where it is *now*. The bag and
+        -- slot were taken when the list was drawn; after a disenchant or a bag change they can
+        -- point at an empty or different slot, and then the spell just waited for a target.
+        deButton:SetScript("PreClick", function(self)
+            if InCombatLockdown and InCombatLockdown() then return end
+            local bag, slot = GP.FindInBags(self.itemID, self.link)
+            if bag then
+                self:SetAttribute("macrotext", string.format("/cast %s\n/use %d %d", self.spell, bag, slot))
+                self.target = { bag = bag, slot = slot }
+                GP.deTarget = self.target
+            else
+                self:SetAttribute("macrotext", "")   -- gone: do nothing rather than leave the spell waiting
+                GP.deTarget = nil
+                C_Timer.After(0.2, function() updateDisenchant(f and f:IsShown() and current() == "bags") end)
+            end
+        end)
+        deButton:SetScript("PostClick", function()
+            C_Timer.After(2, function() if f and f:IsShown() then updateDisenchant(current() == "bags") end end)
+        end)
         deButton:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
             if self.link then GameTooltip:SetHyperlink(self.link) end
@@ -2531,7 +2549,7 @@ updateDisenchant = function(show)
         deButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
     end
     deButton:SetAttribute("macrotext", string.format("/cast %s\n/use %d %d", spell, cand.bag, cand.slot))
-    deButton.link = cand.link
+    deButton.link, deButton.itemID, deButton.spell = cand.link, cand.id, spell
     deButton.target = { bag = cand.bag, slot = cand.slot }
     deButton.label:SetText(L["|cffc48cffDisenchant|r "] .. itemName(cand.id))
     deButton:ClearAllPoints()
